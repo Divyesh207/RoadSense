@@ -29,6 +29,11 @@ class OrgContext:
     role: Role
     permissions: set[str]
 
+    @property
+    def user_id(self) -> uuid.UUID:
+        """Convenience accessor: the authenticated user's ID from their membership."""
+        return self.membership.user_id
+
 
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_bearer)],
