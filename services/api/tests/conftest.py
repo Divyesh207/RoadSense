@@ -7,6 +7,8 @@ from app.core.database import get_db
 from app.core.security import hash_password
 from app.main import app
 from app.models import Base
+from app.models.ai import AIDetection, AIModel, AIProcessingRun, DamageType
+from app.models.damage import DamageRecord, DamageReview
 from app.models.history import AuditLog
 from app.models.identity import (
     Organization,
@@ -95,6 +97,12 @@ TEST_TABLES = [
     Inspection.__table__,
     InspectionMedia.__table__,
     ProcessingJob.__table__,
+    AIModel.__table__,
+    DamageType.__table__,
+    AIProcessingRun.__table__,
+    AIDetection.__table__,
+    DamageRecord.__table__,
+    DamageReview.__table__,
 ]
 
 ORG_1_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
@@ -174,11 +182,18 @@ async def db_session(test_engine):
 
         p_maint_read = Permission(id=uuid.uuid4(), code="maintenance:read", name="Read Maintenance", resource="maintenance", action="read")
         p_maint_update = Permission(id=uuid.uuid4(), code="maintenance:update", name="Update Maintenance", resource="maintenance", action="update")
+
+        p_dmg_read = Permission(id=uuid.uuid4(), code="damage_records:read", name="Read Damage", resource="damage_records", action="read")
+        p_dmg_create = Permission(id=uuid.uuid4(), code="damage_records:create", name="Create Damage", resource="damage_records", action="create")
+        p_dmg_update = Permission(id=uuid.uuid4(), code="damage_records:update", name="Update Damage", resource="damage_records", action="update")
+        p_dmg_review = Permission(id=uuid.uuid4(), code="damage_records:review", name="Review Damage", resource="damage_records", action="review")
+
         session.add_all([
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
             p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_insp_process, p_media_read,
             p_maint_read, p_maint_update,
+            p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
         ])
 
         # Role-Permission mappings
@@ -187,13 +202,24 @@ async def db_session(test_engine):
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
             p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_insp_process, p_media_read,
             p_maint_read,
+            p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
         ])
         role_insp.permissions.extend([
             p_roads_read, p_segs_read,
             p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_media_read,
+            p_dmg_read, p_dmg_create,
         ])
-        role_crew.permissions.extend([p_roads_read, p_segs_read, p_maint_read, p_maint_update])
-        role_analyst.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_maint_read])
+        role_crew.permissions.extend([p_roads_read, p_segs_read, p_maint_read, p_maint_update, p_dmg_read])
+        role_analyst.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_maint_read, p_dmg_read])
+
+        # Seed initial damage types
+        dt_pothole = DamageType(id=uuid.uuid4(), code="POTHOLE", name="Pothole", description="Road surface cavity", is_active=True)
+        dt_crack = DamageType(id=uuid.uuid4(), code="CRACK", name="Surface Crack", description="Linear fracture", is_active=True)
+        dt_dep = DamageType(id=uuid.uuid4(), code="DEPRESSION", name="Depression", description="Sunken road surface", is_active=True)
+        dt_water = DamageType(id=uuid.uuid4(), code="WATERLOGGING", name="Waterlogging", description="Standing water accumulation", is_active=True)
+        dt_surf = DamageType(id=uuid.uuid4(), code="SURFACE_DAMAGE", name="Surface Damage", description="Loss of aggregate", is_active=True)
+        dt_other = DamageType(id=uuid.uuid4(), code="OTHER", name="Other Damage", description="Unclassified road defect", is_active=True)
+        session.add_all([dt_pothole, dt_crack, dt_dep, dt_water, dt_surf, dt_other])
 
         # Seed users
         admin_user = User(

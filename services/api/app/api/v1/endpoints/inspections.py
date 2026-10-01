@@ -744,3 +744,74 @@ async def process_inspection(
         ),
         meta=ResponseMeta(request_id=request_id),
     )
+
+
+@router.get(
+    "/{inspection_id}/detections",
+    response_model=ResponseEnvelope[list[dict[str, Any]]],
+    summary="Get AI detections for an inspection",
+)
+async def get_inspection_detections(
+    inspection_id: uuid.UUID,
+    request: Request,
+    org_ctx: Annotated[OrgContext, Depends(require_permission("inspections:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ResponseEnvelope[list[dict[str, Any]]]:
+    request_id = getattr(request.state, "request_id", None)
+
+    # Validate inspection belongs to org
+    insp_stmt = select(Inspection.id).where(
+        Inspection.id == inspection_id,
+        Inspection.organization_id == org_ctx.organization_id,
+    )
+    exists = (await db.execute(insp_stmt)).scalar_one_or_none()
+    if not exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "NOT_FOUND", "message": "Inspection not found."},
+        )
+
+    from app.models.ai import AIDetection
+
+    det_stmt = (
+        select(AIDetection)
+        .where(
+            AIDetection.inspection_id == inspection_id,
+            AIDetection.organization_id == org_ctx.organization_id,
+        )
+        .options(selectinload(AIDetection.damage_type))
+        .order_by(AIDetection.created_at.desc())
+    )
+    dets = (await db.execute(det_stmt)).scalars().all()
+
+    data = []
+    for d in dets:
+        coords = wkt_or_geom_to_point(d.location)
+        loc = {"latitude": coords[0], "longitude": coords[1]} if coords else None
+        sev = (d.raw_output or {}).get("severity_assessment", {}).get("severity", "MEDIUM")
+
+        data.append(
+            {
+                "id": str(d.id),
+                "inspection_id": str(d.inspection_id),
+                "media_id": str(d.media_id),
+                "damage_type": d.damage_type.code if d.damage_type else "UNKNOWN",
+                "damage_type_id": str(d.damage_type_id),
+                "confidence": float(d.confidence),
+                "bbox": {
+                    "x_min": float(d.bbox_x_min),
+                    "y_min": float(d.bbox_y_min),
+                    "x_max": float(d.bbox_x_max),
+                    "y_max": float(d.bbox_y_max),
+                },
+                "pixel_width": d.pixel_width,
+                "pixel_height": d.pixel_height,
+                "frame_number": d.frame_number,
+                "frame_timestamp_ms": d.frame_timestamp_ms,
+                "location": loc,
+                "severity": sev,
+                "created_at": d.created_at.isoformat(),
+            }
+        )
+
+    return ResponseEnvelope(success=True, data=data, meta=ResponseMeta(request_id=request_id))
