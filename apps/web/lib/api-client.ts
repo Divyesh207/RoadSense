@@ -12,6 +12,9 @@ import {
   MaintenanceDamageLink,
   MaintenanceJob,
   MaintenanceStatusHistory,
+  MapDamageFeature,
+  MapRoadFeature,
+  MapSegmentFeature,
   PaginatedResponseEnvelope,
   RecurrenceRecord,
   RepairEvidence,
@@ -164,6 +167,22 @@ class ApiClient {
     },
     getReviews: async (damageId: string): Promise<ResponseEnvelope<DamageReview[]>> => {
       return this.request<ResponseEnvelope<DamageReview[]>>(`/damages/${damageId}/reviews`);
+    },
+  };
+
+  // GIS Map layers
+  map = {
+    damages: async (params: Record<string, string> = {}): Promise<ResponseEnvelope<MapDamageFeature[]>> => {
+      const q = new URLSearchParams(params).toString();
+      return this.request<ResponseEnvelope<MapDamageFeature[]>>(`/map/damages${q ? `?${q}` : ""}`);
+    },
+    roads: async (params: Record<string, string> = {}): Promise<ResponseEnvelope<MapRoadFeature[]>> => {
+      const q = new URLSearchParams(params).toString();
+      return this.request<ResponseEnvelope<MapRoadFeature[]>>(`/map/roads${q ? `?${q}` : ""}`);
+    },
+    segments: async (params: Record<string, string> = {}): Promise<ResponseEnvelope<MapSegmentFeature[]>> => {
+      const q = new URLSearchParams(params).toString();
+      return this.request<ResponseEnvelope<MapSegmentFeature[]>>(`/map/segments${q ? `?${q}` : ""}`);
     },
   };
 

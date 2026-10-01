@@ -425,3 +425,57 @@ export interface AuditLogItem {
   user_agent?: string | null;
   created_at: string;
 }
+
+// GIS Map (GET /map/damages, /map/roads, /map/segments)
+export interface GeoJSONLineGeometry {
+  type: "LineString" | "MultiLineString";
+  coordinates: number[][] | number[][][];
+}
+
+export interface MapDamageFeature {
+  id: string;
+  damage_type: string;
+  severity: string;
+  status: string;
+  confidence?: number | null;
+  latitude: number;
+  longitude: number;
+  road_id?: string | null;
+  road_name?: string | null;
+  road_segment_id?: string | null;
+  segment_number?: number | null;
+  segment_name?: string | null;
+  detected_at?: string | null;
+}
+
+export interface MapRoadFeature {
+  id: string;
+  name: string;
+  road_code?: string | null;
+  road_type?: string | null;
+  geometry: GeoJSONLineGeometry;
+  length_km?: number | null;
+  is_active: boolean;
+  segment_count: number;
+  damage_count: number;
+  critical_damage_count: number;
+  health_score?: number | null;
+  health_status?: string | null;
+}
+
+export interface MapSegmentFeature {
+  id: string;
+  road_id: string;
+  road_name?: string | null;
+  segment_number: number;
+  name?: string | null;
+  start_chainage?: number | null;
+  end_chainage?: number | null;
+  length_meters?: number | null;
+  geometry: GeoJSONLineGeometry;
+  damage_count: number;
+  critical_damage_count: number;
+  health_score?: number | null;
+  health_status?: string | null;
+  priority_score?: number | null;
+}
