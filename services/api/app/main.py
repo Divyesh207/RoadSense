@@ -46,13 +46,23 @@ if settings.CORS_ALLOWED_ORIGINS:
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     request_id = getattr(request.state, "request_id", None)
+    if isinstance(exc.detail, dict):
+        code = exc.detail.get("code", f"HTTP_{exc.status_code}")
+        message = exc.detail.get("message", "An error occurred")
+        details = exc.detail.get("details")
+    else:
+        code = f"HTTP_{exc.status_code}"
+        message = str(exc.detail)
+        details = None
+
     return JSONResponse(
         status_code=exc.status_code,
         content=ResponseEnvelope(
             success=False,
             error=ErrorDetail(
-                code=f"HTTP_{exc.status_code}",
-                message=str(exc.detail),
+                code=code,
+                message=message,
+                details=details,
             ),
             meta=ResponseMeta(request_id=request_id),
         ).model_dump(mode="json"),
