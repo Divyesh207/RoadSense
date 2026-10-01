@@ -17,6 +17,8 @@ from app.models.identity import (
     User,
     role_permissions,
 )
+from app.models.inspection import Inspection, InspectionMedia
+from app.models.jobs import ProcessingJob
 from app.models.road import Road, RoadSegment
 from fastapi.testclient import TestClient
 from geoalchemy2 import Geometry
@@ -90,6 +92,9 @@ TEST_TABLES = [
     AuditLog.__table__,
     Road.__table__,
     RoadSegment.__table__,
+    Inspection.__table__,
+    InspectionMedia.__table__,
+    ProcessingJob.__table__,
 ]
 
 ORG_1_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
@@ -162,21 +167,31 @@ async def db_session(test_engine):
 
         p_insp_create = Permission(id=uuid.uuid4(), code="inspections:create", name="Create Inspection", resource="inspections", action="create")
         p_insp_read = Permission(id=uuid.uuid4(), code="inspections:read", name="Read Inspection", resource="inspections", action="read")
+        p_insp_update = Permission(id=uuid.uuid4(), code="inspections:update", name="Update Inspection", resource="inspections", action="update")
+        p_insp_submit = Permission(id=uuid.uuid4(), code="inspections:submit", name="Submit Inspection", resource="inspections", action="submit")
+        p_insp_process = Permission(id=uuid.uuid4(), code="inspections:process", name="Process Inspection", resource="inspections", action="process")
+        p_media_read = Permission(id=uuid.uuid4(), code="inspection_media:read", name="Read Media", resource="inspection_media", action="read")
+
         p_maint_read = Permission(id=uuid.uuid4(), code="maintenance:read", name="Read Maintenance", resource="maintenance", action="read")
         p_maint_update = Permission(id=uuid.uuid4(), code="maintenance:update", name="Update Maintenance", resource="maintenance", action="update")
         session.add_all([
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
-            p_insp_create, p_insp_read, p_maint_read, p_maint_update,
+            p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_insp_process, p_media_read,
+            p_maint_read, p_maint_update,
         ])
 
         # Role-Permission mappings
         role_auth.permissions.extend([
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
-            p_insp_read, p_maint_read,
+            p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_insp_process, p_media_read,
+            p_maint_read,
         ])
-        role_insp.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_insp_create])
+        role_insp.permissions.extend([
+            p_roads_read, p_segs_read,
+            p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_media_read,
+        ])
         role_crew.permissions.extend([p_roads_read, p_segs_read, p_maint_read, p_maint_update])
         role_analyst.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_maint_read])
 

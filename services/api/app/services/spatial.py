@@ -47,6 +47,28 @@ def geojson_to_wkt(geom_input: GeoJSONLineString | dict[str, Any] | None) -> str
     return f"LINESTRING({pts_str})"
 
 
+def point_to_wkt(lat: float, lon: float) -> str:
+    """Convert latitude and longitude to WKT POINT(longitude latitude)."""
+    return f"POINT({lon} {lat})"
+
+
+def wkt_or_geom_to_point(geom: Any) -> tuple[float, float] | None:
+    """Extract (latitude, longitude) from a database geometry element or WKT string."""
+    if geom is None:
+        return None
+    try:
+        if isinstance(geom, (WKBElement, WKTElement)):
+            pt = to_shape(geom)
+            return float(pt.y), float(pt.x)
+        if isinstance(geom, str):
+            pt = shapely.from_wkt(geom)
+            return float(pt.y), float(pt.x)
+    except (ValueError, TypeError, AttributeError, shapely.GEOSException):
+        return None
+    return None
+
+
+
 def haversine_distance_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate the great-circle distance between two points on Earth in meters."""
     r_earth = 6371000.0  # Earth's radius in meters
