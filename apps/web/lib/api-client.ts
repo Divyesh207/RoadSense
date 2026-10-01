@@ -8,6 +8,8 @@ import {
   MaintenanceJob,
   MaintenanceStatusHistory,
   PaginatedResponseEnvelope,
+  RepairEvidence,
+  RepairVerification,
   ResponseEnvelope,
   Road,
   RoadSegment,
@@ -212,6 +214,68 @@ class ApiClient {
       return this.request<ResponseEnvelope<{ success: boolean }>>(`/maintenance-jobs/${jobId}/damages/${damageRecordId}`, {
         method: "DELETE",
       });
+    },
+  };
+
+  // Repair Evidence & Verification (Phase 12)
+  repair = {
+    getUploadUrl: async (
+      jobId: string,
+      payload: { filename: string; content_type: string; size_bytes?: number }
+    ): Promise<ResponseEnvelope<{ upload_url: string; storage_path: string; expires_in_seconds: number }>> => {
+      return this.request<ResponseEnvelope<{ upload_url: string; storage_path: string; expires_in_seconds: number }>>(
+        `/maintenance-jobs/${jobId}/repair-evidence/upload-url`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+    },
+    completeEvidence: async (
+      jobId: string,
+      payload: {
+        storage_path: string;
+        evidence_type: string;
+        latitude?: number;
+        longitude?: number;
+        captured_at?: string;
+        notes?: string;
+      }
+    ): Promise<ResponseEnvelope<RepairEvidence>> => {
+      return this.request<ResponseEnvelope<RepairEvidence>>(
+        `/maintenance-jobs/${jobId}/repair-evidence/complete`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
+    },
+    listEvidence: async (jobId: string): Promise<ResponseEnvelope<RepairEvidence[]>> => {
+      return this.request<ResponseEnvelope<RepairEvidence[]>>(`/maintenance-jobs/${jobId}/repair-evidence`);
+    },
+    evaluateAI: async (
+      jobId: string,
+      evidenceIds?: string[]
+    ): Promise<ResponseEnvelope<RepairVerification>> => {
+      return this.request<ResponseEnvelope<RepairVerification>>(
+        `/maintenance-jobs/${jobId}/ai-evaluate`,
+        {
+          method: "POST",
+          body: JSON.stringify(evidenceIds ? { evidence_ids: evidenceIds } : {}),
+        }
+      );
+    },
+    submitVerification: async (
+      jobId: string,
+      payload: { decision: "VERIFIED" | "REJECTED"; notes?: string }
+    ): Promise<ResponseEnvelope<RepairVerification>> => {
+      return this.request<ResponseEnvelope<RepairVerification>>(`/maintenance-jobs/${jobId}/verify`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    listVerifications: async (jobId: string): Promise<ResponseEnvelope<RepairVerification[]>> => {
+      return this.request<ResponseEnvelope<RepairVerification[]>>(`/maintenance-jobs/${jobId}/verifications`);
     },
   };
 }

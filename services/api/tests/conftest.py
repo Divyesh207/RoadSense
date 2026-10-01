@@ -27,6 +27,7 @@ from app.models.maintenance import (
     MaintenanceJob,
     MaintenanceStatusHistory,
 )
+from app.models.repair import RepairEvidence, RepairVerification
 from app.models.road import Road, RoadSegment
 from fastapi.testclient import TestClient
 from geoalchemy2 import Geometry
@@ -115,6 +116,8 @@ TEST_TABLES = [
     MaintenanceJob.__table__,
     MaintenanceDamageLink.__table__,
     MaintenanceStatusHistory.__table__,
+    RepairEvidence.__table__,
+    RepairVerification.__table__,
 ]
 
 ORG_1_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
@@ -199,6 +202,7 @@ async def db_session(test_engine):
         p_maint_status = Permission(id=uuid.uuid4(), code="maintenance:status_update", name="Update Maintenance Status", resource="maintenance", action="status_update")
         p_maint_link = Permission(id=uuid.uuid4(), code="maintenance:link_damage", name="Link Maintenance Damage", resource="maintenance", action="link_damage")
         p_maint_history = Permission(id=uuid.uuid4(), code="maintenance:view_history", name="View Maintenance History", resource="maintenance", action="view_history")
+        p_maint_verify = Permission(id=uuid.uuid4(), code="maintenance:verify", name="Verify Maintenance", resource="maintenance", action="verify")
 
         p_dmg_read = Permission(id=uuid.uuid4(), code="damage_records:read", name="Read Damage", resource="damage_records", action="read")
         p_dmg_create = Permission(id=uuid.uuid4(), code="damage_records:create", name="Create Damage", resource="damage_records", action="create")
@@ -216,7 +220,7 @@ async def db_session(test_engine):
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
             p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_insp_process, p_media_read,
-            p_maint_read, p_maint_create, p_maint_update, p_maint_assign, p_maint_status, p_maint_link, p_maint_history,
+            p_maint_read, p_maint_create, p_maint_update, p_maint_assign, p_maint_status, p_maint_link, p_maint_history, p_maint_verify,
             p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
             p_health_read, p_health_calc,
             p_pred_read, p_pred_create, p_pred_manage,
@@ -227,7 +231,7 @@ async def db_session(test_engine):
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
             p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_insp_process, p_media_read,
-            p_maint_read, p_maint_create, p_maint_update, p_maint_assign, p_maint_status, p_maint_link, p_maint_history,
+            p_maint_read, p_maint_create, p_maint_update, p_maint_assign, p_maint_status, p_maint_link, p_maint_history, p_maint_verify,
             p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
             p_health_read, p_health_calc,
             p_pred_read, p_pred_create, p_pred_manage,

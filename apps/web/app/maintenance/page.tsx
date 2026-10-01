@@ -7,6 +7,8 @@ import {
   MaintenanceJob,
   MaintenanceStatusHistory,
   MaintenanceDamageLink,
+  RepairEvidence,
+  RepairVerification,
   Road,
 } from "@/types/api";
 import {
@@ -26,6 +28,10 @@ import {
   Layers,
   MapPin,
   TrendingUp,
+  Sparkles,
+  UploadCloud,
+  Camera,
+  Check,
 } from "lucide-react";
 
 const STATUS_COLUMNS = [
@@ -71,7 +77,23 @@ export default function MaintenancePage() {
   const [selectedJob, setSelectedJob] = useState<MaintenanceJob | null>(null);
   const [jobHistory, setJobHistory] = useState<MaintenanceStatusHistory[]>([]);
   const [jobDamages, setJobDamages] = useState<MaintenanceDamageLink[]>([]);
+  const [jobEvidence, setJobEvidence] = useState<RepairEvidence[]>([]);
+  const [jobVerifications, setJobVerifications] = useState<RepairVerification[]>([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
+
+  // Evidence Upload Form
+  const [isEvidenceFormOpen, setIsEvidenceFormOpen] = useState(false);
+  const [evidenceType, setEvidenceType] = useState<string>("AFTER_REPAIR");
+  const [evidencePath, setEvidencePath] = useState("");
+  const [evidenceLat, setEvidenceLat] = useState("");
+  const [evidenceLon, setEvidenceLon] = useState("");
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
+
+  // AI Verification & Human Sign-off
+  const [aiEvaluating, setAiEvaluating] = useState(false);
+  const [verifyingDecision, setVerifyingDecision] = useState(false);
+  const [verifyDecisionModal, setVerifyDecisionModal] = useState<"VERIFIED" | "REJECTED" | null>(null);
+  const [verifyNotes, setVerifyNotes] = useState("");
 
   // Transition Status Modal
   const [transitionTarget, setTransitionTarget] = useState<string | null>(null);
@@ -106,16 +128,87 @@ export default function MaintenancePage() {
     setSelectedJob(job);
     setDetailsLoading(true);
     try {
-      const [histRes, dmgRes] = await Promise.all([
+      const [histRes, dmgRes, evRes, verRes] = await Promise.all([
         api.maintenance.getHistory(job.id),
         api.maintenance.getDamages(job.id),
+        api.repair.listEvidence(job.id),
+        api.repair.listVerifications(job.id),
       ]);
       if (histRes.data) setJobHistory(histRes.data);
       if (dmgRes.data) setJobDamages(dmgRes.data);
+      if (evRes.data) setJobEvidence(evRes.data);
+      if (verRes.data) setJobVerifications(verRes.data);
     } catch (err) {
       console.error("Failed to load job details:", err);
     } finally {
       setDetailsLoading(false);
+    }
+  };
+
+  const handleUploadEvidence = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedJob || !evidencePath.trim()) return;
+    setUploadingEvidence(true);
+    try {
+      await api.repair.completeEvidence(selectedJob.id, {
+        storage_path: evidencePath.trim(),
+        evidence_type: evidenceType,
+        latitude: evidenceLat ? parseFloat(evidenceLat) : undefined,
+        longitude: evidenceLon ? parseFloat(evidenceLon) : undefined,
+      });
+      setIsEvidenceFormOpen(false);
+      setEvidencePath("");
+      setEvidenceLat("");
+      setEvidenceLon("");
+      const evRes = await api.repair.listEvidence(selectedJob.id);
+      if (evRes.data) setJobEvidence(evRes.data);
+    } catch (err: any) {
+      alert(`Evidence recording failed: ${err?.message || "Unknown error"}`);
+    } finally {
+      setUploadingEvidence(false);
+    }
+  };
+
+  const handleRunAIEvaluation = async () => {
+    if (!selectedJob) return;
+    setAiEvaluating(true);
+    try {
+      await api.repair.evaluateAI(selectedJob.id);
+      const verRes = await api.repair.listVerifications(selectedJob.id);
+      if (verRes.data) setJobVerifications(verRes.data);
+    } catch (err: any) {
+      alert(`AI Verification evaluation failed: ${err?.message || "Ensure evidence has been uploaded"}`);
+    } finally {
+      setAiEvaluating(false);
+    }
+  };
+
+  const handleHumanVerificationSignoff = async () => {
+    if (!selectedJob || !verifyDecisionModal) return;
+    setVerifyingDecision(true);
+    try {
+      const res = await api.repair.submitVerification(selectedJob.id, {
+        decision: verifyDecisionModal,
+        notes: verifyNotes.trim() || undefined,
+      });
+      setVerifyDecisionModal(null);
+      setVerifyNotes("");
+      await Promise.all([
+        loadData(),
+        api.repair.listVerifications(selectedJob.id).then((r) => {
+          if (r.data) setJobVerifications(r.data);
+        }),
+        api.maintenance.get(selectedJob.id).then((r) => {
+          if (r.data) setSelectedJob(r.data);
+        }),
+        api.maintenance.getHistory(selectedJob.id).then((r) => {
+          if (r.data) setJobHistory(r.data);
+        }),
+      ]);
+    } catch (err: any) {
+      alert(`Verification decision failed: ${err?.message || "Unknown error"}`);
+    } finally {
+      setVerifyingDecision(false);
     }
   };
 
@@ -694,6 +787,254 @@ export default function MaintenancePage() {
                         {dmg.severity && getPriorityBadge(dmg.severity)}
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Phase 12: Repair Evidence & Documentation */}
+              <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold text-slate-200 flex items-center gap-2">
+                    <Camera className="h-3.5 w-3.5 text-blue-400" />
+                    Repair Evidence ({jobEvidence.length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEvidenceFormOpen(!isEvidenceFormOpen);
+                      if (selectedJob.latitude && !evidenceLat) {
+                        setEvidenceLat(selectedJob.latitude.toString());
+                      }
+                      if (selectedJob.longitude && !evidenceLon) {
+                        setEvidenceLon(selectedJob.longitude.toString());
+                      }
+                    }}
+                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
+                  >
+                    <Plus className="h-3 w-3" />
+                    {isEvidenceFormOpen ? "Cancel" : "Add Evidence"}
+                  </button>
+                </div>
+
+                {isEvidenceFormOpen && (
+                  <form onSubmit={handleUploadEvidence} className="bg-slate-900/90 border border-blue-500/30 rounded-lg p-3 space-y-3">
+                    <p className="text-[11px] text-slate-400">Record photographic proof of work completed on site:</p>
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-[11px] text-slate-400 mb-1">Storage Path / Image File</label>
+                        <input
+                          type="text"
+                          required
+                          value={evidencePath}
+                          onChange={(e) => setEvidencePath(e.target.value)}
+                          placeholder="e.g. jobs/exp101/patch_completed.jpg"
+                          className="w-full bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Evidence Type</label>
+                          <select
+                            value={evidenceType}
+                            onChange={(e) => setEvidenceType(e.target.value)}
+                            className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                          >
+                            <option value="BEFORE_REPAIR">Before Repair</option>
+                            <option value="DURING_REPAIR">During Repair</option>
+                            <option value="AFTER_REPAIR">After Repair</option>
+                            <option value="SIGN_OFF_DOCUMENT">Sign-Off Doc</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Latitude</label>
+                          <input
+                            type="text"
+                            value={evidenceLat}
+                            onChange={(e) => setEvidenceLat(e.target.value)}
+                            placeholder="18.5204"
+                            className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Longitude</label>
+                          <input
+                            type="text"
+                            value={evidenceLon}
+                            onChange={(e) => setEvidenceLon(e.target.value)}
+                            placeholder="73.8567"
+                            className="w-full bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsEvidenceFormOpen(false)}
+                        className="px-2.5 py-1 text-xs text-slate-400 hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={uploadingEvidence}
+                        className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-medium"
+                      >
+                        {uploadingEvidence ? "Saving..." : "Save Evidence"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {jobEvidence.length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">No repair evidence uploaded yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {jobEvidence.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="bg-slate-900 border border-slate-800/80 p-2.5 rounded-lg flex items-center justify-between text-xs"
+                      >
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">
+                            {ev.evidence_type.replace(/_/g, " ")}
+                          </span>
+                          <p className="text-slate-300 font-mono text-[11px] truncate max-w-xs">{ev.storage_path}</p>
+                          {ev.latitude && ev.longitude && (
+                            <p className="text-[10px] text-slate-500">
+                              Coords: {ev.latitude.toFixed(4)}, {ev.longitude.toFixed(4)}
+                            </p>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-500">{new Date(ev.created_at).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Phase 12: AI Repair Verification & Human Authority Sign-off */}
+              <div className="space-y-3 bg-slate-950/80 p-4 rounded-xl border border-purple-500/20">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold text-purple-300 flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                    AI Verification & Sign-off
+                  </h4>
+                  <button
+                    type="button"
+                    disabled={aiEvaluating || jobEvidence.length === 0}
+                    onClick={handleRunAIEvaluation}
+                    className="text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-md font-medium flex items-center gap-1 disabled:opacity-40 transition-colors"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {aiEvaluating ? "Analyzing..." : "Run AI Analysis"}
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-slate-400 leading-tight">
+                  AI performs spatial proximity and surface texture clearance checks. Authoritative sign-off requires human decision.
+                </p>
+
+                {/* Latest Verification Status */}
+                {jobVerifications.length > 0 && (
+                  <div className="bg-slate-900 border border-slate-800 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-white">Latest Evaluation</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        jobVerifications[0].verification_status === "VERIFIED"
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                          : jobVerifications[0].verification_status === "REJECTED"
+                          ? "bg-rose-500/10 text-rose-400 border border-rose-500/30"
+                          : "bg-purple-500/10 text-purple-300 border border-purple-500/30"
+                      }`}>
+                        {jobVerifications[0].verification_status.replace(/_/g, " ")}
+                      </span>
+                    </div>
+
+                    {jobVerifications[0].ai_confidence !== undefined && jobVerifications[0].ai_confidence !== null && (
+                      <div className="flex items-center gap-2 text-[11px] text-slate-300">
+                        <span>Confidence:</span>
+                        <div className="flex-1 bg-slate-800 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-purple-500 h-full rounded-full"
+                            style={{ width: `${Math.round(jobVerifications[0].ai_confidence * 100)}%` }}
+                          />
+                        </div>
+                        <span className="font-bold text-purple-300">{Math.round(jobVerifications[0].ai_confidence * 100)}%</span>
+                      </div>
+                    )}
+
+                    {jobVerifications[0].reviewer_notes && (
+                      <p className="text-xs text-slate-400 bg-slate-950/60 p-2 rounded border border-slate-800/80">
+                        {jobVerifications[0].reviewer_notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Human Authority Sign-off Buttons */}
+                {["COMPLETED", "VERIFICATION_PENDING"].includes(selectedJob.status) && (
+                  <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                    <span className="text-[11px] font-semibold text-slate-300">Authority Verification Decision:</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerifyDecisionModal("VERIFIED");
+                          setVerifyNotes("Visual and spatial evidence confirmed. Repair satisfactory.");
+                        }}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Approve & Verify
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVerifyDecisionModal("REJECTED");
+                          setVerifyNotes("Workmanship unsatisfactory or residual depression observed.");
+                        }}
+                        className="flex-1 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                      >
+                        <XCircle className="h-3.5 w-3.5" />
+                        Reject Repair
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Decision Confirmation Modal */}
+                {verifyDecisionModal && (
+                  <div className="p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-2 mt-2">
+                    <h5 className="text-xs font-bold text-white">
+                      Confirm {verifyDecisionModal === "VERIFIED" ? "Approval" : "Rejection"}
+                    </h5>
+                    <textarea
+                      rows={2}
+                      value={verifyNotes}
+                      onChange={(e) => setVerifyNotes(e.target.value)}
+                      placeholder="Add sign-off notes or required rework directives..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setVerifyDecisionModal(null)}
+                        className="px-2.5 py-1 text-xs text-slate-400 hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={verifyingDecision}
+                        onClick={handleHumanVerificationSignoff}
+                        className={`px-3 py-1 rounded text-xs font-bold text-white ${
+                          verifyDecisionModal === "VERIFIED" ? "bg-emerald-600 hover:bg-emerald-500" : "bg-rose-600 hover:bg-rose-500"
+                        }`}
+                      >
+                        {verifyingDecision ? "Submitting..." : `Confirm ${verifyDecisionModal}`}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

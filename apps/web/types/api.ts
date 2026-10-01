@@ -237,3 +237,31 @@ export interface MaintenanceDamageLink {
   status?: string;
   damage_type?: string;
 }
+
+export interface RepairEvidence {
+  id: string;
+  organization_id: string;
+  maintenance_job_id: string;
+  evidence_type: "BEFORE_REPAIR" | "DURING_REPAIR" | "AFTER_REPAIR" | "SIGN_OFF_DOCUMENT";
+  storage_path: string;
+  file_size_bytes?: number;
+  content_type?: string;
+  latitude?: number;
+  longitude?: number;
+  captured_at?: string;
+  created_at: string;
+}
+
+export interface RepairVerification {
+  id: string;
+  organization_id: string;
+  maintenance_job_id: string;
+  verified_by_user_id?: string;
+  verification_status: "PENDING" | "AI_EVALUATED" | "VERIFIED" | "REJECTED";
+  ai_confidence?: number;
+  comparison_metrics?: Record<string, any>;
+  findings?: Record<string, any>;
+  reviewer_notes?: string;
+  verified_at?: string;
+  created_at: string;
+}
