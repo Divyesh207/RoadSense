@@ -9,6 +9,7 @@ from app.api.v1.endpoints import (
     jobs,
     maintenance,
     predictions,
+    recurrence,
     repair,
     road_health,
     roads,
@@ -30,3 +31,4 @@ api_router.include_router(road_health.segment_health_router, prefix="/road-segme
 api_router.include_router(predictions.router, prefix="/road-segments", tags=["Predictions"])
 api_router.include_router(maintenance.router, prefix="/maintenance-jobs", tags=["Maintenance"])
 api_router.include_router(repair.router, prefix="/maintenance-jobs", tags=["Repair Verification"])
+api_router.include_router(recurrence.router, prefix="/recurrence", tags=["Recurrence & Historical Intelligence"])

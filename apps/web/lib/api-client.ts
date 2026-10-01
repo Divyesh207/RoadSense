@@ -8,11 +8,13 @@ import {
   MaintenanceJob,
   MaintenanceStatusHistory,
   PaginatedResponseEnvelope,
+  RecurrenceRecord,
   RepairEvidence,
   RepairVerification,
   ResponseEnvelope,
   Road,
   RoadSegment,
+  SegmentHistoricalTimelineResponse,
   UserProfile,
 } from "@/types/api";
 
@@ -276,6 +278,39 @@ class ApiClient {
     },
     listVerifications: async (jobId: string): Promise<ResponseEnvelope<RepairVerification[]>> => {
       return this.request<ResponseEnvelope<RepairVerification[]>>(`/maintenance-jobs/${jobId}/verifications`);
+    },
+  };
+
+  // Recurrence & Historical Intelligence (Phase 13)
+  recurrence = {
+    list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<RecurrenceRecord>> => {
+      const q = new URLSearchParams(params).toString();
+      return this.request<PaginatedResponseEnvelope<RecurrenceRecord>>(`/recurrence${q ? `?${q}` : ""}`);
+    },
+    get: async (recurrenceId: string): Promise<ResponseEnvelope<RecurrenceRecord>> => {
+      return this.request<ResponseEnvelope<RecurrenceRecord>>(`/recurrence/${recurrenceId}`);
+    },
+    evaluate: async (payload: {
+      new_damage_id?: string;
+      road_segment_id?: string;
+      max_distance_meters?: number;
+    }): Promise<ResponseEnvelope<RecurrenceRecord[]>> => {
+      return this.request<ResponseEnvelope<RecurrenceRecord[]>>("/recurrence/evaluate", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    review: async (
+      recurrenceId: string,
+      payload: { status: "CONFIRMED" | "DISMISSED" | "FALSE_POSITIVE"; notes?: string }
+    ): Promise<ResponseEnvelope<RecurrenceRecord>> => {
+      return this.request<ResponseEnvelope<RecurrenceRecord>>(`/recurrence/${recurrenceId}/review`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    getSegmentTimeline: async (segmentId: string): Promise<ResponseEnvelope<SegmentHistoricalTimelineResponse>> => {
+      return this.request<ResponseEnvelope<SegmentHistoricalTimelineResponse>>(`/recurrence/segments/${segmentId}/timeline`);
     },
   };
 }

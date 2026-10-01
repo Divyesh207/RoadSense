@@ -265,3 +265,64 @@ export interface RepairVerification {
   verified_at?: string;
   created_at: string;
 }
+
+export interface RecurrenceRecord {
+  id: string;
+  organization_id: string;
+  historical_damage_id: string;
+  new_damage_id: string;
+  related_maintenance_job_id?: string;
+  related_repair_verification_id?: string;
+  road_segment_id?: string;
+  spatial_distance_meters?: number;
+  temporal_distance_days?: number;
+  similarity_score?: number;
+  recurrence_score?: number;
+  detection_method_version?: string;
+  status: "POTENTIAL" | "CONFIRMED" | "DISMISSED" | "FALSE_POSITIVE";
+  evaluated_at: string;
+  reviewed_by_user_id?: string;
+  reviewed_at?: string;
+  review_notes?: string;
+  created_at: string;
+  updated_at: string;
+  historical_damage?: {
+    id: string;
+    damage_type: string;
+    severity: string;
+    status: string;
+    latitude?: number;
+    longitude?: number;
+    detected_at?: string;
+  };
+  new_damage?: {
+    id: string;
+    damage_type: string;
+    severity: string;
+    status: string;
+    latitude?: number;
+    longitude?: number;
+    detected_at?: string;
+  };
+  road_name?: string;
+  segment_name?: string;
+}
+
+export interface SegmentTimelineEvent {
+  event_type: "DAMAGE_DETECTED" | "MAINTENANCE_CREATED" | "MAINTENANCE_COMPLETED" | "REPAIR_VERIFIED" | "RECURRENCE_DETECTED";
+  timestamp: string;
+  entity_id: string;
+  title: string;
+  description?: string;
+  severity?: string;
+  status?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface SegmentHistoricalTimelineResponse {
+  road_segment_id: string;
+  road_name?: string;
+  segment_number?: number;
+  total_events: number;
+  events: SegmentTimelineEvent[];
+}
