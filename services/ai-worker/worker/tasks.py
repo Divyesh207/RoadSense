@@ -3,12 +3,55 @@ import logging
 import uuid
 from typing import Any
 
-from app.core.database import AsyncSessionLocal
-from pipelines.media_pipeline import execute_media_pipeline
+from pipelines.media_pipeline import execute_inspection_pipeline, execute_media_pipeline
 
 from worker.celery_app import celery_app
+from worker.db import WorkerSessionLocal
 
 logger = logging.getLogger(__name__)
+
+WORKER_VERSION = "road-ai-worker/1.0.0"
+
+
+def _jsonable(result: dict[str, Any]) -> dict[str, Any]:
+    """Celery's JSON serializer cannot encode UUIDs."""
+    out: dict[str, Any] = {}
+    for key, value in result.items():
+        if isinstance(value, uuid.UUID):
+            out[key] = str(value)
+        elif isinstance(value, list):
+            out[key] = [str(v) if isinstance(v, uuid.UUID) else v for v in value]
+        else:
+            out[key] = value
+    return out
+
+
+@celery_app.task(name="tasks.process_inspection", bind=True)
+def process_inspection(
+    self,
+    job_id: str,
+    inspection_id: str,
+    organization_id: str,
+    confidence_threshold: float = 0.25,
+) -> dict[str, Any]:
+    """
+    Entry point published by the API (POST /inspections/{id}/process).
+    Analyzes all completed media of the inspection under the given ProcessingJob.
+    """
+    logger.info("Worker received process_inspection: job=%s inspection=%s", job_id, inspection_id)
+
+    async def _run() -> dict[str, Any]:
+        async with WorkerSessionLocal() as session:
+            return await execute_inspection_pipeline(
+                db=session,
+                job_id=uuid.UUID(job_id),
+                inspection_id=uuid.UUID(inspection_id),
+                organization_id=uuid.UUID(organization_id),
+                confidence_threshold=confidence_threshold,
+                worker_version=WORKER_VERSION,
+            )
+
+    return _jsonable(asyncio.run(_run()))
 
 
 @celery_app.task(name="tasks.process_inspection_media", bind=True)
@@ -21,13 +64,13 @@ def process_inspection_media(
     confidence_threshold: float = 0.25,
 ) -> dict[str, Any]:
     """
-    Celery task entrypoint for processing inspection media.
-    Runs the complete OpenCV + YOLO + Severity + Geospatial pipeline asynchronously.
+    Single-media entry point (reprocessing one media item under its own job).
+    Runs the complete OpenCV/YOLO + Severity + Geospatial pipeline asynchronously.
     """
-    logger.info(f"Worker received process_inspection_media: job={job_id}, media={media_id}")
+    logger.info("Worker received process_inspection_media: job=%s media=%s", job_id, media_id)
 
-    async def _run():
-        async with AsyncSessionLocal() as session:
+    async def _run() -> dict[str, Any]:
+        async with WorkerSessionLocal() as session:
             return await execute_media_pipeline(
                 db=session,
                 job_id=uuid.UUID(job_id),
@@ -37,4 +80,4 @@ def process_inspection_media(
                 confidence_threshold=confidence_threshold,
             )
 
-    return asyncio.run(_run())
+    return _jsonable(asyncio.run(_run()))

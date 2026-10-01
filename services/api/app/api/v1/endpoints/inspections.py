@@ -4,12 +4,15 @@ from datetime import datetime, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.auth import OrgContext, require_permission
 from app.core.database import get_db
+from app.core.task_queue import TaskDispatchError, dispatch_inspection_processing
 from app.models.inspection import Inspection, InspectionMedia
 from app.models.jobs import ProcessingJob
 from app.models.road import Road, RoadSegment
@@ -671,6 +674,20 @@ async def list_inspection_media(
 
 # --- AI Processing Trigger Endpoint ---
 
+PROCESSING_JOB_TYPE = "INSPECTION_AI_ANALYSIS"
+ACTIVE_JOB_STATUSES = ("QUEUED", "RUNNING")
+
+
+def _process_response(
+    job: ProcessingJob, inspection_id: uuid.UUID, request_id: str | None
+) -> ResponseEnvelope[ProcessInspectionResponseData]:
+    return ResponseEnvelope(
+        success=True,
+        data=ProcessInspectionResponseData(job_id=job.id, status=job.status, inspection_id=inspection_id),
+        meta=ResponseMeta(request_id=request_id),
+    )
+
+
 @router.post(
     "/{inspection_id}/process",
     response_model=ResponseEnvelope[ProcessInspectionResponseData],
@@ -683,6 +700,13 @@ async def process_inspection(
     org_ctx: Annotated[OrgContext, Depends(require_permission("inspections:process"))],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ResponseEnvelope[ProcessInspectionResponseData]:
+    """Creates a ProcessingJob and publishes `tasks.process_inspection` to the AI worker.
+
+    Idempotent: while a job for the inspection is QUEUED/RUNNING, or when the same
+    Idempotency-Key is replayed, the existing job is returned instead of a new one.
+    The job row is committed before the task is published so the worker always
+    finds it; if publishing fails the job is marked FAILED and 503 is returned.
+    """
     request_id = getattr(request.state, "request_id", None)
 
     stmt = select(Inspection).where(Inspection.id == inspection_id)
@@ -703,6 +727,32 @@ async def process_inspection(
             },
         )
 
+    jobs_for_inspection = select(ProcessingJob).where(
+        ProcessingJob.organization_id == org_ctx.organization_id,
+        ProcessingJob.job_type == PROCESSING_JOB_TYPE,
+        ProcessingJob.entity_id == inspection_id,
+    )
+
+    # Replay of an explicit Idempotency-Key returns the job it created.
+    client_key = request.headers.get("Idempotency-Key")
+    if client_key:
+        replay = (
+            await db.execute(jobs_for_inspection.where(ProcessingJob.idempotency_key == client_key))
+        ).scalar_one_or_none()
+        if replay is not None:
+            return _process_response(replay, inspection_id, request_id)
+
+    # A job already in flight is returned rather than duplicated.
+    active = (
+        await db.execute(
+            jobs_for_inspection.where(ProcessingJob.status.in_(ACTIVE_JOB_STATUSES))
+            .order_by(ProcessingJob.queued_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    if active is not None:
+        return _process_response(active, inspection_id, request_id)
+
     # Valid state to start processing: SUBMITTED (or retry from PROCESSING_FAILED)
     if insp.status not in ["SUBMITTED", "PROCESSING_FAILED"]:
         raise HTTPException(
@@ -713,12 +763,37 @@ async def process_inspection(
             },
         )
 
-    idempotency_key = request.headers.get("Idempotency-Key") or f"insp_proc_{inspection_id}_{utc_now().timestamp()}"
+    media_count = (
+        await db.execute(
+            select(func.count(InspectionMedia.id)).where(
+                InspectionMedia.inspection_id == inspection_id,
+                InspectionMedia.organization_id == org_ctx.organization_id,
+                InspectionMedia.upload_status == "COMPLETED",
+            )
+        )
+    ).scalar() or 0
+    if media_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "INSPECTION_HAS_NO_MEDIA",
+                "message": "Inspection has no completed media uploads to analyze.",
+            },
+        )
 
-    # Create background processing job
+    # Deterministic per-attempt key: concurrent requests for the same attempt collide
+    # on uq_processing_jobs_idempotency instead of creating duplicate jobs.
+    if not client_key:
+        prior_attempts = (
+            await db.execute(select(func.count()).select_from(jobs_for_inspection.subquery()))
+        ).scalar() or 0
+        idempotency_key = f"inspection:{inspection_id}:attempt:{prior_attempts + 1}"
+    else:
+        idempotency_key = client_key
+
     job = ProcessingJob(
         organization_id=org_ctx.organization_id,
-        job_type="INSPECTION_AI_ANALYSIS",
+        job_type=PROCESSING_JOB_TYPE,
         entity_type="inspections",
         entity_id=inspection_id,
         idempotency_key=idempotency_key,
@@ -727,23 +802,41 @@ async def process_inspection(
         queued_at=utc_now(),
     )
     db.add(job)
-
-    # Transition inspection status to PROCESSING
     insp.status = "PROCESSING"
     insp.updated_at = utc_now()
 
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        existing = (
+            await db.execute(jobs_for_inspection.where(ProcessingJob.idempotency_key == idempotency_key))
+        ).scalar_one_or_none()
+        if existing is None:
+            raise
+        return _process_response(existing, inspection_id, request_id)
     await db.refresh(job)
 
-    return ResponseEnvelope(
-        success=True,
-        data=ProcessInspectionResponseData(
-            job_id=job.id,
-            status=job.status,
-            inspection_id=inspection_id,
-        ),
-        meta=ResponseMeta(request_id=request_id),
-    )
+    try:
+        await run_in_threadpool(dispatch_inspection_processing, job.id, inspection_id, org_ctx.organization_id)
+    except TaskDispatchError as exc:
+        job.status = "FAILED"
+        job.failed_at = utc_now()
+        job.completed_at = job.failed_at
+        job.error_code = "TASK_DISPATCH_FAILED"
+        job.error_message = f"Could not enqueue processing task: {exc}"
+        insp.status = "PROCESSING_FAILED"
+        insp.updated_at = utc_now()
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "TASK_QUEUE_UNAVAILABLE",
+                "message": "AI processing queue is unavailable; the job was not started. Retry later.",
+            },
+        ) from exc
+
+    return _process_response(job, inspection_id, request_id)
 
 
 @router.get(

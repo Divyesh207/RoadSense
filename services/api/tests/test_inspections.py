@@ -251,14 +251,30 @@ async def test_media_upload_lifecycle(async_client):
 
 
 @pytest.mark.asyncio
-async def test_process_inspection_and_job_lifecycle(async_client):
+async def test_process_inspection_and_job_lifecycle(async_client, monkeypatch):
+    dispatched = []
+    monkeypatch.setattr(
+        "app.api.v1.endpoints.inspections.dispatch_inspection_processing",
+        lambda job_id, inspection_id, organization_id: dispatched.append(job_id) or str(job_id),
+    )
     # Authority user has inspections:process permission
     auth_token = await get_token(async_client, email="authority@example.com", password="AuthoritySecret123!")
     headers = {"Authorization": f"Bearer {auth_token}", "X-Organization-ID": str(ORG_1_ID)}
 
-    # Create and submit inspection
+    # Create inspection with one uploaded image, then submit
     insp_resp = await async_client.post("/api/v1/inspections", json={"notes": "Ready for AI analysis"}, headers=headers)
     insp_id = insp_resp.json()["data"]["id"]
+    media_resp = await async_client.post(
+        f"/api/v1/inspections/{insp_id}/media/complete",
+        json={
+            "storage_path": f"inspections/{insp_id}/road.jpg",
+            "media_type": "IMAGE",
+            "mime_type": "image/jpeg",
+            "size_bytes": 2048,
+        },
+        headers=headers,
+    )
+    assert media_resp.status_code == 201
 
     # 1. Attempting to process in DRAFT state -> 409 INVALID_STATE_TRANSITION
     premature_proc = await async_client.post(f"/api/v1/inspections/{insp_id}/process", headers=headers)
@@ -278,6 +294,7 @@ async def test_process_inspection_and_job_lifecycle(async_client):
     job_id = proc_data["job_id"]
     assert proc_data["status"] == "QUEUED"
     assert proc_data["inspection_id"] == insp_id
+    assert [str(j) for j in dispatched] == [job_id]
 
     # Verify inspection state is now PROCESSING
     insp_check = await async_client.get(f"/api/v1/inspections/{insp_id}", headers=headers)
