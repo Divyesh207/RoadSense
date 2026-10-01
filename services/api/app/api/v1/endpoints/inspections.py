@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.auth import OrgContext, require_permission
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.task_queue import TaskDispatchError, dispatch_inspection_processing
 from app.models.inspection import Inspection, InspectionMedia
@@ -35,6 +36,13 @@ from app.schemas.inspection import (
     ProcessInspectionResponseData,
 )
 from app.services.spatial import point_to_wkt, wkt_or_geom_to_point
+from app.services.storage import (
+    StorageError,
+    get_storage_backend,
+    safe_filename,
+    storage_http_exception,
+    validate_object_key,
+)
 
 router = APIRouter()
 
@@ -521,30 +529,32 @@ async def get_media_upload_url(
             },
         )
 
-    file_id = uuid.uuid4()
-    clean_filename = payload.filename.replace(" ", "_").replace("/", "_")
-    storage_bucket = "inspection-media"
-    storage_path = f"inspections/{inspection_id}/{file_id}_{clean_filename}"
+    bucket = settings.SUPABASE_STORAGE_BUCKET_INSPECTION_MEDIA
+    storage_path = f"{inspection_media_prefix(inspection_id)}{uuid.uuid4()}_{safe_filename(payload.filename)}"
 
-    # Generate upload URL (Supabase/S3 object storage signature structure)
-    upload_url = f"https://storage.supabase.co/storage/v1/object/{storage_bucket}/{storage_path}?token={secrets_token()}"
-    expires_in = 900  # 15 minutes
+    try:
+        signed = await run_in_threadpool(
+            lambda: get_storage_backend().create_signed_upload(bucket, storage_path, payload.content_type)
+        )
+    except StorageError as exc:
+        raise storage_http_exception(exc) from exc
 
     return ResponseEnvelope(
         success=True,
         data=MediaUploadUrlResponseData(
-            upload_url=upload_url,
-            storage_path=storage_path,
-            storage_bucket=storage_bucket,
-            expires_in=expires_in,
+            upload_url=signed.upload_url,
+            storage_path=signed.path,
+            storage_bucket=signed.bucket,
+            expires_in=signed.expires_in,
+            upload_method=signed.method,
+            upload_headers=signed.headers,
         ),
         meta=ResponseMeta(request_id=request_id),
     )
 
 
-def secrets_token() -> str:
-    import secrets
-    return secrets.token_urlsafe(32)
+def inspection_media_prefix(inspection_id: uuid.UUID) -> str:
+    return f"inspections/{inspection_id}/"
 
 
 @router.post(
@@ -579,6 +589,24 @@ async def complete_media_upload(
                 "message": "Resource belongs to another organization.",
             },
         )
+
+    # Only objects issued for this inspection by upload-url may be registered;
+    # otherwise a client could attach another tenant's object to its inspection.
+    if (
+        payload.storage_bucket != settings.SUPABASE_STORAGE_BUCKET_INSPECTION_MEDIA
+        or not payload.storage_path.startswith(inspection_media_prefix(inspection_id))
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "INVALID_STORAGE_PATH",
+                "message": "storage_bucket/storage_path must be the values issued by media/upload-url for this inspection.",
+            },
+        )
+    try:
+        validate_object_key(payload.storage_bucket, payload.storage_path)
+    except StorageError as exc:
+        raise storage_http_exception(exc) from exc
 
     media_geom = (
         point_to_wkt(payload.location.latitude, payload.location.longitude)

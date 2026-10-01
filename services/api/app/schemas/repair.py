@@ -17,6 +17,8 @@ class RepairEvidenceUploadUrlResponse(BaseModel):
     storage_path: str
     storage_bucket: str
     expires_in_seconds: int = 3600
+    upload_method: str = "PUT"
+    upload_headers: dict[str, str] = Field(default_factory=dict)
 
 
 class RepairEvidenceCompleteRequest(BaseModel):

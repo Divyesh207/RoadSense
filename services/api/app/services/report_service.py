@@ -1,14 +1,25 @@
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Any
+
+from fastapi import HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.models.history import GeneratedReport
 from app.schemas.report import (
     ReportCreateRequest,
     ReportCreateResponseData,
     ReportDownloadUrlResponseData,
     ReportResponseData,
+)
+from app.services.storage import (
+    StorageError,
+    get_storage_backend,
+    storage_http_exception,
 )
 
 
@@ -27,22 +38,37 @@ class ReportService:
     ) -> ReportCreateResponseData:
         report_id = uuid.uuid4()
         now = utc_now()
+        report_type = payload.report_type.upper()
+        requested_format = str(payload.parameters.get("format", "JSON")).upper()
 
-        # Simulated report artifact path
-        ext = payload.parameters.get("format", "JSON").lower()
-        storage_path = f"reports/{org_id}/{report_id}.{ext}"
+        # Artifacts are JSON snapshots of live analytics; PDF/CSV rendering is not
+        # implemented, so the requested and produced formats are recorded separately.
+        content = await ReportService._build_report_content(db, org_id, report_type, payload.parameters, now)
+        bucket = settings.SUPABASE_STORAGE_BUCKET_REPORTS
+        storage_path = f"reports/{org_id}/{report_id}.json"
+        parameters = {**payload.parameters, "requested_format": requested_format, "artifact_format": "JSON"}
+
+        status_value, error_message, generated_at = "COMPLETED", None, now
+        try:
+            body = json.dumps(content, default=str, indent=2).encode("utf-8")
+            await run_in_threadpool(
+                lambda: get_storage_backend().put_object(bucket, storage_path, body, "application/json")
+            )
+        except StorageError as exc:
+            status_value, error_message, generated_at = "FAILED", f"Report artifact upload failed: {exc}", None
 
         report = GeneratedReport(
             id=report_id,
             organization_id=org_id,
             requested_by_user_id=user_id,
-            report_type=payload.report_type.upper(),
-            status="COMPLETED",  # Immediately generated for operational intelligence
-            parameters=payload.parameters,
-            storage_bucket="reports",
-            storage_path=storage_path,
-            generated_at=now,
+            report_type=report_type,
+            status=status_value,
+            parameters=parameters,
+            storage_bucket=bucket,
+            storage_path=storage_path if status_value == "COMPLETED" else None,
+            generated_at=generated_at,
             expires_at=now + timedelta(days=7),
+            error_message=error_message,
             created_at=now,
             updated_at=now,
         )
@@ -56,6 +82,36 @@ class ReportService:
             report_type=report.report_type,
             created_at=report.created_at,
         )
+
+    @staticmethod
+    async def _build_report_content(
+        db: AsyncSession,
+        org_id: uuid.UUID,
+        report_type: str,
+        parameters: dict[str, Any],
+        generated_at: datetime,
+    ) -> dict[str, Any]:
+        from app.services.analytics_service import AnalyticsService
+
+        sections: dict[str, Any] = {}
+        if report_type in ("ROAD_HEALTH", "EXECUTIVE_ROAD_CONDITION"):
+            sections["road_health"] = await AnalyticsService.get_road_health_analytics(db, org_id)
+        if report_type in ("DAMAGE_SUMMARY", "EXECUTIVE_ROAD_CONDITION"):
+            sections["damage_trends"] = await AnalyticsService.get_damage_trends(db, org_id)
+        if report_type in ("MAINTENANCE_LOG", "EXECUTIVE_ROAD_CONDITION"):
+            sections["maintenance"] = await AnalyticsService.get_maintenance_analytics(db, org_id)
+        if report_type in ("INSPECTION_SUMMARY", "EXECUTIVE_ROAD_CONDITION"):
+            sections["inspections"] = await AnalyticsService.get_inspection_analytics(db, org_id)
+        if not sections:
+            sections["dashboard_summary"] = await AnalyticsService.get_dashboard_summary(db, org_id)
+
+        return {
+            "report_type": report_type,
+            "organization_id": str(org_id),
+            "generated_at": generated_at.isoformat(),
+            "parameters": parameters,
+            "sections": {k: v.model_dump(mode="json") for k, v in sections.items()},
+        }
 
     @staticmethod
     async def list_reports(
@@ -137,8 +193,22 @@ class ReportService:
         if not report:
             return None
 
-        expires_in = 3600  # 1 hour
-        download_url = f"https://storage.roadsense.internal/reports/{org_id}/{report_id}?token=mock_signed_{report_id}"
+        if report.status != "COMPLETED" or not report.storage_path:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail={
+                    "code": "REPORT_ARTIFACT_NOT_AVAILABLE",
+                    "message": f"Report is {report.status}; no artifact is available for download.",
+                },
+            )
+        expires_in = settings.SIGNED_DOWNLOAD_EXPIRES_SECONDS
+        bucket = settings.SUPABASE_STORAGE_BUCKET_REPORTS
+        try:
+            download_url = await run_in_threadpool(
+                lambda: get_storage_backend().create_signed_download_url(bucket, report.storage_path, expires_in)
+            )
+        except StorageError as exc:
+            raise storage_http_exception(exc) from exc
 
         return ReportDownloadUrlResponseData(
             report_id=report.id,

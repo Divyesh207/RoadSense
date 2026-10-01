@@ -75,6 +75,16 @@ class Settings(BaseSettings):
     SUPABASE_STORAGE_BUCKET_REPORTS: str = "reports"
     SUPABASE_STORAGE_BUCKET_MODEL_ARTIFACTS: str = "model-artifacts"
 
+    # Object storage backend: "auto" (Supabase when configured, else local outside
+    # production), "supabase", or "local" (development/demo only).
+    STORAGE_BACKEND: str = "auto"
+    STORAGE_TIMEOUT_SECONDS: float = 15.0
+    LOCAL_STORAGE_ROOT: str = "./data/media"
+    # Externally reachable API base used in locally signed upload/download URLs.
+    PUBLIC_API_BASE_URL: str = "http://localhost:8000/api/v1"
+    SIGNED_UPLOAD_EXPIRES_SECONDS: int = 900
+    SIGNED_DOWNLOAD_EXPIRES_SECONDS: int = 3600
+
     # AI / ML
     AI_MODEL_DIR: str = "./data/models"
     YOLO_MODEL_PATH: str = "./data/models/pothole_yolov8.pt"

@@ -4,11 +4,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from geoalchemy2 import WKTElement
 from geoalchemy2.shape import to_shape
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.models.damage import DamageRecord
 from app.models.maintenance import (
     MaintenanceDamageLink,
@@ -21,6 +23,13 @@ from app.schemas.repair import (
     RepairEvidenceUploadUrlRequest,
     RepairEvidenceUploadUrlResponse,
     RepairVerificationSubmitRequest,
+)
+from app.services.storage import (
+    StorageError,
+    get_storage_backend,
+    safe_filename,
+    storage_http_exception,
+    validate_object_key,
 )
 
 
@@ -67,17 +76,27 @@ async def generate_evidence_upload_url(
 ) -> RepairEvidenceUploadUrlResponse:
     await get_verified_job(db, maintenance_job_id, organization_id)
 
-    unique_key = f"{maintenance_job_id}/{uuid.uuid4()}_{payload.filename}"
-    bucket = "repair-evidence"
-    # Presigned URL stub (integrated with cloud storage / Supabase)
-    upload_url = f"https://storage.local.roadsense/{bucket}/{unique_key}?token={uuid.uuid4()}"
+    bucket = settings.SUPABASE_STORAGE_BUCKET_REPAIR_EVIDENCE
+    storage_path = f"{repair_evidence_prefix(maintenance_job_id)}{uuid.uuid4()}_{safe_filename(payload.filename)}"
+    try:
+        signed = await run_in_threadpool(
+            lambda: get_storage_backend().create_signed_upload(bucket, storage_path, payload.content_type)
+        )
+    except StorageError as exc:
+        raise storage_http_exception(exc) from exc
 
     return RepairEvidenceUploadUrlResponse(
-        upload_url=upload_url,
-        storage_path=unique_key,
-        storage_bucket=bucket,
-        expires_in_seconds=3600,
+        upload_url=signed.upload_url,
+        storage_path=signed.path,
+        storage_bucket=signed.bucket,
+        expires_in_seconds=signed.expires_in,
+        upload_method=signed.method,
+        upload_headers=signed.headers,
     )
+
+
+def repair_evidence_prefix(maintenance_job_id: uuid.UUID) -> str:
+    return f"{maintenance_job_id}/"
 
 
 async def complete_repair_evidence(
@@ -88,6 +107,23 @@ async def complete_repair_evidence(
     payload: RepairEvidenceCompleteRequest,
 ) -> RepairEvidence:
     job = await get_verified_job(db, maintenance_job_id, organization_id)
+
+    # Only objects issued by upload-url for this job may be registered as evidence.
+    if (
+        payload.storage_bucket != settings.SUPABASE_STORAGE_BUCKET_REPAIR_EVIDENCE
+        or not payload.storage_path.startswith(repair_evidence_prefix(maintenance_job_id))
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "INVALID_STORAGE_PATH",
+                "message": "storage_bucket/storage_path must be the values issued by repair-evidence/upload-url for this job.",
+            },
+        )
+    try:
+        validate_object_key(payload.storage_bucket, payload.storage_path)
+    except StorageError as exc:
+        raise storage_http_exception(exc) from exc
 
     location_geom = None
     if payload.latitude is not None and payload.longitude is not None:

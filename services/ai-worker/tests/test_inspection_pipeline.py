@@ -150,24 +150,30 @@ async def test_inspection_pipeline_skips_redelivered_job(async_db, tmp_path):
     assert runs == []
 
 
-def test_default_resolver_reads_local_media_root(tmp_path, monkeypatch):
+def test_default_resolver_reads_shared_local_storage(tmp_path, monkeypatch):
+    from app.core.config import settings
+    from preprocessing.validator import MediaValidationError
+
     target = tmp_path / "inspection-media" / "inspections" / "x" / "photo.jpg"
     target.parent.mkdir(parents=True)
     _write_defect_image(target)
-    monkeypatch.setenv("LOCAL_MEDIA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
+    monkeypatch.setattr(settings, "LOCAL_STORAGE_ROOT", str(tmp_path))
 
     class _Media:
         storage_bucket = "inspection-media"
         storage_path = "inspections/x/photo.jpg"
 
-    assert _default_media_resolver(_Media()) == target
+    assert _default_media_resolver(_Media()) == target.resolve()
 
     _Media.storage_path = "inspections/x/missing.jpg"
-    from preprocessing.validator import MediaValidationError
-
     with pytest.raises(MediaValidationError) as exc:
         _default_media_resolver(_Media())
     assert exc.value.code == "MEDIA_UNAVAILABLE"
+
+    _Media.storage_path = "../../outside.jpg"
+    with pytest.raises(MediaValidationError):
+        _default_media_resolver(_Media())
 
 
 @pytest.mark.asyncio

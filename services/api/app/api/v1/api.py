@@ -15,6 +15,7 @@ from app.api.v1.endpoints import (
     reports,
     road_health,
     roads,
+    storage,
 )
 from app.api.v1.endpoints import audit
 
@@ -39,3 +40,4 @@ api_router.include_router(analytics.dashboard_router, prefix="/dashboard", tags=
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(audit.router, prefix="/audit-logs", tags=["Audit Logs"])
+api_router.include_router(storage.router, prefix="/storage", tags=["Storage"])

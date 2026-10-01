@@ -256,10 +256,24 @@ async def test_master_platform_e2e_lifecycle(
     # -------------------------------------------------------------
     # Step 7: Repair Evidence Submission & Verification
     # -------------------------------------------------------------
+    ev_url_resp = await async_client.post(
+        f"/api/v1/maintenance-jobs/{job_id}/repair-evidence/upload-url",
+        json={"filename": "evidence_post_patch.jpg", "content_type": "image/jpeg", "size_bytes": 4},
+        headers=crew_hdr,
+    )
+    assert ev_url_resp.status_code == 200, ev_url_resp.text
+    ev_upload = ev_url_resp.json()["data"]
+    put_resp = await async_client.put(
+        ev_upload["upload_url"].replace("http://testserver", ""),
+        content=b"\xff\xd8\xff\xd9",
+        headers=ev_upload["upload_headers"],
+    )
+    assert put_resp.status_code == 200, put_resp.text
+
     evidence_payload = {
         "media_type": "IMAGE",
-        "storage_bucket": "repair-evidence",
-        "storage_path": f"repairs/{job_id}/evidence_post_patch.jpg",
+        "storage_bucket": ev_upload["storage_bucket"],
+        "storage_path": ev_upload["storage_path"],
         "latitude": 18.5206,
         "longitude": 73.8568,
         "notes": "Photo of freshly completed patch",

@@ -1,5 +1,4 @@
 import logging
-import os
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -409,20 +408,22 @@ async def execute_media_pipeline(
 
 
 def _default_media_resolver(media: Any) -> Path:
-    """Locates the media file on local disk: an absolute path as stored, or
-    <LOCAL_MEDIA_ROOT>/<bucket>/<path> for objects uploaded to local storage."""
+    """Materializes the media object as a local file via the configured storage
+    backend (Supabase download, or the shared LOCAL_STORAGE_ROOT). Absolute paths
+    already on disk are used as-is."""
+    from app.services.storage import StorageError, get_storage_backend
+
     stored = Path(media.storage_path)
     if stored.is_absolute() and stored.is_file():
         return stored
-    root = Path(os.getenv("LOCAL_MEDIA_ROOT", "./data/media"))
-    candidate = root / media.storage_bucket / media.storage_path
-    if candidate.is_file():
-        return candidate
-    raise MediaValidationError(
-        f"Media object {media.storage_bucket}/{media.storage_path} is not available to the worker.",
-        code="MEDIA_UNAVAILABLE",
-        details={"storage_bucket": media.storage_bucket, "storage_path": media.storage_path},
-    )
+    try:
+        return get_storage_backend().fetch_to_local_path(media.storage_bucket, media.storage_path)
+    except StorageError as exc:
+        raise MediaValidationError(
+            f"Media object {media.storage_bucket}/{media.storage_path} is not available to the worker: {exc}",
+            code="MEDIA_UNAVAILABLE",
+            details={"storage_bucket": media.storage_bucket, "storage_path": media.storage_path},
+        ) from exc
 
 
 async def execute_inspection_pipeline(

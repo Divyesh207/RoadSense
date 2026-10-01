@@ -74,6 +74,9 @@ class MediaUploadUrlResponseData(BaseModel):
     storage_path: str
     storage_bucket: str
     expires_in: int
+    # How to send the file bytes to upload_url (signed PUT for both backends).
+    upload_method: str = "PUT"
+    upload_headers: dict[str, str] = Field(default_factory=dict)
 
 
 class MediaUploadCompleteRequest(BaseModel):

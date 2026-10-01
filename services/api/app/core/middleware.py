@@ -65,7 +65,7 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
                 length = int(content_length)
                 # Determine limit based on endpoint type
                 path = request.url.path
-                if any(media_path in path for media_path in ["/media", "/inspections", "/evidence"]):
+                if any(media_path in path for media_path in ["/media", "/inspections", "/evidence", "/storage/local/"]):
                     max_size = settings.MAX_MEDIA_REQUEST_SIZE_BYTES
                 else:
                     max_size = settings.MAX_REQUEST_SIZE_BYTES

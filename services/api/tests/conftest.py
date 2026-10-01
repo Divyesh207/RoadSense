@@ -133,6 +133,18 @@ INACTIVE_USER_ID = uuid.UUID("a5555555-5555-5555-5555-555555555555")
 OTHER_ORG_USER_ID = uuid.UUID("a6666666-6666-6666-6666-666666666666")
 
 
+@pytest.fixture(autouse=True)
+def isolated_local_storage(tmp_path, monkeypatch):
+    """Tests use the local storage backend rooted in a temp dir, never the
+    repository's data/media or a Supabase project configured in .env."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "STORAGE_BACKEND", "local")
+    monkeypatch.setattr(settings, "LOCAL_STORAGE_ROOT", str(tmp_path / "storage"))
+    monkeypatch.setattr(settings, "PUBLIC_API_BASE_URL", "http://testserver/api/v1")
+    return tmp_path / "storage"
+
+
 @pytest_asyncio.fixture
 async def test_engine():
     engine = create_async_engine(
