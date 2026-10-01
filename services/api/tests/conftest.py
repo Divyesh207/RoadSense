@@ -20,7 +20,7 @@ from app.models.identity import (
     role_permissions,
 )
 from app.models.inspection import Inspection, InspectionMedia
-from app.models.intelligence import RoadHealthSnapshot
+from app.models.intelligence import DeteriorationPrediction, RoadHealthSnapshot
 from app.models.jobs import ProcessingJob
 from app.models.road import Road, RoadSegment
 from fastapi.testclient import TestClient
@@ -106,6 +106,7 @@ TEST_TABLES = [
     DamageReview.__table__,
     RoadHealthSnapshot.__table__,
     RecurrenceRecord.__table__,
+    DeteriorationPrediction.__table__,
 ]
 
 ORG_1_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
@@ -194,6 +195,10 @@ async def db_session(test_engine):
         p_health_read = Permission(id=uuid.uuid4(), code="road_health:read", name="Read Road Health", resource="road_health", action="read")
         p_health_calc = Permission(id=uuid.uuid4(), code="road_health:calculate", name="Calculate Road Health", resource="road_health", action="calculate")
 
+        p_pred_read = Permission(id=uuid.uuid4(), code="predictions:read", name="Read Predictions", resource="predictions", action="read")
+        p_pred_create = Permission(id=uuid.uuid4(), code="predictions:create", name="Create Predictions", resource="predictions", action="create")
+        p_pred_manage = Permission(id=uuid.uuid4(), code="predictions:manage", name="Manage Predictions", resource="predictions", action="manage")
+
         session.add_all([
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
@@ -201,6 +206,7 @@ async def db_session(test_engine):
             p_maint_read, p_maint_update,
             p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
             p_health_read, p_health_calc,
+            p_pred_read, p_pred_create, p_pred_manage,
         ])
 
         # Role-Permission mappings
@@ -211,12 +217,14 @@ async def db_session(test_engine):
             p_maint_read,
             p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
             p_health_read, p_health_calc,
+            p_pred_read, p_pred_create, p_pred_manage,
         ])
         role_insp.permissions.extend([
             p_roads_read, p_segs_read,
             p_insp_create, p_insp_read, p_insp_update, p_insp_submit, p_media_read,
             p_dmg_read, p_dmg_create,
             p_health_read,
+            p_pred_read,
         ])
         role_crew.permissions.extend([p_roads_read, p_segs_read, p_maint_read, p_maint_update, p_dmg_read, p_health_read])
         role_analyst.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_maint_read, p_dmg_read, p_health_read])

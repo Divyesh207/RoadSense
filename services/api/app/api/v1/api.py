@@ -7,6 +7,7 @@ from app.api.v1.endpoints import (
     health,
     inspections,
     jobs,
+    predictions,
     road_health,
     roads,
 )
@@ -24,3 +25,4 @@ api_router.include_router(damages.router, prefix="/damages", tags=["Damages"])
 api_router.include_router(gis.router, prefix="/map", tags=["GIS Map"])
 api_router.include_router(road_health.road_health_router, prefix="/roads", tags=["Road Health"])
 api_router.include_router(road_health.segment_health_router, prefix="/road-segments", tags=["Road Health"])
+api_router.include_router(predictions.router, prefix="/road-segments", tags=["Predictions"])
