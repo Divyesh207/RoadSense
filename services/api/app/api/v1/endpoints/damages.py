@@ -29,6 +29,7 @@ from app.schemas.damage import (
     DamageUpdateRequest,
 )
 from app.schemas.inspection import LocationOutput
+from app.services.audit_service import AuditService
 from app.services.spatial import point_to_wkt, wkt_or_geom_to_point
 
 router = APIRouter()
@@ -615,6 +616,18 @@ async def review_damage_record(
     if payload.notes:
         record.notes = (f"{record.notes}\n[Review]: {payload.notes}").strip() if record.notes else payload.notes
     record.updated_at = now
+
+    await AuditService.record_audit_event(
+        db=db,
+        action=f"DAMAGE_{payload.decision}",
+        entity_type="damage_record",
+        entity_id=record.id,
+        actor_user_id=reviewer_id,
+        organization_id=org_ctx.organization_id,
+        request_id=request_id,
+        before_data={"status": record.status, "severity": orig_sev},
+        after_data={"status": payload.decision, "severity": new_sev, "decision": payload.decision},
+    )
 
     await db.commit()
     await db.refresh(record)

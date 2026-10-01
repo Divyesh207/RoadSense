@@ -108,9 +108,13 @@ async def calculate_segment_health(
         health_score = computed_score
         health_status = classify_health_status(health_score)
 
+        insp_captured_at = latest_inspection.captured_at if latest_inspection else None
+        if insp_captured_at and insp_captured_at.tzinfo is None:
+            insp_captured_at = insp_captured_at.replace(tzinfo=timezone.utc)
+
         freshness_days = (
-            (now - latest_inspection.captured_at).days
-            if latest_inspection and latest_inspection.captured_at
+            (now - insp_captured_at).days
+            if insp_captured_at
             else None
         )
         density = round(len(damages) / length_km, 3)
