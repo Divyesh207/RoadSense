@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Enterprise Road Infrastructure Condition Monitoring & Pothole Lifecycle Intelligence System",
 };
 
+import { Providers } from "@/components/providers";
+
 export default function RootLayout({
   children,
 }: {
@@ -16,7 +18,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
