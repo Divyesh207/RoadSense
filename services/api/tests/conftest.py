@@ -1,5 +1,6 @@
 import uuid
 
+import geoalchemy2.admin.dialects.sqlite as ga_sqlite
 import pytest
 import pytest_asyncio
 from app.core.database import get_db
@@ -16,12 +17,45 @@ from app.models.identity import (
     User,
     role_permissions,
 )
+from app.models.road import Road, RoadSegment
 from fastapi.testclient import TestClient
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKBElement, WKTElement
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.dialects.postgresql import INET, JSONB, UUID
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.pool import StaticPool
+
+# Bypass SpatiaLite DDL event triggers when testing on vanilla SQLite
+ga_sqlite.after_create = lambda *args, **kwargs: None
+ga_sqlite.before_create = lambda *args, **kwargs: None
+ga_sqlite.before_drop = lambda *args, **kwargs: None
+ga_sqlite.after_drop = lambda *args, **kwargs: None
+
+Geometry.bind_expression = lambda self, bindvalue: bindvalue
+Geometry.column_expression = lambda self, col: col
+
+orig_result_proc = Geometry.result_processor
+
+
+def custom_result_proc(self, dialect, coltype):
+    if dialect.name == "sqlite":
+
+        def process(value):
+            if value is None:
+                return None
+            if isinstance(value, (bytes, memoryview)):
+                return WKBElement(bytes(value), srid=self.srid)
+            if isinstance(value, str):
+                return WKTElement(value, srid=self.srid)
+            return value
+
+        return process
+    return orig_result_proc(self, dialect, coltype)
+
+
+Geometry.result_processor = custom_result_proc
 
 
 # Custom type compilation for SQLite in-memory test environment
@@ -40,7 +74,12 @@ def compile_inet_sqlite(type_, compiler, **kw):
     return "VARCHAR(45)"
 
 
-AUTH_TABLES = [
+@compiles(Geometry, "sqlite")
+def compile_geom_sqlite(type_, compiler, **kw):
+    return "TEXT"
+
+
+TEST_TABLES = [
     Organization.__table__,
     User.__table__,
     Role.__table__,
@@ -49,6 +88,8 @@ AUTH_TABLES = [
     OrganizationMembership.__table__,
     RefreshToken.__table__,
     AuditLog.__table__,
+    Road.__table__,
+    RoadSegment.__table__,
 ]
 
 ORG_1_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
@@ -70,12 +111,12 @@ async def test_engine():
         connect_args={"check_same_thread": False},
     )
     async with engine.begin() as conn:
-        await conn.run_sync(lambda sync_conn: Base.metadata.create_all(sync_conn, tables=AUTH_TABLES))
+        await conn.run_sync(lambda sync_conn: Base.metadata.create_all(sync_conn, tables=TEST_TABLES))
     try:
         yield engine
     finally:
         async with engine.begin() as conn:
-            await conn.run_sync(lambda sync_conn: Base.metadata.drop_all(sync_conn, tables=AUTH_TABLES))
+            await conn.run_sync(lambda sync_conn: Base.metadata.drop_all(sync_conn, tables=TEST_TABLES))
         await engine.dispose()
 
 
@@ -113,20 +154,31 @@ async def db_session(test_engine):
         p_roads_create = Permission(id=uuid.uuid4(), code="roads:create", name="Create Roads", resource="roads", action="create")
         p_roads_update = Permission(id=uuid.uuid4(), code="roads:update", name="Update Roads", resource="roads", action="update")
         p_roads_delete = Permission(id=uuid.uuid4(), code="roads:delete", name="Delete Roads", resource="roads", action="delete")
+
+        p_segs_read = Permission(id=uuid.uuid4(), code="road_segments:read", name="Read Road Segments", resource="road_segments", action="read")
+        p_segs_create = Permission(id=uuid.uuid4(), code="road_segments:create", name="Create Road Segments", resource="road_segments", action="create")
+        p_segs_update = Permission(id=uuid.uuid4(), code="road_segments:update", name="Update Road Segments", resource="road_segments", action="update")
+        p_segs_delete = Permission(id=uuid.uuid4(), code="road_segments:delete", name="Delete Road Segments", resource="road_segments", action="delete")
+
         p_insp_create = Permission(id=uuid.uuid4(), code="inspections:create", name="Create Inspection", resource="inspections", action="create")
         p_insp_read = Permission(id=uuid.uuid4(), code="inspections:read", name="Read Inspection", resource="inspections", action="read")
         p_maint_read = Permission(id=uuid.uuid4(), code="maintenance:read", name="Read Maintenance", resource="maintenance", action="read")
         p_maint_update = Permission(id=uuid.uuid4(), code="maintenance:update", name="Update Maintenance", resource="maintenance", action="update")
         session.add_all([
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
+            p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
             p_insp_create, p_insp_read, p_maint_read, p_maint_update,
         ])
 
         # Role-Permission mappings
-        role_auth.permissions.extend([p_roads_read, p_roads_create, p_roads_update, p_roads_delete, p_insp_read, p_maint_read])
-        role_insp.permissions.extend([p_roads_read, p_insp_read, p_insp_create])
-        role_crew.permissions.extend([p_roads_read, p_maint_read, p_maint_update])
-        role_analyst.permissions.extend([p_roads_read, p_insp_read, p_maint_read])
+        role_auth.permissions.extend([
+            p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
+            p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
+            p_insp_read, p_maint_read,
+        ])
+        role_insp.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_insp_create])
+        role_crew.permissions.extend([p_roads_read, p_segs_read, p_maint_read, p_maint_update])
+        role_analyst.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_maint_read])
 
         # Seed users
         admin_user = User(
