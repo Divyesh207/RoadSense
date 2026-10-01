@@ -8,6 +8,7 @@ import {
   ClipboardList,
   AlertTriangle,
   Map,
+  Wrench,
   ShieldCheck,
   LogOut,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const navItems = [
   { name: "Roads & Segments", href: "/roads", icon: Route },
   { name: "Field Inspections", href: "/inspections", icon: ClipboardList },
   { name: "Damage Intelligence", href: "/damages", icon: AlertTriangle },
+  { name: "Maintenance Operations", href: "/maintenance", icon: Wrench },
   { name: "Spatial Map", href: "/map", icon: Map },
 ];
 

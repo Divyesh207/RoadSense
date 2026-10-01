@@ -3,14 +3,13 @@ from datetime import datetime, timezone
 
 import pytest
 import pytest_asyncio
-from geoalchemy2.elements import WKTElement
-from sqlalchemy import select
-
 from app.models.ai import DamageType
 from app.models.damage import DamageRecord
 from app.models.inspection import Inspection
-from app.models.maintenance import MaintenanceJob
 from app.models.road import Road, RoadSegment
+from geoalchemy2.elements import WKTElement
+from sqlalchemy import select
+
 from tests.conftest import CREW_USER_ID, ORG_1_ID, ORG_2_ID
 
 
@@ -185,8 +184,6 @@ async def test_create_maintenance_job_with_damages(async_client, seeded_maintena
 async def test_get_maintenance_job_and_list_filtering(async_client, seeded_maintenance_context):
     token = await get_token_for(async_client)
     headers = {"Authorization": f"Bearer {token}", "X-Organization-ID": str(ORG_1_ID)}
-    ctx = seeded_maintenance_context
-
     # Create 2 jobs
     await async_client.post(
         "/api/v1/maintenance-jobs",
@@ -409,8 +406,6 @@ async def test_maintenance_multi_tenant_isolation(async_client, seeded_maintenan
 
 @pytest.mark.asyncio
 async def test_maintenance_rbac_permissions(async_client, seeded_maintenance_context):
-    ctx = seeded_maintenance_context
-
     # Inspector lacks maintenance:create
     insp_token = await get_inspector_token(async_client)
     insp_headers = {"Authorization": f"Bearer {insp_token}", "X-Organization-ID": str(ORG_1_ID)}

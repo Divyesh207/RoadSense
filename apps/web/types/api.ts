@@ -183,3 +183,57 @@ export interface DamageReview {
   review_notes?: string;
   reviewed_at: string;
 }
+
+export interface MaintenanceJob {
+  id: string;
+  organization_id: string;
+  road_id?: string;
+  road_segment_id?: string;
+  created_by_user_id: string;
+  assigned_to_user_id?: string;
+  assigned_to_organization_id?: string;
+  title: string;
+  description?: string;
+  priority_level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  priority_score?: number;
+  status:
+    | "OPEN"
+    | "ASSIGNED"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "VERIFICATION_PENDING"
+    | "VERIFIED"
+    | "REJECTED"
+    | "CANCELLED";
+  due_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  verified_at?: string;
+  completion_notes?: string;
+  latitude?: number;
+  longitude?: number;
+  damage_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MaintenanceStatusHistory {
+  id: string;
+  organization_id: string;
+  maintenance_job_id: string;
+  previous_status?: string;
+  new_status: string;
+  changed_by_user_id: string;
+  reason?: string;
+  changed_at: string;
+}
+
+export interface MaintenanceDamageLink {
+  maintenance_job_id: string;
+  damage_record_id: string;
+  relationship_type: string;
+  created_at: string;
+  severity?: string;
+  status?: string;
+  damage_type?: string;
+}

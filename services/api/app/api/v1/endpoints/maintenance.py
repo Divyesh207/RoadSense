@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from geoalchemy2.shape import to_shape
@@ -49,7 +49,7 @@ def build_job_response(job: MaintenanceJob, damage_count: int = 0) -> Maintenanc
         try:
             pt = to_shape(job.location)
             lat, lon = pt.y, pt.x
-        except Exception:
+        except (AttributeError, ValueError, TypeError):
             pass
 
     return MaintenanceJobResponse(
@@ -87,16 +87,16 @@ async def list_maintenance_jobs(
     request: Request,
     org_context: Annotated[OrgContext, Depends(require_permission("maintenance:read"))],
     db: Annotated[AsyncSession, Depends(get_db)],
-    status_filter: str | None = Query(None, alias="status"),
-    priority: str | None = Query(None),
-    road_id: uuid.UUID | None = Query(None),
-    road_segment_id: uuid.UUID | None = Query(None),
-    assigned_to: uuid.UUID | None = Query(None),
-    from_date: datetime | None = Query(None, alias="from"),
-    to_date: datetime | None = Query(None, alias="to"),
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
-    sort: str = Query("created_at:desc"),
+    status_filter: Annotated[str | None, Query(alias="status")] = None,
+    priority: Annotated[str | None, Query()] = None,
+    road_id: Annotated[uuid.UUID | None, Query()] = None,
+    road_segment_id: Annotated[uuid.UUID | None, Query()] = None,
+    assigned_to: Annotated[uuid.UUID | None, Query()] = None,
+    from_date: Annotated[datetime | None, Query(alias="from")] = None,
+    to_date: Annotated[datetime | None, Query(alias="to")] = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    sort: Annotated[str, Query()] = "created_at:desc",
 ):
     query = select(MaintenanceJob).where(MaintenanceJob.organization_id == org_context.organization_id)
 
@@ -152,10 +152,10 @@ async def list_maintenance_jobs(
         meta=PaginationMeta(
             page=page,
             page_size=page_size,
-            total_items=total_items,
+            total_count=total_items,
             total_pages=total_pages,
             has_next=page < total_pages,
-            has_previous=page > 1,
+            has_prev=page > 1,
         ),
     )
 
