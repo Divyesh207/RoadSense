@@ -9,7 +9,12 @@ from starlette.responses import JSONResponse
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import setup_logging
-from app.core.middleware import RequestTrackingMiddleware
+from app.core.middleware import (
+    RateLimiterMiddleware,
+    RequestSizeLimitMiddleware,
+    RequestTrackingMiddleware,
+    SecurityHeadersMiddleware,
+)
 from app.schemas.common import ErrorDetail, ResponseEnvelope, ResponseMeta
 
 
@@ -29,9 +34,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Middleware
-app.add_middleware(RequestTrackingMiddleware)
-
+# Production Middlewares (Note: Starlette executes middlewares in reverse order of addition)
 if settings.CORS_ALLOWED_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
@@ -40,6 +43,11 @@ if settings.CORS_ALLOWED_ORIGINS:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+app.add_middleware(RateLimiterMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestTrackingMiddleware)
 
 
 # Standard Exception Handlers

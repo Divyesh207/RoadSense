@@ -409,3 +409,19 @@ export interface ReportDownloadUrlResponse {
   download_url: string;
   expires_in_seconds: number;
 }
+
+export interface AuditLogItem {
+  id: string;
+  organization_id?: string | null;
+  actor_user_id?: string | null;
+  action: string;
+  entity_type: string;
+  entity_id?: string | null;
+  request_id?: string | null;
+  before_data?: Record<string, any> | null;
+  after_data?: Record<string, any> | null;
+  metadata?: Record<string, any> | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+}

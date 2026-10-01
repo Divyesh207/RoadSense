@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     BCRYPT_ROUNDS: int = 12
 
+    # Production Hardening & Rate Limiting
+    SECURITY_HEADERS_ENABLED: bool = True
+    HSTS_ENABLED: bool = False  # Set to True when HTTPS is terminated at FastAPI
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_DEFAULT_PER_MINUTE: int = 300
+    RATE_LIMIT_AUTH_PER_MINUTE: int = 30
+    MAX_REQUEST_SIZE_BYTES: int = 20 * 1024 * 1024  # 20MB default
+    MAX_MEDIA_REQUEST_SIZE_BYTES: int = 100 * 1024 * 1024  # 100MB for media uploads
+
     # Supabase (Managed Postgres & Object Storage)
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""

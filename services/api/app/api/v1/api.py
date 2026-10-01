@@ -16,6 +16,7 @@ from app.api.v1.endpoints import (
     road_health,
     roads,
 )
+from app.api.v1.endpoints import audit
 
 api_router = APIRouter()
 
@@ -37,3 +38,4 @@ api_router.include_router(recurrence.router, prefix="/recurrence", tags=["Recurr
 api_router.include_router(analytics.dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
+api_router.include_router(audit.router, prefix="/audit-logs", tags=["Audit Logs"])

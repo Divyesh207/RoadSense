@@ -23,6 +23,7 @@ import {
   RoadSegment,
   SegmentHistoricalTimelineResponse,
   UserProfile,
+  AuditLogItem,
 } from "@/types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
@@ -358,6 +359,14 @@ class ApiClient {
     },
     getDownloadUrl: async (reportId: string): Promise<ResponseEnvelope<ReportDownloadUrlResponse>> => {
       return this.request<ResponseEnvelope<ReportDownloadUrlResponse>>(`/reports/${reportId}/download-url`);
+    },
+  };
+
+  // Audit & Security Intelligence (Phase 16)
+  auditLogs = {
+    list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<AuditLogItem>> => {
+      const q = new URLSearchParams(params).toString();
+      return this.request<PaginatedResponseEnvelope<AuditLogItem>>(`/audit-logs${q ? `?${q}` : ""}`);
     },
   };
 }
