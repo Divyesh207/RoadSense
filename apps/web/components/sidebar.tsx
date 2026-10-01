@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   Map,
   Wrench,
-  ShieldCheck,
+  FileText,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
@@ -21,6 +21,7 @@ const navItems = [
   { name: "Damage Intelligence", href: "/damages", icon: AlertTriangle },
   { name: "Maintenance Operations", href: "/maintenance", icon: Wrench },
   { name: "Spatial Map", href: "/map", icon: Map },
+  { name: "Reports & Exports", href: "/reports", icon: FileText },
 ];
 
 export function Sidebar() {

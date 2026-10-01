@@ -1,9 +1,14 @@
 import {
   DamageRecord,
   DamageReview,
+  DamageTrendsData,
   DamageType,
+  DashboardSummaryData,
+  GeneratedReport,
   Inspection,
+  InspectionAnalyticsData,
   LoginResponseData,
+  MaintenanceAnalyticsData,
   MaintenanceDamageLink,
   MaintenanceJob,
   MaintenanceStatusHistory,
@@ -11,8 +16,10 @@ import {
   RecurrenceRecord,
   RepairEvidence,
   RepairVerification,
+  ReportDownloadUrlResponse,
   ResponseEnvelope,
   Road,
+  RoadHealthAnalyticsData,
   RoadSegment,
   SegmentHistoricalTimelineResponse,
   UserProfile,
@@ -311,6 +318,46 @@ class ApiClient {
     },
     getSegmentTimeline: async (segmentId: string): Promise<ResponseEnvelope<SegmentHistoricalTimelineResponse>> => {
       return this.request<ResponseEnvelope<SegmentHistoricalTimelineResponse>>(`/recurrence/segments/${segmentId}/timeline`);
+    },
+  };
+
+  // Analytics & Dashboard (Phase 15)
+  analytics = {
+    getDashboardSummary: async (): Promise<ResponseEnvelope<DashboardSummaryData>> => {
+      return this.request<ResponseEnvelope<DashboardSummaryData>>("/dashboard/summary");
+    },
+    getDamageTrends: async (params: Record<string, any> = {}): Promise<ResponseEnvelope<DamageTrendsData>> => {
+      const q = new URLSearchParams(params).toString();
+      return this.request<ResponseEnvelope<DamageTrendsData>>(`/analytics/damage-trends${q ? `?${q}` : ""}`);
+    },
+    getRoadHealth: async (): Promise<ResponseEnvelope<RoadHealthAnalyticsData>> => {
+      return this.request<ResponseEnvelope<RoadHealthAnalyticsData>>("/analytics/road-health");
+    },
+    getMaintenance: async (): Promise<ResponseEnvelope<MaintenanceAnalyticsData>> => {
+      return this.request<ResponseEnvelope<MaintenanceAnalyticsData>>("/analytics/maintenance");
+    },
+    getInspections: async (): Promise<ResponseEnvelope<InspectionAnalyticsData>> => {
+      return this.request<ResponseEnvelope<InspectionAnalyticsData>>("/analytics/inspections");
+    },
+  };
+
+  // Reports (Phase 15)
+  reports = {
+    create: async (payload: { report_type: string; parameters?: Record<string, any> }): Promise<ResponseEnvelope<{ report_id: string; status: string; report_type: string; created_at: string }>> => {
+      return this.request("/reports", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<GeneratedReport>> => {
+      const q = new URLSearchParams(params).toString();
+      return this.request<PaginatedResponseEnvelope<GeneratedReport>>(`/reports${q ? `?${q}` : ""}`);
+    },
+    get: async (reportId: string): Promise<ResponseEnvelope<GeneratedReport>> => {
+      return this.request<ResponseEnvelope<GeneratedReport>>(`/reports/${reportId}`);
+    },
+    getDownloadUrl: async (reportId: string): Promise<ResponseEnvelope<ReportDownloadUrlResponse>> => {
+      return this.request<ResponseEnvelope<ReportDownloadUrlResponse>>(`/reports/${reportId}/download-url`);
     },
   };
 }

@@ -9,7 +9,7 @@ from app.main import app
 from app.models import Base
 from app.models.ai import AIDetection, AIModel, AIProcessingRun, DamageType
 from app.models.damage import DamageRecord, DamageReview
-from app.models.history import AuditLog, RecurrenceRecord
+from app.models.history import AuditLog, GeneratedReport, Notification, RecurrenceRecord
 from app.models.identity import (
     Organization,
     OrganizationMembership,
@@ -118,6 +118,8 @@ TEST_TABLES = [
     MaintenanceStatusHistory.__table__,
     RepairEvidence.__table__,
     RepairVerification.__table__,
+    GeneratedReport.__table__,
+    Notification.__table__,
 ]
 
 ORG_1_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
@@ -216,6 +218,11 @@ async def db_session(test_engine):
         p_pred_create = Permission(id=uuid.uuid4(), code="predictions:create", name="Create Predictions", resource="predictions", action="create")
         p_pred_manage = Permission(id=uuid.uuid4(), code="predictions:manage", name="Manage Predictions", resource="predictions", action="manage")
 
+        p_rep_read = Permission(id=uuid.uuid4(), code="reports:read", name="Read Reports", resource="reports", action="read")
+        p_rep_create = Permission(id=uuid.uuid4(), code="reports:create", name="Create Reports", resource="reports", action="create")
+        p_rep_download = Permission(id=uuid.uuid4(), code="reports:download", name="Download Reports", resource="reports", action="download")
+        p_analytics_read = Permission(id=uuid.uuid4(), code="analytics:read", name="Read Analytics", resource="analytics", action="read")
+
         session.add_all([
             p_roads_read, p_roads_create, p_roads_update, p_roads_delete,
             p_segs_read, p_segs_create, p_segs_update, p_segs_delete,
@@ -224,6 +231,7 @@ async def db_session(test_engine):
             p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
             p_health_read, p_health_calc,
             p_pred_read, p_pred_create, p_pred_manage,
+            p_rep_read, p_rep_create, p_rep_download, p_analytics_read,
         ])
 
         # Role-Permission mappings
@@ -235,6 +243,7 @@ async def db_session(test_engine):
             p_dmg_read, p_dmg_create, p_dmg_update, p_dmg_review,
             p_health_read, p_health_calc,
             p_pred_read, p_pred_create, p_pred_manage,
+            p_rep_read, p_rep_create, p_rep_download, p_analytics_read,
         ])
         role_insp.permissions.extend([
             p_roads_read, p_segs_read,
@@ -243,13 +252,17 @@ async def db_session(test_engine):
             p_health_read,
             p_pred_read,
             p_maint_read, p_maint_history,
+            p_rep_read,
         ])
         role_crew.permissions.extend([
             p_roads_read, p_segs_read,
             p_maint_read, p_maint_update, p_maint_status, p_maint_link, p_maint_history,
             p_dmg_read, p_health_read,
         ])
-        role_analyst.permissions.extend([p_roads_read, p_segs_read, p_insp_read, p_maint_read, p_dmg_read, p_health_read])
+        role_analyst.permissions.extend([
+            p_roads_read, p_segs_read, p_insp_read, p_maint_read, p_dmg_read, p_health_read,
+            p_rep_read, p_rep_create, p_rep_download, p_analytics_read,
+        ])
 
         # Seed initial damage types
         dt_pothole = DamageType(id=uuid.uuid4(), code="POTHOLE", name="Pothole", description="Road surface cavity", is_active=True)

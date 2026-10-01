@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    analytics,
     auth,
     damages,
     gis,
@@ -11,6 +12,7 @@ from app.api.v1.endpoints import (
     predictions,
     recurrence,
     repair,
+    reports,
     road_health,
     roads,
 )
@@ -32,3 +34,6 @@ api_router.include_router(predictions.router, prefix="/road-segments", tags=["Pr
 api_router.include_router(maintenance.router, prefix="/maintenance-jobs", tags=["Maintenance"])
 api_router.include_router(repair.router, prefix="/maintenance-jobs", tags=["Repair Verification"])
 api_router.include_router(recurrence.router, prefix="/recurrence", tags=["Recurrence & Historical Intelligence"])
+api_router.include_router(analytics.dashboard_router, prefix="/dashboard", tags=["Dashboard"])
+api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
+api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])

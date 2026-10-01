@@ -326,3 +326,86 @@ export interface SegmentHistoricalTimelineResponse {
   total_events: number;
   events: SegmentTimelineEvent[];
 }
+
+export interface DashboardSummaryData {
+  total_roads: number;
+  total_segments: number;
+  active_inspections: number;
+  open_damages: number;
+  high_severity_damages: number;
+  critical_damages: number;
+  maintenance_open: number;
+  maintenance_in_progress: number;
+  verification_pending: number;
+  verified_repairs: number;
+  recurrence_count: number;
+  average_road_health?: number | null;
+}
+
+export interface DamageTrendPoint {
+  date: string;
+  count: number;
+  severity_breakdown?: Record<string, number>;
+}
+
+export interface DamageTrendsData {
+  series: DamageTrendPoint[];
+  by_type: Record<string, number>;
+  by_severity: Record<string, number>;
+  total_damages: number;
+}
+
+export interface CriticalSegmentSummary {
+  segment_id: string;
+  road_id: string;
+  road_name: string;
+  segment_number: number;
+  current_health_score?: number | null;
+  classification: string;
+  open_damages_count: number;
+}
+
+export interface RoadHealthAnalyticsData {
+  average_health?: number | null;
+  health_distribution: Record<string, number>;
+  critical_segments: CriticalSegmentSummary[];
+  total_segments_evaluated: number;
+}
+
+export interface MaintenanceAnalyticsData {
+  open_jobs: number;
+  in_progress_jobs: number;
+  completed_jobs: number;
+  verified_repairs: number;
+  rejected_repairs: number;
+  verification_rate: number;
+  avg_completion_time_days?: number | null;
+  recurrence_after_repair_count: number;
+}
+
+export interface InspectionAnalyticsData {
+  total_inspections: number;
+  by_status: Record<string, number>;
+  total_media_captured: number;
+  ai_processed_count: number;
+}
+
+export interface GeneratedReport {
+  id: string;
+  organization_id: string;
+  requested_by_user_id: string;
+  report_type: string;
+  status: string;
+  parameters: Record<string, any>;
+  storage_path?: string | null;
+  generated_at?: string | null;
+  expires_at?: string | null;
+  error_message?: string | null;
+  created_at: string;
+}
+
+export interface ReportDownloadUrlResponse {
+  report_id: string;
+  download_url: string;
+  expires_in_seconds: number;
+}
