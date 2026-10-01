@@ -93,6 +93,19 @@ TEST_TABLES = [
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
 
 
+@pytest.fixture(autouse=True)
+def isolated_model_registry(tmp_path, monkeypatch):
+    """Never pick up weights from a developer's data/models; each test starts
+    with a fresh registry and no trained model unless it provides one."""
+    from inference.model_registry import ModelRegistry
+
+    monkeypatch.setenv("YOLO_MODEL_PATH", str(tmp_path / "no-weights" / "pothole_yolov8.pt"))
+    monkeypatch.delenv("AI_REQUIRE_TRAINED_MODEL", raising=False)
+    ModelRegistry.reset()
+    yield
+    ModelRegistry.reset()
+
+
 @pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.new_event_loop()
