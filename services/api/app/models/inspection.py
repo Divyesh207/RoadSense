@@ -36,7 +36,7 @@ class Inspection(Base):
     source = Column(String(30), nullable=False, default="ANDROID")
     captured_at = Column(DateTime(timezone=True), nullable=True, index=True)
     submitted_at = Column(DateTime(timezone=True), nullable=True)
-    location = Column(Geometry("POINT", srid=4326), nullable=True)
+    location = Column(Geometry("POINT", srid=4326, spatial_index=False), nullable=True)
     gps_accuracy_meters = Column(Numeric(10, 3), nullable=True)
     notes = Column(Text, nullable=True)
     failure_code = Column(String(100), nullable=True)

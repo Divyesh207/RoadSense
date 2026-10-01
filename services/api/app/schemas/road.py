@@ -110,6 +110,8 @@ class MatchedCandidate(BaseModel):
     distance_meters: float
     confidence_score: float
     is_uncertain: bool
+    # Fraction (0..1) along the segment of the nearest point; PostGIS only
+    position_along_segment: float | None = None
 
 
 class LocationMatchResponseData(BaseModel):

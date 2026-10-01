@@ -39,6 +39,17 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _json_safe(value: Any) -> Any:
+    """JSONB columns are serialized with json.dumps; UUIDs (road/segment ids) are not JSON."""
+    if isinstance(value, dict):
+        return {k: _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    if isinstance(value, uuid.UUID):
+        return str(value)
+    return value
+
+
 @dataclass
 class MediaAnalysis:
     """Output of the compute-only stage for one media item (no DB writes)."""
@@ -278,7 +289,7 @@ async def persist_media_analysis(
             location=pt_geom,
             raw_output={
                 "severity_assessment": sev_data,
-                "geospatial_association": geo_assoc.__dict__,
+                "geospatial_association": _json_safe(geo_assoc.__dict__),
                 "metadata": det.metadata,
             },
             created_at=t_comp,

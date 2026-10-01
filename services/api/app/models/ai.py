@@ -117,7 +117,7 @@ class AIDetection(Base):
     bbox_y_max = Column(Numeric(10, 7), nullable=False)
     pixel_width = Column(Integer, nullable=True)
     pixel_height = Column(Integer, nullable=True)
-    location = Column(Geometry("POINT", srid=4326), nullable=True)
+    location = Column(Geometry("POINT", srid=4326, spatial_index=False), nullable=True)
     raw_output = Column(JSONB, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
 

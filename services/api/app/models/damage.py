@@ -36,7 +36,7 @@ class DamageRecord(Base):
     severity = Column(String(20), nullable=False, index=True)
     severity_score = Column(Numeric(7, 4), nullable=True)
     severity_method_version = Column(String(100), nullable=True)
-    location = Column(Geometry("POINT", srid=4326), nullable=True)
+    location = Column(Geometry("POINT", srid=4326, spatial_index=False), nullable=True)
     status = Column(String(30), nullable=False, default="DETECTED", index=True)
     confidence = Column(Numeric(7, 6), nullable=True)
     estimated_area_m2 = Column(Numeric(14, 4), nullable=True)

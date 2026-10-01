@@ -27,12 +27,14 @@ def _write_defect_image(path: Path) -> Path:
     return path
 
 
-async def _seed(async_db, media_files: list[Path], job_status: str = "QUEUED"):
+async def _seed(async_db, media_files: list[Path], job_status: str = "QUEUED", road_ids=(None, None)):
     org_id, insp_id, job_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
     async_db.add(
         Inspection(
             id=insp_id,
             organization_id=org_id,
+            road_id=road_ids[0],
+            road_segment_id=road_ids[1],
             inspector_user_id=uuid.uuid4(),
             status="PROCESSING",
             source="API",
@@ -207,3 +209,21 @@ async def test_strict_mode_fails_job_when_trained_model_missing(async_db, tmp_pa
     assert job.status == "FAILED"
     insp = (await async_db.execute(select(Inspection).where(Inspection.id == insp_id))).scalar_one()
     assert insp.status == "PROCESSING_FAILED"
+
+
+@pytest.mark.asyncio
+async def test_road_linked_inspection_stores_json_safe_association(async_db, tmp_path):
+    """raw_output is JSONB: the road/segment UUIDs must be serialized as strings."""
+    road_id, segment_id = uuid.uuid4(), uuid.uuid4()
+    good = _write_defect_image(tmp_path / "a.jpg")
+    org_id, insp_id, job_id = await _seed(async_db, [good], road_ids=(road_id, segment_id))
+
+    result = await execute_inspection_pipeline(
+        async_db, job_id, insp_id, org_id, confidence_threshold=0.2, resolve_media=_local
+    )
+
+    assert result["status"] == "COMPLETED", result
+    det = (await async_db.execute(select(AIDetection).where(AIDetection.inspection_id == insp_id))).scalars().first()
+    assoc = det.raw_output["geospatial_association"]
+    assert assoc["road_id"] == str(road_id)
+    assert assoc["road_segment_id"] == str(segment_id)

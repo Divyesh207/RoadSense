@@ -38,7 +38,7 @@ class RepairEvidence(Base):
     file_size_bytes = Column(BigInteger, nullable=True)
     checksum = Column(String(128), nullable=True)
     captured_at = Column(DateTime(timezone=True), nullable=True)
-    location = Column(Geometry("POINT", srid=4326), nullable=True)
+    location = Column(Geometry("POINT", srid=4326, spatial_index=False), nullable=True)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)

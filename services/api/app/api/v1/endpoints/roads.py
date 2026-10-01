@@ -35,6 +35,7 @@ from app.services.spatial import (
     geometry_to_geojson,
     point_to_linestring_distance_m,
 )
+from app.services.spatial_queries import is_postgres, match_segments_postgis
 
 router = APIRouter()
 segments_router = APIRouter()
@@ -631,45 +632,54 @@ async def match_location(
 ) -> ResponseEnvelope[LocationMatchResponseData]:
     request_id = getattr(request.state, "request_id", None)
 
-    # Query active road segments for this organization with road info
-    stmt = (
-        select(RoadSegment)
-        .join(Road, RoadSegment.road_id == Road.id)
-        .where(
-            RoadSegment.organization_id == org_ctx.organization_id,
-            RoadSegment.is_active.is_(True),
-            Road.is_active.is_(True),
-            RoadSegment.geometry.is_not(None),
+    # (segment, distance_m, fraction along segment or None)
+    measured: list[tuple[RoadSegment, float, float | None]] = []
+    if is_postgres(db):
+        # PostGIS: GIST-indexed bbox prefilter + ST_DWithin/ST_Distance on geography.
+        matches = await match_segments_postgis(
+            db, org_ctx.organization_id, payload.latitude, payload.longitude, payload.max_distance_meters
         )
-        .options(selectinload(RoadSegment.road))
-    )
-    result = await db.execute(stmt)
-    segments = result.scalars().all()
+        measured = [(m.segment, m.distance_m, m.position_along_segment) for m in matches]
+    else:
+        # Portable fallback (e.g. SQLite unit tests): planar math in Python.
+        stmt = (
+            select(RoadSegment)
+            .join(Road, RoadSegment.road_id == Road.id)
+            .where(
+                RoadSegment.organization_id == org_ctx.organization_id,
+                RoadSegment.is_active.is_(True),
+                Road.is_active.is_(True),
+                RoadSegment.geometry.is_not(None),
+            )
+            .options(selectinload(RoadSegment.road))
+        )
+        for seg in (await db.execute(stmt)).scalars().all():
+            dist = point_to_linestring_distance_m(payload.latitude, payload.longitude, seg.geometry)
+            if dist is not None and dist <= payload.max_distance_meters:
+                measured.append((seg, dist, None))
 
     candidates: list[MatchedCandidate] = []
-    for seg in segments:
-        dist = point_to_linestring_distance_m(payload.latitude, payload.longitude, seg.geometry)
-        if dist is not None and dist <= payload.max_distance_meters:
-            if dist <= 10.0:
-                confidence = round(1.0 - (dist / 10.0) * 0.1, 3)
-            elif dist <= 25.0:
-                confidence = round(0.89 - ((dist - 10.0) / 15.0) * 0.19, 3)
-            else:
-                confidence = round(0.69 - ((dist - 25.0) / (payload.max_distance_meters - 25.0 + 1e-6)) * 0.19, 3)
+    for seg, dist, position in measured:
+        if dist <= 10.0:
+            confidence = round(1.0 - (dist / 10.0) * 0.1, 3)
+        elif dist <= 25.0:
+            confidence = round(0.89 - ((dist - 10.0) / 15.0) * 0.19, 3)
+        else:
+            confidence = round(0.69 - ((dist - 25.0) / (payload.max_distance_meters - 25.0 + 1e-6)) * 0.19, 3)
 
-            is_candidate_uncertain = dist > 25.0
-            candidates.append(
-                MatchedCandidate(
-                    road_id=seg.road_id,
-                    road_name=seg.road.name,
-                    road_code=seg.road.road_code,
-                    segment_id=seg.id,
-                    segment_number=seg.segment_number,
-                    distance_meters=round(dist, 2),
-                    confidence_score=max(0.0, min(1.0, confidence)),
-                    is_uncertain=is_candidate_uncertain,
-                )
+        candidates.append(
+            MatchedCandidate(
+                road_id=seg.road_id,
+                road_name=seg.road.name,
+                road_code=seg.road.road_code,
+                segment_id=seg.id,
+                segment_number=seg.segment_number,
+                distance_meters=round(dist, 2),
+                confidence_score=max(0.0, min(1.0, confidence)),
+                is_uncertain=dist > 25.0,
+                position_along_segment=round(position, 4) if position is not None else None,
             )
+        )
 
     candidates.sort(key=lambda c: c.distance_meters)
 

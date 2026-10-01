@@ -26,9 +26,24 @@ target_metadata = Base.metadata
 def get_url():
     # Use sync connection URL for Alembic migrations
     url = settings.DATABASE_URL_SYNC
-    if url.startswith("postgresql+asyncpg://"):
-        url = url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    # Pin the installed sync driver (psycopg2-binary): SQLAlchemy 2.1 maps a bare
+    # "postgresql://" URL to psycopg (v3), which is not a project dependency.
+    for prefix in ("postgresql+asyncpg://", "postgresql://"):
+        if url.startswith(prefix):
+            url = "postgresql+psycopg2://" + url[len(prefix):]
+            break
     return url
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    """Limit autogenerate to this application's tables. PostGIS ships its own
+    tables (spatial_ref_sys, tiger.*, topology.*) that must never be dropped."""
+    if type_ == "table":
+        schema = getattr(obj, "schema", None)
+        if schema not in (None, "public") or name == "spatial_ref_sys":
+            return False
+        return name in target_metadata.tables or not reflected
+    return True
 
 
 def run_migrations_offline() -> None:
@@ -39,7 +54,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_schemas=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -63,7 +78,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            include_schemas=True,
+            include_object=include_object,
         )
 
         with context.begin_transaction():
