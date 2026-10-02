@@ -8,6 +8,8 @@ import {
   GeneratedReport,
   Inspection,
   InspectionAnalyticsData,
+  InspectionDetection,
+  InspectionMedia,
   LoginResponseData,
   MaintenanceAnalyticsData,
   MaintenanceDamageLink,
@@ -30,6 +32,16 @@ import {
 } from "@/types/api";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+// URLSearchParams serializes undefined/null as the literal strings "undefined"/"null",
+// which the API then applies as filters (e.g. status=undefined returns no rows).
+const toQueryString = (params: Record<string, any>): string => {
+  const q = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") q.append(key, String(value));
+  }
+  return q.toString();
+};
 
 class ApiClient {
   private getHeaders(customHeaders: Record<string, string> = {}): HeadersInit {
@@ -106,7 +118,7 @@ class ApiClient {
   // Roads
   roads = {
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<Road>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<PaginatedResponseEnvelope<Road>>(`/roads${q ? `?${q}` : ""}`);
     },
     get: async (roadId: string): Promise<ResponseEnvelope<Road>> => {
@@ -120,14 +132,17 @@ class ApiClient {
   // Inspections
   inspections = {
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<Inspection>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<PaginatedResponseEnvelope<Inspection>>(`/inspections${q ? `?${q}` : ""}`);
     },
     get: async (inspectionId: string): Promise<ResponseEnvelope<Inspection>> => {
       return this.request<ResponseEnvelope<Inspection>>(`/inspections/${inspectionId}`);
     },
-    getDetections: async (inspectionId: string): Promise<ResponseEnvelope<any[]>> => {
-      return this.request<ResponseEnvelope<any[]>>(`/inspections/${inspectionId}/detections`);
+    getMedia: async (inspectionId: string): Promise<ResponseEnvelope<InspectionMedia[]>> => {
+      return this.request<ResponseEnvelope<InspectionMedia[]>>(`/inspections/${inspectionId}/media`);
+    },
+    getDetections: async (inspectionId: string): Promise<ResponseEnvelope<InspectionDetection[]>> => {
+      return this.request<ResponseEnvelope<InspectionDetection[]>>(`/inspections/${inspectionId}/detections`);
     },
     submit: async (inspectionId: string): Promise<ResponseEnvelope<Inspection>> => {
       return this.request<ResponseEnvelope<Inspection>>(`/inspections/${inspectionId}/submit`, {
@@ -147,7 +162,7 @@ class ApiClient {
       return this.request<ResponseEnvelope<DamageType[]>>("/damage-types");
     },
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<DamageRecord>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<PaginatedResponseEnvelope<DamageRecord>>(`/damages${q ? `?${q}` : ""}`);
     },
     get: async (damageId: string): Promise<ResponseEnvelope<DamageRecord>> => {
@@ -170,15 +185,15 @@ class ApiClient {
   // GIS Map layers
   map = {
     damages: async (params: Record<string, string> = {}): Promise<ResponseEnvelope<MapDamageFeature[]>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<ResponseEnvelope<MapDamageFeature[]>>(`/map/damages${q ? `?${q}` : ""}`);
     },
     roads: async (params: Record<string, string> = {}): Promise<ResponseEnvelope<MapRoadFeature[]>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<ResponseEnvelope<MapRoadFeature[]>>(`/map/roads${q ? `?${q}` : ""}`);
     },
     segments: async (params: Record<string, string> = {}): Promise<ResponseEnvelope<MapSegmentFeature[]>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<ResponseEnvelope<MapSegmentFeature[]>>(`/map/segments${q ? `?${q}` : ""}`);
     },
   };
@@ -186,7 +201,7 @@ class ApiClient {
   // Maintenance Management
   maintenance = {
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<MaintenanceJob>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<PaginatedResponseEnvelope<MaintenanceJob>>(`/maintenance-jobs${q ? `?${q}` : ""}`);
     },
     get: async (jobId: string): Promise<ResponseEnvelope<MaintenanceJob>> => {
@@ -308,7 +323,7 @@ class ApiClient {
   // Recurrence & Historical Intelligence (Phase 13)
   recurrence = {
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<RecurrenceRecord>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<PaginatedResponseEnvelope<RecurrenceRecord>>(`/recurrence${q ? `?${q}` : ""}`);
     },
     get: async (recurrenceId: string): Promise<ResponseEnvelope<RecurrenceRecord>> => {
@@ -344,7 +359,7 @@ class ApiClient {
       return this.request<ResponseEnvelope<DashboardSummaryData>>("/dashboard/summary");
     },
     getDamageTrends: async (params: Record<string, any> = {}): Promise<ResponseEnvelope<DamageTrendsData>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<ResponseEnvelope<DamageTrendsData>>(`/analytics/damage-trends${q ? `?${q}` : ""}`);
     },
     getRoadHealth: async (): Promise<ResponseEnvelope<RoadHealthAnalyticsData>> => {
@@ -367,7 +382,7 @@ class ApiClient {
       });
     },
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<GeneratedReport>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<PaginatedResponseEnvelope<GeneratedReport>>(`/reports${q ? `?${q}` : ""}`);
     },
     get: async (reportId: string): Promise<ResponseEnvelope<GeneratedReport>> => {
@@ -381,7 +396,7 @@ class ApiClient {
   // Audit & Security Intelligence (Phase 16)
   auditLogs = {
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<AuditLogItem>> => {
-      const q = new URLSearchParams(params).toString();
+      const q = toQueryString(params);
       return this.request<PaginatedResponseEnvelope<AuditLogItem>>(`/audit-logs${q ? `?${q}` : ""}`);
     },
   };

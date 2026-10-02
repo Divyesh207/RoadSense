@@ -127,7 +127,9 @@ export default function InspectionsPage() {
                   inspections.map((insp) => (
                     <tr key={insp.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3 px-4 font-mono text-[11px] text-blue-400 font-medium">
-                        {insp.id.slice(0, 8)}...
+                        <Link href={`/inspections/${insp.id}`} className="hover:text-blue-300 hover:underline">
+                          {insp.id.slice(0, 8)}...
+                        </Link>
                       </td>
                       <td className="py-3 px-4 text-white">
                         {insp.road_name ? (

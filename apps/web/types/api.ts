@@ -125,7 +125,16 @@ export interface Inspection {
   road_name?: string;
   road_segment_id?: string;
   segment_number?: number;
-  status: "DRAFT" | "SUBMITTED" | "PROCESSING" | "COMPLETED" | "REJECTED";
+  // Backend lifecycle: DRAFT -> UPLOADING -> SUBMITTED -> PROCESSING -> ANALYZED | PROCESSING_FAILED
+  status:
+    | "DRAFT"
+    | "UPLOADING"
+    | "SUBMITTED"
+    | "PROCESSING"
+    | "ANALYZED"
+    | "PROCESSING_FAILED"
+    | "COMPLETED"
+    | "REJECTED";
   source: string;
   captured_at: string;
   submitted_at?: string;
@@ -149,6 +158,24 @@ export interface InspectionMedia {
   duration_seconds?: number;
   width_px?: number;
   height_px?: number;
+  created_at: string;
+}
+
+// GET /inspections/{id}/detections (bbox coordinates are normalized 0..1)
+export interface InspectionDetection {
+  id: string;
+  inspection_id: string;
+  media_id: string;
+  damage_type: string;
+  damage_type_id: string;
+  confidence: number;
+  bbox: { x_min: number; y_min: number; x_max: number; y_max: number };
+  pixel_width?: number | null;
+  pixel_height?: number | null;
+  frame_number?: number | null;
+  frame_timestamp_ms?: number | null;
+  location?: LocationData | null;
+  severity: string;
   created_at: string;
 }
 
