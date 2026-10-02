@@ -40,6 +40,8 @@ services:
     build:
       context: ./services/api
       dockerfile: Dockerfile
+      secrets:
+        - extra_ca
     container_name: road_platform_api
     restart: unless-stopped
     environment:
@@ -53,6 +55,12 @@ services:
       - JWT_SECRET=${JWT_SECRET:-development-jwt-secret-change-in-production}
       - SUPABASE_URL=${SUPABASE_URL:-}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-auto}
+      - LOCAL_STORAGE_ROOT=/data/media
+      - PUBLIC_API_BASE_URL=${PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
+    volumes:
+      # Shared with ai-worker; used only by the local (non-Supabase) storage backend
+      - ./data/media:/data/media
     ports:
       - "8000:8000"
     depends_on:
@@ -70,20 +78,34 @@ services:
 
   ai-worker:
     build:
-      context: ./services/ai-worker
-      dockerfile: Dockerfile
+      # Context is ./services so the image can include the shared API domain
+      # package (services/api/app) that the worker persists results through.
+      context: ./services
+      dockerfile: ai-worker/Dockerfile
+      secrets:
+        - extra_ca
     container_name: road_platform_ai_worker
     restart: unless-stopped
     environment:
       - APP_ENV=${APP_ENV:-development}
+      - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-road_platform}
       - DATABASE_URL_SYNC=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-road_platform}
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
       - AI_MODEL_DIR=/app/models
+      - YOLO_MODEL_PATH=/app/models/${YOLO_MODEL_FILE:-pothole_yolov8.pt}
       - AI_DEVICE=cpu
+      - AI_REQUIRE_TRAINED_MODEL=${AI_REQUIRE_TRAINED_MODEL:-false}
+      - SECRET_KEY=${SECRET_KEY:-development-secret-key-change-in-production}
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-auto}
+      - LOCAL_STORAGE_ROOT=/data/media
     volumes:
-      - ./data/models:/app/models
+      - ./data/models:/app/models:ro
+      - ./data/media:/data/media
     depends_on:
       postgres:
         condition: service_healthy
@@ -96,6 +118,10 @@ services:
     build:
       context: ./apps/web
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      secrets:
+        - extra_ca
     container_name: road_platform_web
     restart: unless-stopped
     environment:
@@ -128,3 +154,8 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+
+secrets:
+  # Optional extra CA for HTTPS-intercepting networks (infrastructure/certs/README.md)
+  extra_ca:
+    file: ${EXTRA_CA_CERT_FILE:-./infrastructure/certs/empty-ca-bundle.txt}

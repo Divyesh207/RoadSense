@@ -1,15 +1,19 @@
+import asyncio
 from datetime import datetime, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 from redis.asyncio import from_url as async_redis_from_url
+from redis.exceptions import RedisError
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.schemas.common import ResponseEnvelope
+from app.services.storage import StorageError, get_storage_backend
 
 router = APIRouter()
 
@@ -22,8 +26,15 @@ async def check_redis_health() -> tuple[bool, str]:
         await client.ping()
         await client.aclose()
         return True, "connected"
-    except Exception as e:
+    except (RedisError, OSError, asyncio.TimeoutError) as e:
         return False, f"unreachable ({e.__class__.__name__})"
+
+
+def check_storage() -> str:
+    try:
+        return get_storage_backend().name
+    except StorageError:
+        return "unconfigured"
 
 
 @router.get("/live", response_model=ResponseEnvelope[dict[str, Any]])
@@ -51,17 +62,19 @@ async def health_ready(db: Annotated[AsyncSession, Depends(get_db)]):
     try:
         await db.execute(text("SELECT 1"))
         db_ok = True
-    except Exception:
+    except (SQLAlchemyError, OSError):
         db_ok = False
-    redis_ok, redis_status = await check_redis_health()
+    # Redis is reported but does not gate readiness: reads keep working and
+    # POST /inspections/{id}/process answers 503 while the broker is down.
+    _redis_ok, redis_status = await check_redis_health()
 
     checks = {
         "database": "connected" if db_ok else "disconnected",
         "redis": redis_status,
-        "storage": "configured" if settings.SUPABASE_URL or settings.APP_ENV == "development" else "unconfigured",
+        "storage": check_storage(),
     }
 
-    # In production, DB is strictly required for readiness. Redis is monitored.
+    # In production, DB is strictly required for readiness.
     all_ready = db_ok
 
     content = ResponseEnvelope(

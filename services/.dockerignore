@@ -1,0 +1,9 @@
+# Build context for services/ai-worker/Dockerfile is ./services
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.ruff_cache
+**/.venv
+**/.env
+**/tests
+api/alembic
