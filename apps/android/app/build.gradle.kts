@@ -1,9 +1,33 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
 }
+
+// API base URL (server root; ApiService paths start with "api/v1/").
+// Resolution order: -P<key>=... / gradle.properties, ROADINTEL_* environment
+// variable, then the git-ignored local.properties. Physical devices need the
+// host's LAN address, e.g. roadintel.apiBaseUrl.debug=http://192.168.1.50:8000/
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
+fun apiBaseUrl(key: String, envName: String, default: String): String {
+    val raw = (project.findProperty(key) as String?)
+        ?: System.getenv(envName)
+        ?: localProperties.getProperty(key)
+        ?: default
+    return raw.trim().let { if (it.endsWith("/")) it else "$it/" }
+}
+
+// Debug default targets the Android emulator's alias for the host machine.
+val debugApiBaseUrl = apiBaseUrl("roadintel.apiBaseUrl.debug", "ROADINTEL_API_BASE_URL_DEBUG", "http://10.0.2.2:8000/")
+// Release must use HTTPS; release builds also disallow cleartext traffic.
+val releaseApiBaseUrl = apiBaseUrl("roadintel.apiBaseUrl.release", "ROADINTEL_API_BASE_URL_RELEASE", "https://api.roadintelligence.invalid/")
 
 android {
     namespace = "com.roadintelligence.field"
@@ -23,7 +47,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"$debugApiBaseUrl\"")
+        }
         release {
+            if (!releaseApiBaseUrl.startsWith("https://")) {
+                throw GradleException("roadintel.apiBaseUrl.release must be an https:// URL (got $releaseApiBaseUrl)")
+            }
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -43,6 +74,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

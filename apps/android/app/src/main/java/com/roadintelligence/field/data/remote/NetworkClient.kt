@@ -1,5 +1,6 @@
 package com.roadintelligence.field.data.remote
 
+import com.roadintelligence.field.BuildConfig
 import com.roadintelligence.field.data.local.SecureSessionManager
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -50,9 +51,9 @@ class AuthInterceptor(
 
 object NetworkClient {
 
-    // Default base URL is 10.0.2.2 (standard Android Emulator loopback to host)
-    // or standard localhost / LAN IP
-    var baseUrl: String = "http://10.0.2.2:8000/"
+    // Server root, set per build type in app/build.gradle.kts (roadintel.apiBaseUrl.*).
+    // Every ApiService call, including the upload handshake, resolves against it.
+    val baseUrl: String = BuildConfig.API_BASE_URL
 
     private var apiServiceInstance: ApiService? = null
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug builds only (overrides src/main/res/xml/network_security_config.xml).
+  Allows plain HTTP to a development API on the emulator host (10.0.2.2) or
+  a LAN address (e.g. 192.168.x.x) when testing on a physical device.
+  Release builds keep cleartext disabled.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
