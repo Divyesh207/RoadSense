@@ -1,6 +1,8 @@
 package com.roadintelligence.field.ui.screens
 
+import android.Manifest
 import android.content.Context
+import android.util.Log
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -28,6 +30,7 @@ import androidx.core.content.ContextCompat
 import com.roadintelligence.field.domain.model.InspectionMedia
 import com.roadintelligence.field.domain.model.UploadStatus
 import com.roadintelligence.field.domain.repository.InspectionRepository
+import com.roadintelligence.field.ui.permissions.hasAllPermissions
 import com.roadintelligence.field.ui.theme.*
 import kotlinx.coroutines.launch
 import java.io.File
@@ -43,6 +46,13 @@ fun CameraCaptureScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
+
+    // Normally granted before navigating here (NewInspectionScreen); this covers a
+    // permission revoked in Settings while the app was in the background.
+    if (!context.hasAllPermissions(arrayOf(Manifest.permission.CAMERA))) {
+        CameraPermissionMissing(onNavigateBack)
+        return
+    }
 
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
@@ -93,7 +103,7 @@ fun CameraCaptureScreen(
                             capture
                         )
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        Log.e(CAMERA_TAG, "CameraX bindToLifecycle failed", e)
                     }
                 }, ContextCompat.getMainExecutor(ctx))
 
@@ -222,7 +232,7 @@ fun CameraCaptureScreen(
 
                                     override fun onError(exception: ImageCaptureException) {
                                         isCapturing = false
-                                        exception.printStackTrace()
+                                        Log.e(CAMERA_TAG, "takePicture failed", exception)
                                     }
                                 }
                             )
@@ -251,6 +261,31 @@ fun CameraCaptureScreen(
                         modifier = Modifier.size(28.dp)
                     )
                 }
+            }
+        }
+    }
+}
+
+private const val CAMERA_TAG = "CameraCapture"
+
+@Composable
+private fun CameraPermissionMissing(onNavigateBack: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundDark)
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Default.NoPhotography, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(40.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("Camera permission required", color = TextPrimary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Go back and tap Capture Photo Evidence to allow camera access.", color = TextSecondary, fontSize = 13.sp)
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onNavigateBack, colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan)) {
+                Text("Back", color = Color.Black, fontWeight = FontWeight.Bold)
             }
         }
     }

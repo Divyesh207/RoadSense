@@ -1,8 +1,9 @@
 package com.roadintelligence.field.ui.screens
 
-import android.annotation.SuppressLint
-import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
 import android.location.Location
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.roadintelligence.field.domain.model.*
@@ -28,6 +30,9 @@ import com.roadintelligence.field.domain.repository.InspectionRepository
 import com.roadintelligence.field.domain.repository.RoadRepository
 import com.roadintelligence.field.domain.repository.SyncRepository
 import com.roadintelligence.field.ui.components.CommonTopBar
+import com.roadintelligence.field.ui.permissions.PermissionResult
+import com.roadintelligence.field.ui.permissions.openAppSettings
+import com.roadintelligence.field.ui.permissions.rememberPermissionRequest
 import com.roadintelligence.field.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -63,6 +68,10 @@ fun NewInspectionScreen(
     var accuracyMeters by remember { mutableStateOf<Float?>(null) }
     var isAcquiringGps by remember { mutableStateOf(false) }
     var gpsStatusMessage by remember { mutableStateOf("Tap 'Acquire GPS' to capture coordinates") }
+    var locationPermanentlyDenied by remember { mutableStateOf(false) }
+
+    var cameraPermissionMessage by remember { mutableStateOf<String?>(null) }
+    var cameraPermanentlyDenied by remember { mutableStateOf(false) }
 
     var notes by remember { mutableStateOf("") }
     var mediaList by remember { mutableStateOf<List<InspectionMedia>>(emptyList()) }
@@ -75,28 +84,70 @@ fun NewInspectionScreen(
         mediaList = inspectionRepository.getMediaForInspection(localId)
     }
 
-    // Acquire GPS function
-    @SuppressLint("MissingPermission")
+    // Acquire GPS function (only called once location permission is granted)
     fun acquireLocation() {
+        val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+        if (!hasFine && !hasCoarse) {
+            gpsStatusMessage = "Location permission is required to capture coordinates."
+            return
+        }
         isAcquiringGps = true
         gpsStatusMessage = "Acquiring GPS fix from satellites..."
+        // Approximate-only grants (Android 12+) cannot use high-accuracy GPS.
+        val priority = if (hasFine) Priority.PRIORITY_HIGH_ACCURACY else Priority.PRIORITY_BALANCED_POWER_ACCURACY
         val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-            .addOnSuccessListener { loc: Location? ->
-                isAcquiringGps = false
-                if (loc != null) {
-                    latitude = loc.latitude
-                    longitude = loc.longitude
-                    accuracyMeters = loc.accuracy
-                    gpsStatusMessage = "GPS Acquired: ±%.1f m accuracy".format(loc.accuracy)
-                } else {
-                    gpsStatusMessage = "Could not obtain GPS fix. Ensure location is enabled."
+        try {
+            fusedLocationClient.getCurrentLocation(priority, null)
+                .addOnSuccessListener { loc: Location? ->
+                    isAcquiringGps = false
+                    if (loc != null) {
+                        latitude = loc.latitude
+                        longitude = loc.longitude
+                        accuracyMeters = loc.accuracy
+                        gpsStatusMessage = "GPS Acquired: ±%.1f m accuracy".format(loc.accuracy)
+                    } else {
+                        gpsStatusMessage = "Could not obtain GPS fix. Ensure location is enabled."
+                    }
                 }
+                .addOnFailureListener { e ->
+                    isAcquiringGps = false
+                    Log.e("NewInspection", "getCurrentLocation failed", e)
+                    gpsStatusMessage = "GPS Error: ${e.message}"
+                }
+        } catch (e: SecurityException) {
+            // Permission revoked between the check and the call.
+            isAcquiringGps = false
+            gpsStatusMessage = "Location permission is required to capture coordinates."
+        }
+    }
+
+    // Runtime permissions are requested contextually, when the user taps the feature.
+    val requestLocationPermission = rememberPermissionRequest(LOCATION_PERMISSIONS, requireAll = false) { result ->
+        locationPermanentlyDenied = result == PermissionResult.PERMANENTLY_DENIED
+        when (result) {
+            PermissionResult.GRANTED -> acquireLocation()
+            PermissionResult.DENIED ->
+                gpsStatusMessage = "Location permission denied. Tap 'Acquire' again to allow it."
+            PermissionResult.PERMANENTLY_DENIED ->
+                gpsStatusMessage = "Location permission is blocked. Enable it in App Settings."
+        }
+    }
+
+    val requestCameraPermission = rememberPermissionRequest(arrayOf(Manifest.permission.CAMERA), requireAll = true) { result ->
+        cameraPermanentlyDenied = result == PermissionResult.PERMANENTLY_DENIED
+        when (result) {
+            PermissionResult.GRANTED -> {
+                cameraPermissionMessage = null
+                onNavigateToCamera(localId)
             }
-            .addOnFailureListener { e ->
-                isAcquiringGps = false
-                gpsStatusMessage = "GPS Error: ${e.message}"
-            }
+            PermissionResult.DENIED ->
+                cameraPermissionMessage = "Camera permission is required to capture photo evidence. Tap the card again to allow it."
+            PermissionResult.PERMANENTLY_DENIED ->
+                cameraPermissionMessage = "Camera permission is blocked. Enable it in App Settings to capture photo evidence."
+        }
     }
 
     Column(
@@ -255,7 +306,7 @@ fun NewInspectionScreen(
                         }
 
                         Button(
-                            onClick = { acquireLocation() },
+                            onClick = { requestLocationPermission() },
                             enabled = !isAcquiringGps,
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan),
                             shape = RoundedCornerShape(8.dp)
@@ -267,6 +318,12 @@ fun NewInspectionScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Acquire", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
+                        }
+                    }
+
+                    if (locationPermanentlyDenied) {
+                        TextButton(onClick = { context.openAppSettings() }) {
+                            Text("Open App Settings", color = PrimaryCyan, fontSize = 13.sp)
                         }
                     }
                 }
@@ -282,8 +339,8 @@ fun NewInspectionScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        // Navigate to Camera capture screen passing inspection localId
-                        onNavigateToCamera(localId)
+                        // Requests CAMERA if needed, then opens the CameraX capture screen
+                        requestCameraPermission()
                     },
                 color = SurfaceDark,
                 shape = RoundedCornerShape(12.dp),
@@ -311,6 +368,24 @@ fun NewInspectionScreen(
                         )
                     }
                     Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted)
+                }
+            }
+
+            cameraPermissionMessage?.let { message ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = WarningAmber.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(message, color = WarningAmber, fontSize = 13.sp)
+                        if (cameraPermanentlyDenied) {
+                            TextButton(onClick = { context.openAppSettings() }) {
+                                Text("Open App Settings", color = PrimaryCyan, fontSize = 13.sp)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -417,3 +492,8 @@ fun NewInspectionScreen(
         }
     }
 }
+
+private val LOCATION_PERMISSIONS = arrayOf(
+    Manifest.permission.ACCESS_FINE_LOCATION,
+    Manifest.permission.ACCESS_COARSE_LOCATION
+)
