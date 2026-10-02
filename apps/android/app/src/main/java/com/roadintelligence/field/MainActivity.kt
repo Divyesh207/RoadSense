@@ -46,6 +46,10 @@ class MainActivity : ComponentActivity() {
 
                 var selectedNavTab by remember { mutableStateOf(NavItem.HOME) }
 
+                // Hoisted so the in-progress inspection survives switching to the camera
+                // screen; replaced with a fresh form once it is saved/queued or abandoned.
+                var inspectionForm by remember { mutableStateOf(NewInspectionFormState()) }
+
                 when (val screen = currentScreen) {
                     is Screen.Login -> {
                         LoginScreen(
@@ -118,10 +122,12 @@ class MainActivity : ComponentActivity() {
 
                                     NavItem.NEW_INSPECTION -> {
                                         NewInspectionScreen(
+                                            form = inspectionForm,
                                             inspectionRepository = inspectionRepository,
                                             roadRepository = roadRepository,
                                             syncRepository = syncRepository,
                                             onNavigateBack = {
+                                                inspectionForm = NewInspectionFormState()
                                                 selectedNavTab = NavItem.HOME
                                                 currentScreen = Screen.Home
                                             },

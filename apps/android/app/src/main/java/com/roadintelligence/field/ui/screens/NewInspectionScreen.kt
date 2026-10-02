@@ -37,9 +37,27 @@ import com.roadintelligence.field.ui.theme.*
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+/**
+ * Inspection form data that must survive leaving the composition, e.g. while the
+ * CameraX screen replaces this one. Owned by MainActivity; photos captured on the
+ * camera screen are stored under [localId], so it must not change mid-inspection.
+ */
+class NewInspectionFormState {
+    var localId by mutableStateOf(UUID.randomUUID().toString())
+    var clientId by mutableStateOf(UUID.randomUUID().toString())
+    var selectedRoad by mutableStateOf<Road?>(null)
+    var selectedSegment by mutableStateOf<RoadSegment?>(null)
+    var latitude by mutableStateOf<Double?>(null)
+    var longitude by mutableStateOf<Double?>(null)
+    var accuracyMeters by mutableStateOf<Float?>(null)
+    var gpsStatusMessage by mutableStateOf("Tap 'Acquire GPS' to capture coordinates")
+    var notes by mutableStateOf("")
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewInspectionScreen(
+    form: NewInspectionFormState,
     inspectionRepository: InspectionRepository,
     roadRepository: RoadRepository,
     syncRepository: SyncRepository,
@@ -50,30 +68,30 @@ fun NewInspectionScreen(
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-    // Local inspection state
-    val localId = remember { UUID.randomUUID().toString() }
-    val clientId = remember { UUID.randomUUID().toString() }
+    // Inspection data lives in the hoisted form state (survives camera navigation)
+    val localId = form.localId
+    val clientId = form.clientId
 
     val roads by roadRepository.getCachedRoads().collectAsState(initial = emptyList())
-    var selectedRoad by remember { mutableStateOf<Road?>(null) }
+    var selectedRoad by form::selectedRoad
     var roadDropdownExpanded by remember { mutableStateOf(false) }
 
     val segments by (if (selectedRoad != null) roadRepository.getCachedSegments(selectedRoad!!.id) else null)
         ?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
-    var selectedSegment by remember { mutableStateOf<RoadSegment?>(null) }
+    var selectedSegment by form::selectedSegment
     var segmentDropdownExpanded by remember { mutableStateOf(false) }
 
-    var latitude by remember { mutableStateOf<Double?>(null) }
-    var longitude by remember { mutableStateOf<Double?>(null) }
-    var accuracyMeters by remember { mutableStateOf<Float?>(null) }
+    var latitude by form::latitude
+    var longitude by form::longitude
+    var accuracyMeters by form::accuracyMeters
     var isAcquiringGps by remember { mutableStateOf(false) }
-    var gpsStatusMessage by remember { mutableStateOf("Tap 'Acquire GPS' to capture coordinates") }
+    var gpsStatusMessage by form::gpsStatusMessage
     var locationPermanentlyDenied by remember { mutableStateOf(false) }
 
     var cameraPermissionMessage by remember { mutableStateOf<String?>(null) }
     var cameraPermanentlyDenied by remember { mutableStateOf(false) }
 
-    var notes by remember { mutableStateOf("") }
+    var notes by form::notes
     var mediaList by remember { mutableStateOf<List<InspectionMedia>>(emptyList()) }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -286,7 +304,7 @@ fun NewInspectionScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                             if (latitude != null && longitude != null) {
                                 Text(
                                     text = "%.6f, %.6f".format(latitude, longitude),
