@@ -30,8 +30,10 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
-    var email by remember { mutableStateOf("inspector@example.com") }
-    var password by remember { mutableStateOf("Password123!") }
+    // No pre-filled credentials: accounts are created with `python -m app.bootstrap`
+    // (services/api/app/bootstrap.py) or by an administrator.
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }

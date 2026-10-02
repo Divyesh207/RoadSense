@@ -1,7 +1,9 @@
 package com.roadintelligence.field.data.repository
 
 import com.roadintelligence.field.data.local.SecureSessionManager
+import com.google.gson.Gson
 import com.roadintelligence.field.data.remote.ApiService
+import com.roadintelligence.field.data.remote.dto.ApiEnvelope
 import com.roadintelligence.field.data.remote.dto.LoginRequestDto
 import com.roadintelligence.field.domain.model.UserSession
 import com.roadintelligence.field.domain.repository.AuthRepository
@@ -39,7 +41,11 @@ class AuthRepositoryImpl(
                 sessionManager.saveSession(session)
                 Result.success(session)
             } else {
-                val errorMsg = response.body()?.error?.message ?: response.message() ?: "Authentication failed"
+                // Non-2xx bodies arrive in errorBody(), e.g. 401 INVALID_CREDENTIALS.
+                val apiError = response.errorBody()?.string()?.let { raw ->
+                    runCatching { Gson().fromJson(raw, ApiEnvelope::class.java)?.error?.message }.getOrNull()
+                }
+                val errorMsg = apiError ?: response.body()?.error?.message ?: response.message().ifBlank { "Authentication failed" }
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
