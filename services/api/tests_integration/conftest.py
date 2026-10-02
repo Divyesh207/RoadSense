@@ -34,9 +34,12 @@ if PG_URL:
 def pytest_collection_modifyitems(config, items):
     if PG_URL:
         return
+    # Collection hooks are session-wide: only touch this directory's tests.
+    here = Path(__file__).resolve().parent
     skip = pytest.mark.skip(reason="POSTGIS_TEST_DATABASE_URL not set; real PostGIS integration tests skipped")
     for item in items:
-        item.add_marker(skip)
+        if here in Path(str(item.path)).resolve().parents:
+            item.add_marker(skip)
 
 
 def _recreate_database() -> None:
@@ -107,6 +110,8 @@ async def pg_engine(migrated_database):
 
 @pytest_asyncio.fixture
 async def session_factory(pg_engine):
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
     from app.core.security import hash_password
     from app.models.identity import (
         Organization,
@@ -115,7 +120,6 @@ async def session_factory(pg_engine):
         Role,
         User,
     )
-    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
     factory = async_sessionmaker(bind=pg_engine, expire_on_commit=False, class_=AsyncSession)
     async with factory() as session:
@@ -151,9 +155,10 @@ def local_storage(tmp_path, monkeypatch):
 
 @pytest_asyncio.fixture
 async def api_client(session_factory, local_storage):
+    from httpx import ASGITransport, AsyncClient
+
     from app.core.database import get_db
     from app.main import app
-    from httpx import ASGITransport, AsyncClient
 
     async def override_get_db():
         async with session_factory() as session:
