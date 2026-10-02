@@ -5,6 +5,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
+from sqlalchemy import select
+
 from app.models.ai import AIDetection, AIProcessingRun
 from app.models.inspection import Inspection, InspectionMedia
 from app.models.jobs import ProcessingJob
@@ -13,7 +15,6 @@ from pipelines.media_pipeline import (
     _default_media_resolver,
     execute_inspection_pipeline,
 )
-from sqlalchemy import select
 
 
 def _now() -> datetime:

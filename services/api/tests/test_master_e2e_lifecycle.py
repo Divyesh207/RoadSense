@@ -1,4 +1,3 @@
-import math
 import uuid
 from datetime import datetime, timezone
 
@@ -8,23 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token
-from app.models.ai import AIDetection, AIModel, AIProcessingRun, DamageType
+from app.models.ai import DamageType
 from app.models.damage import DamageRecord
-from app.models.history import AuditLog, GeneratedReport
-from app.models.identity import Organization, OrganizationMembership, Role, User
-from app.models.inspection import Inspection, InspectionMedia
-from app.models.intelligence import RoadHealthSnapshot
-from app.models.maintenance import MaintenanceJob
-from app.models.repair import RepairEvidence, RepairVerification
-from app.models.road import Road, RoadSegment
 from tests.conftest import (
     ADMIN_USER_ID,
     AUTHORITY_USER_ID,
     CREW_USER_ID,
     INSPECTOR_USER_ID,
     ORG_1_ID,
-    ORG_2_ID,
-    OTHER_ORG_USER_ID,
 )
 
 

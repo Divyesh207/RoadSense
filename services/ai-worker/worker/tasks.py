@@ -4,7 +4,6 @@ import uuid
 from typing import Any
 
 from pipelines.media_pipeline import execute_inspection_pipeline, execute_media_pipeline
-
 from worker.celery_app import celery_app
 from worker.db import WorkerSessionLocal
 

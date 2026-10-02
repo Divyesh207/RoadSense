@@ -6,6 +6,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+
 from postprocessing.nms import RawDetection, apply_nms
 
 logger = logging.getLogger(__name__)

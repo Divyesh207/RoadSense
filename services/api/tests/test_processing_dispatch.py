@@ -3,10 +3,10 @@
 import uuid
 
 import pytest
-from app.core.task_queue import TaskDispatchError
-from app.models.jobs import ProcessingJob
 from sqlalchemy import select
 
+from app.core.task_queue import TaskDispatchError
+from app.models.jobs import ProcessingJob
 from tests.conftest import ORG_1_ID
 from tests.test_inspections import get_token
 

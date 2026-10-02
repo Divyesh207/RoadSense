@@ -3,6 +3,7 @@ import json
 import cv2
 import numpy as np
 import pytest
+
 from inference.detector import OpenCVHeuristicDetector, YOLODetector, map_class_name
 from inference.model_registry import (
     FALLBACK_MODEL_ID,

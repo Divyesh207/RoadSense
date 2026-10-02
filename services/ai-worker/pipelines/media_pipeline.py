@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from inference.detector import BaseDetector, DetectionResult
 from inference.model_registry import (
     FALLBACK_MODEL_ID,
@@ -23,8 +26,6 @@ from preprocessing.validator import (
     validate_media_file,
 )
 from preprocessing.video import sample_video_frames
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 

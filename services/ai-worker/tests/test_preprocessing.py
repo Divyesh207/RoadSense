@@ -3,6 +3,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
+
 from preprocessing.image import assess_image_quality, preprocess_image
 from preprocessing.video import sample_video_frames
 

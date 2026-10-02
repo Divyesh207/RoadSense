@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime, timezone
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.ai import DamageType
 from app.models.damage import DamageRecord
 from app.models.history import RecurrenceRecord
 from app.models.inspection import Inspection, InspectionMedia

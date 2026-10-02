@@ -1,8 +1,8 @@
 import uuid
 
 import pytest
-from app.models.inspection import Inspection
 
+from app.models.inspection import Inspection
 from tests.conftest import (
     INSPECTOR_USER_ID,
     ORG_1_ID,

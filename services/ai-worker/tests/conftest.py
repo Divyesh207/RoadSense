@@ -15,6 +15,12 @@ if str(api_dir) not in sys.path:
     sys.path.insert(0, str(api_dir))
 
 import geoalchemy2.admin.dialects.sqlite as ga_sqlite
+from geoalchemy2 import Geometry
+from geoalchemy2.elements import WKBElement, WKTElement
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.pool import StaticPool
+
 from app.core.database import Base
 from app.models.ai import (
     AIDetection,
@@ -25,11 +31,6 @@ from app.models.ai import (
 from app.models.inspection import Inspection, InspectionMedia
 from app.models.jobs import ProcessingJob
 from app.models.road import Road, RoadSegment
-from geoalchemy2 import Geometry
-from geoalchemy2.elements import WKBElement, WKTElement
-from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.pool import StaticPool
 
 # Bypass SpatiaLite DDL event triggers when testing on vanilla SQLite
 ga_sqlite.after_create = lambda *args, **kwargs: None

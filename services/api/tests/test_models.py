@@ -1,3 +1,5 @@
+from geoalchemy2 import Geometry
+
 from app.models import (
     AIDetection,
     AIProcessingRun,
@@ -22,7 +24,6 @@ from app.models import (
     RoadHealthSnapshot,
     RoadSegment,
 )
-from geoalchemy2 import Geometry
 
 
 def test_table_inventory():

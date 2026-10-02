@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 
 import pytest
 from httpx import AsyncClient
@@ -183,7 +182,7 @@ async def test_audit_service_and_api(
     assert res_cross.json()["error"]["code"] == "ORGANIZATION_ACCESS_DENIED"
 
     # Also check that an admin in ORG_2 cannot see ORG_1 logs (strict tenant isolation)
-    from app.models.identity import Role, User, OrganizationMembership
+    from app.models.identity import OrganizationMembership, Role, User
     admin_org2_id = uuid.uuid4()
     admin_role = (await db_session.execute(select(Role).where(Role.code == "ADMINISTRATOR"))).scalar_one()
     u2 = User(

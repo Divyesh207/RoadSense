@@ -5,12 +5,13 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
+from sqlalchemy import select
+
 from app.models.ai import AIDetection, AIProcessingRun
 from app.models.inspection import Inspection, InspectionMedia
 from app.models.jobs import ProcessingJob
 from app.services.spatial import point_to_wkt
 from pipelines.media_pipeline import execute_media_pipeline
-from sqlalchemy import select
 
 
 @pytest.fixture

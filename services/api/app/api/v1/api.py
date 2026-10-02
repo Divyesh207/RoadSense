@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     analytics,
+    audit,
     auth,
     damages,
     gis,
@@ -17,7 +18,6 @@ from app.api.v1.endpoints import (
     roads,
     storage,
 )
-from app.api.v1.endpoints import audit
 
 api_router = APIRouter()
 

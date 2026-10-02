@@ -4,6 +4,9 @@ from typing import Annotated
 
 import jwt
 import pytest
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+
 from app.core.auth import (
     OrgContext,
     get_current_org_context,
@@ -23,9 +26,6 @@ from app.core.security import (
 from app.main import app
 from app.models.history import AuditLog
 from app.models.identity import RefreshToken
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
-
 from tests.conftest import (
     AUTHORITY_USER_ID,
     INSPECTOR_USER_ID,

@@ -3,13 +3,13 @@ from datetime import datetime, timezone
 
 import pytest
 import pytest_asyncio
+from geoalchemy2.elements import WKTElement
+from sqlalchemy import select
+
 from app.models.ai import DamageType
 from app.models.damage import DamageRecord
 from app.models.inspection import Inspection
 from app.models.road import Road, RoadSegment
-from geoalchemy2.elements import WKTElement
-from sqlalchemy import select
-
 from tests.conftest import CREW_USER_ID, ORG_1_ID, ORG_2_ID
 
 

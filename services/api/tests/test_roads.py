@@ -1,8 +1,8 @@
 import uuid
 
 import pytest
-from app.models.road import Road
 
+from app.models.road import Road
 from tests.conftest import ORG_1_ID, ORG_2_ID
 
 

@@ -1,11 +1,12 @@
 import uuid
 from datetime import datetime, timezone
+
 import pytest
 from httpx import AsyncClient
 
+from app.models.ai import DamageType
 from app.models.damage import DamageRecord
 from app.models.inspection import Inspection
-from app.models.ai import DamageType
 from app.models.road import Road, RoadSegment
 from tests.conftest import ORG_1_ID, ORG_2_ID
 

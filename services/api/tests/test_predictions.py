@@ -3,14 +3,14 @@ from datetime import datetime, timezone
 
 import pytest
 import pytest_asyncio
+from sqlalchemy import select
+
 from app.models.ai import DamageType
 from app.models.damage import DamageRecord
 from app.models.inspection import Inspection
 from app.models.intelligence import RoadHealthSnapshot
 from app.models.road import Road, RoadSegment
 from app.services.spatial import geojson_to_wkt, point_to_wkt
-from sqlalchemy import select
-
 from tests.conftest import (
     INSPECTOR_USER_ID,
     ORG_1_ID,
