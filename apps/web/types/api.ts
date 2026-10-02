@@ -34,12 +34,28 @@ export interface PaginatedResponseEnvelope<T> {
   meta: PaginationMeta;
 }
 
-export interface UserProfile {
+export interface OrganizationMembershipInfo {
+  organization_id: string;
+  organization_name: string;
+  organization_code: string;
+  role_id: string;
+  role_code: string;
+  status: string;
+  permissions: string[];
+}
+
+// GET /auth/me
+export interface CurrentUserData {
   id: string;
   email: string;
   full_name: string;
-  phone_number?: string;
+  phone?: string | null;
   is_active: boolean;
+  organizations: OrganizationMembershipInfo[];
+}
+
+// CurrentUserData plus the active membership resolved on the client.
+export interface UserProfile extends CurrentUserData {
   role: string;
   organization_id?: string;
   organization_name?: string;
@@ -52,8 +68,8 @@ export interface AuthTokens {
   expires_in: number;
 }
 
+// POST /auth/login (tokens only; the profile comes from /auth/me)
 export interface LoginResponseData {
-  user: UserProfile;
   access_token: string;
   refresh_token: string;
   token_type: string;

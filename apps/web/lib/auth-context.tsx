@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { UserProfile } from "@/types/api";
+import { CurrentUserData, UserProfile } from "@/types/api";
 import { api } from "@/lib/api-client";
 
 interface AuthContextType {
@@ -23,6 +23,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [organizationId, setOrgId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Resolves the active membership (saved choice if still valid, else the first)
+  // from /auth/me and persists the organization used for X-Organization-ID.
+  const loadProfile = async (preferredOrgId: string | null) => {
+    const res = await api.auth.me();
+    const me: CurrentUserData | null = res.data ?? null;
+    if (!me) throw new Error("Empty profile response");
+    const membership =
+      me.organizations.find((m) => m.organization_id === preferredOrgId) ?? me.organizations[0];
+    setUser({
+      ...me,
+      role: membership?.role_code ?? "",
+      organization_id: membership?.organization_id,
+      organization_name: membership?.organization_name,
+    });
+    if (membership) {
+      setOrgId(membership.organization_id);
+      localStorage.setItem("organization_id", membership.organization_id);
+    } else {
+      setOrgId(null);
+      localStorage.removeItem("organization_id");
+    }
+  };
+
   useEffect(() => {
     // Check initial auth state from localStorage
     const savedToken = localStorage.getItem("access_token");
@@ -30,21 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (savedToken) {
       setToken(savedToken);
-      if (savedOrg) {
-        setOrgId(savedOrg);
-      }
-      // Load current user profile from /auth/me
-      api.auth
-        .me()
-        .then((res) => {
-          if (res.data) {
-            setUser(res.data);
-            if (res.data.organization_id && !savedOrg) {
-              setOrgId(res.data.organization_id);
-              localStorage.setItem("organization_id", res.data.organization_id);
-            }
-          }
-        })
+      loadProfile(savedOrg)
         .catch(() => {
           // If token invalid, clear
           localStorage.removeItem("access_token");
@@ -63,13 +72,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const res = await api.auth.login(email, password);
-      if (res.data) {
-        setToken(res.data.access_token);
-        setUser(res.data.user);
-        if (res.data.user.organization_id) {
-          setOrgId(res.data.user.organization_id);
-        }
-      }
+      if (!res.data?.access_token) throw new Error("Login response did not include a token");
+      setToken(res.data.access_token);
+      await loadProfile(localStorage.getItem("organization_id"));
+    } catch (err) {
+      localStorage.removeItem("access_token");
+      setToken(null);
+      setUser(null);
+      throw err;
     } finally {
       setIsLoading(false);
     }

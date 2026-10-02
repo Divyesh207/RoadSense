@@ -1,4 +1,5 @@
 import {
+  CurrentUserData,
   DamageRecord,
   DamageReview,
   DamageTrendsData,
@@ -25,7 +26,6 @@ import {
   RoadHealthAnalyticsData,
   RoadSegment,
   SegmentHistoricalTimelineResponse,
-  UserProfile,
   AuditLogItem,
 } from "@/types/api";
 
@@ -89,14 +89,11 @@ class ApiClient {
       });
       if (res.data?.access_token && typeof window !== "undefined") {
         localStorage.setItem("access_token", res.data.access_token);
-        if (res.data.user?.organization_id) {
-          localStorage.setItem("organization_id", res.data.user.organization_id);
-        }
       }
       return res;
     },
-    me: async (): Promise<ResponseEnvelope<UserProfile>> => {
-      return this.request<ResponseEnvelope<UserProfile>>("/auth/me");
+    me: async (): Promise<ResponseEnvelope<CurrentUserData>> => {
+      return this.request<ResponseEnvelope<CurrentUserData>>("/auth/me");
     },
     logout: async (): Promise<void> => {
       if (typeof window !== "undefined") {
