@@ -13,6 +13,12 @@ interface ApiService {
         @Body request: LoginRequestDto
     ): Response<ApiEnvelope<LoginResponseDataDto>>
 
+    // Explicit header: called right after login, before the session is stored.
+    @GET("api/v1/auth/me")
+    suspend fun getCurrentUser(
+        @Header("Authorization") bearer: String
+    ): Response<ApiEnvelope<CurrentUserDto>>
+
     // Roads & Segments
     @GET("api/v1/roads")
     suspend fun getRoads(
@@ -42,19 +48,20 @@ interface ApiService {
     ): Response<ApiEnvelope<InspectionResponseDto>>
 
     // Media Upload Handshake
-    @POST("api/v1/inspections/{id}/upload-url")
+    @POST("api/v1/inspections/{id}/media/upload-url")
     suspend fun requestMediaUploadUrl(
         @Path("id") inspectionId: String,
         @Body request: UploadUrlRequestDto
     ): Response<ApiEnvelope<UploadUrlResponseDto>>
 
-    @POST("api/v1/inspections/{id}/media")
+    @POST("api/v1/inspections/{id}/media/complete")
     suspend fun completeMediaUpload(
         @Path("id") inspectionId: String,
         @Body request: MediaCompleteDto
-    ): Response<ApiEnvelope<Map<String, Any>>>
+    ): Response<ApiEnvelope<InspectionMediaDto>>
 
-    // Direct Binary/Signed URL Upload
+    // Direct binary upload to the signed storage URL (Supabase or local API storage).
+    // AuthInterceptor does not attach platform credentials to non-API hosts.
     @PUT
     suspend fun uploadToSignedUrl(
         @Url uploadUrl: String,
@@ -62,9 +69,9 @@ interface ApiService {
         @Body fileBytes: RequestBody
     ): Response<Unit>
 
-    // Submit for AI Processing
+    // Submit (DRAFT/UPLOADING -> SUBMITTED)
     @POST("api/v1/inspections/{id}/submit")
     suspend fun submitInspection(
         @Path("id") inspectionId: String
-    ): Response<ApiEnvelope<SubmitInspectionResponseDto>>
+    ): Response<ApiEnvelope<InspectionResponseDto>>
 }

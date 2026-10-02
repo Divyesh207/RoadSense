@@ -18,14 +18,21 @@ class AuthRepositoryImpl(
             val response = apiService.login(LoginRequestDto(email, password))
             if (response.isSuccessful && response.body()?.success == true) {
                 val data = response.body()?.data ?: return@withContext Result.failure(Exception("Empty login response"))
-                val org = data.user.organizations.firstOrNull()
+                // Login returns tokens only; the profile and memberships come from /auth/me.
+                val meResponse = apiService.getCurrentUser("Bearer ${data.accessToken}")
+                val user = meResponse.body()?.data
+                if (!meResponse.isSuccessful || user == null) {
+                    return@withContext Result.failure(Exception("Failed to load user profile: HTTP ${meResponse.code()}"))
+                }
+                val org = user.organizations.firstOrNull { it.status == null || it.status == "ACTIVE" }
+                    ?: return@withContext Result.failure(Exception("User has no active organization membership"))
                 val session = UserSession(
-                    userId = data.user.id,
-                    email = data.user.email,
-                    fullName = data.user.fullName,
-                    role = org?.role ?: data.user.role ?: "FIELD_INSPECTOR",
-                    organizationId = org?.organizationId ?: "",
-                    organizationName = org?.organizationName ?: "Default Org",
+                    userId = user.id,
+                    email = user.email,
+                    fullName = user.fullName,
+                    role = org.roleCode,
+                    organizationId = org.organizationId,
+                    organizationName = org.organizationName,
                     accessToken = data.accessToken,
                     refreshToken = data.refreshToken
                 )

@@ -86,7 +86,8 @@ interface SyncQueueDao {
     @Query("SELECT * FROM sync_queue ORDER BY createdAt ASC")
     fun getQueueItems(): Flow<List<SyncQueueEntity>>
 
-    @Query("SELECT * FROM sync_queue WHERE status = 'QUEUED' ORDER BY createdAt ASC")
+    // UPLOAD_FAILED items are included so WorkManager retries pick them up again.
+    @Query("SELECT * FROM sync_queue WHERE status IN ('QUEUED', 'UPLOAD_FAILED') ORDER BY createdAt ASC")
     suspend fun getPendingQueueItems(): List<SyncQueueEntity>
 
     @Query("SELECT * FROM sync_queue WHERE id = :id LIMIT 1")

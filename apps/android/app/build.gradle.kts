@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -81,6 +82,8 @@ dependencies {
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
+    // Generates AppDatabase_Impl / DAO implementations; without it Room fails at runtime.
+    ksp("androidx.room:room-compiler:$roomVersion")
 
     // WorkManager (Background Sync)
     implementation("androidx.work:work-runtime-ktx:2.9.0")

@@ -17,6 +17,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
+import java.time.Instant
 
 class InspectionSyncWorker(
     appContext: Context,
@@ -101,24 +102,23 @@ class InspectionSyncWorker(
 
                     mediaDao.updateMediaStatus(media.localId, UploadStatus.UPLOADING.name, null, null)
 
-                    // Request upload URL
+                    // Request a signed upload URL
                     val uploadUrlResponse = apiService.requestMediaUploadUrl(
                         inspectionId = serverId,
                         request = UploadUrlRequestDto(
-                            mediaType = media.mediaType,
                             filename = file.name,
-                            mimeType = media.mimeType,
-                            fileSizeBytes = file.length()
+                            contentType = media.mimeType,
+                            sizeBytes = file.length()
                         )
                     )
 
                     if (!uploadUrlResponse.isSuccessful || uploadUrlResponse.body()?.data == null) {
-                        throw Exception("Failed to get upload URL: ${uploadUrlResponse.message()}")
+                        throw Exception("Failed to get upload URL: HTTP ${uploadUrlResponse.code()}")
                     }
 
                     val uploadData = uploadUrlResponse.body()!!.data!!
 
-                    // Upload binary to signed URL
+                    // Upload binary to the signed storage URL
                     val requestBody = file.asRequestBody(media.mimeType.toMediaTypeOrNull())
                     val binaryUploadResponse = apiService.uploadToSignedUrl(
                         uploadUrl = uploadData.uploadUrl,
@@ -127,28 +127,41 @@ class InspectionSyncWorker(
                     )
 
                     if (!binaryUploadResponse.isSuccessful) {
-                        throw Exception("Binary upload failed: ${binaryUploadResponse.message()}")
+                        throw Exception("Binary upload failed: HTTP ${binaryUploadResponse.code()}")
                     }
 
-                    // Complete media upload handshake
+                    // Register the uploaded object as inspection media
                     val completeResponse = apiService.completeMediaUpload(
                         inspectionId = serverId,
-                        request = MediaCompleteDto(mediaId = uploadData.mediaId)
+                        request = MediaCompleteDto(
+                            storagePath = uploadData.storagePath,
+                            storageBucket = uploadData.storageBucket,
+                            mediaType = media.mediaType,
+                            mimeType = media.mimeType,
+                            sizeBytes = file.length(),
+                            originalFilename = file.name,
+                            capturedAt = Instant.ofEpochMilli(media.capturedAt).toString(),
+                            location = if (media.latitude != null && media.longitude != null) {
+                                LocationDto(latitude = media.latitude, longitude = media.longitude)
+                            } else null
+                        )
                     )
 
-                    if (!completeResponse.isSuccessful) {
-                        throw Exception("Media completion failed: ${completeResponse.message()}")
+                    val mediaServerId = completeResponse.body()?.data?.id
+                    if (!completeResponse.isSuccessful || mediaServerId == null) {
+                        throw Exception("Media completion failed: HTTP ${completeResponse.code()}")
                     }
 
-                    mediaDao.updateMediaStatus(media.localId, UploadStatus.COMPLETED.name, uploadData.mediaId, null)
+                    mediaDao.updateMediaStatus(media.localId, UploadStatus.COMPLETED.name, mediaServerId, null)
                 }
 
-                // 3. Submit inspection for AI processing
+                // 3. Submit inspection (DRAFT/UPLOADING -> SUBMITTED). 409 means a
+                // previous attempt already submitted it, which is fine on retry.
                 val submitResponse = apiService.submitInspection(serverId)
-                val finalStatus = if (submitResponse.isSuccessful) {
-                    submitResponse.body()?.data?.status ?: "SUBMITTED"
-                } else {
-                    "SUBMITTED"
+                val finalStatus = when {
+                    submitResponse.isSuccessful -> submitResponse.body()?.data?.status ?: "SUBMITTED"
+                    submitResponse.code() == 409 -> localInspection.status.takeIf { it != "DRAFT" } ?: "SUBMITTED"
+                    else -> throw Exception("Submit failed: HTTP ${submitResponse.code()}")
                 }
 
                 // 4. Mark inspection and sync queue item completed
