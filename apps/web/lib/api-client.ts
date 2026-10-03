@@ -191,6 +191,13 @@ class ApiClient {
     get: async (damageId: string): Promise<ResponseEnvelope<DamageRecord>> => {
       return this.request<ResponseEnvelope<DamageRecord>>(`/damages/${damageId}`);
     },
+    // Promote an AI detection to a damage record (PENDING_REVIEW). Idempotent per detection; a repeat
+    // sighting within the GPS grouping radius returns the existing open record it was grouped into.
+    promoteDetection: async (detectionId: string): Promise<ResponseEnvelope<DamageRecord>> => {
+      return this.request<ResponseEnvelope<DamageRecord>>(`/damages/from-detection/${detectionId}`, {
+        method: "POST",
+      });
+    },
     review: async (
       damageId: string,
       payload: { decision: "CONFIRMED" | "REJECTED"; severity?: string; damage_type_id?: string; notes?: string }

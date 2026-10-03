@@ -83,6 +83,11 @@ export default function InspectionDetailPage() {
   const [damages, setDamages] = useState<Section<DamageRecord>>(emptySection);
   const [audit, setAudit] = useState<Section<AuditLogItem>>(emptySection);
 
+  // Promotion of AI detections to damage records (always a manual, per-detection action).
+  const [promoted, setPromoted] = useState<Record<string, DamageRecord>>({});
+  const [promoting, setPromoting] = useState<string | null>(null);
+  const [promotionNotice, setPromotionNotice] = useState<{ ok: boolean; text: string } | null>(null);
+
   const load = useCallback(async () => {
     if (!inspectionId) return;
     setLoading(true);
@@ -150,6 +155,52 @@ export default function InspectionDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Refresh inspection status and its damage records without resetting the page.
+  const refreshAfterPromotion = async () => {
+    if (!inspectionId) return;
+    const [inspRes, dmgRes] = await Promise.allSettled([
+      api.inspections.get(inspectionId),
+      api.damages.list({ inspection_id: inspectionId, page_size: 100 }),
+    ]);
+    if (inspRes.status === "fulfilled" && inspRes.value.data) setInspection(inspRes.value.data);
+    setDamages(
+      dmgRes.status === "fulfilled"
+        ? { loading: false, data: dmgRes.value.data ?? [], error: null }
+        : { loading: false, data: [], error: errorMessage(dmgRes.reason, "Failed to load damage records.") }
+    );
+  };
+
+  const promoteDetection = async (d: InspectionDetection) => {
+    if (
+      isHeuristic(d.detection_method, d.score_type) &&
+      !window.confirm(
+        "This candidate was produced by the OpenCV heuristic fallback (rule-based, not the trained model) and is " +
+          "unverified. Promote it to a damage record for human review anyway?"
+      )
+    ) {
+      return;
+    }
+    setPromoting(d.id);
+    setPromotionNotice(null);
+    try {
+      const rec = (await api.damages.promoteDetection(d.id)).data;
+      if (!rec) throw new Error("The API returned no damage record.");
+      setPromoted((prev) => ({ ...prev, [d.id]: rec }));
+      const grouped = !!rec.source_detection_id && rec.source_detection_id !== d.id;
+      setPromotionNotice({
+        ok: true,
+        text: grouped
+          ? `Grouped into existing damage record ${rec.id.slice(0, 8)} (${rec.status}) as a repeat sighting of the same damage.`
+          : `Damage record ${rec.id.slice(0, 8)} created with status ${rec.status}. Review it in Damage Intelligence.`,
+      });
+      await refreshAfterPromotion();
+    } catch (err) {
+      setPromotionNotice({ ok: false, text: `Promotion failed: ${errorMessage(err, "unknown error")}` });
+    } finally {
+      setPromoting(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -328,6 +379,17 @@ export default function InspectionDetailPage() {
         )}
 
         {/* AI detections */}
+        {promotionNotice && (
+          <p
+            className={`text-xs px-3 py-2 rounded border ${
+              promotionNotice.ok
+                ? "text-emerald-300 border-emerald-800/50 bg-emerald-950/30"
+                : "text-red-300 border-red-800/50 bg-red-950/30"
+            }`}
+          >
+            {promotionNotice.text}
+          </p>
+        )}
         <Panel title="AI Detections" icon={<Cpu className="h-3.5 w-3.5 text-blue-400" />} section={detections} empty="No AI detections for this inspection yet.">
           {heuristicOnly && (
             <p className="px-4 py-2 text-[11px] text-amber-400 bg-amber-950/30 border-b border-slate-800">
@@ -344,10 +406,14 @@ export default function InspectionDetailPage() {
                 <th className="py-2 px-4 font-medium">Severity</th>
                 <th className="py-2 px-4 font-medium">Bounding Box (normalized)</th>
                 <th className="py-2 px-4 font-medium">Location</th>
+                <th className="py-2 px-4 font-medium">Damage record</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-300">
-              {detections.data.map((d) => (
+              {detections.data.map((d) => {
+                const record = promoted[d.id] ?? damages.data.find((r) => r.source_detection_id === d.id);
+                const heuristic = isHeuristic(d.detection_method, d.score_type);
+                return (
                 <tr key={d.id}>
                   <td className="py-2 px-4 text-white">{d.damage_type}</td>
                   <td className="py-2 px-4">{(d.confidence * 100).toFixed(1)}%</td>
@@ -358,8 +424,32 @@ export default function InspectionDetailPage() {
                   <td className="py-2 px-4 text-slate-400">
                     {d.location ? `${d.location.latitude.toFixed(5)}, ${d.location.longitude.toFixed(5)}` : "—"}
                   </td>
+                  <td className="py-2 px-4">
+                    {record ? (
+                      <Link href="/damages" className="inline-flex items-center gap-1.5 hover:text-blue-400">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadgeClass(record.status)}`}>
+                          {record.status}
+                        </span>
+                        <span className="font-mono text-[10px] text-slate-500">{record.id.slice(0, 8)}</span>
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => promoteDetection(d)}
+                        disabled={promoting !== null}
+                        title={heuristic ? "Heuristic fallback candidate (unverified)" : "Trained-model detection"}
+                        className={`px-2 py-1 rounded text-[11px] font-medium disabled:opacity-50 ${
+                          heuristic
+                            ? "border border-amber-700/60 text-amber-300 hover:bg-amber-950/40"
+                            : "bg-blue-600 hover:bg-blue-500 text-white"
+                        }`}
+                      >
+                        {promoting === d.id ? "Promoting…" : heuristic ? "Promote (unverified heuristic)" : "Promote to Damage Record"}
+                      </button>
+                    )}
+                  </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </Panel>
