@@ -20,6 +20,28 @@ async def get_token_for(async_client, email="authority@example.com", password="A
     return resp.json()["data"]["access_token"]
 
 
+@pytest.fixture(autouse=True)
+def evidence_uploaded_before_complete(async_client):
+    """These tests exercise completion/verification logic, not the upload itself: stage the
+    object in (test) local storage as the client's signed PUT would, so completion's
+    object-exists check passes."""
+    from app.services.storage import get_storage_backend
+
+    original_post = async_client.post
+
+    async def post(url, *args, **kwargs):
+        if url.endswith("/repair-evidence/complete"):
+            body = kwargs.get("json") or {}
+            get_storage_backend().put_object(
+                body.get("storage_bucket", "repair-evidence"), body["storage_path"], b"\xff\xd8test", "image/jpeg"
+            )
+        return await original_post(url, *args, **kwargs)
+
+    async_client.post = post
+    yield
+    async_client.post = original_post
+
+
 async def get_crew_token(async_client):
     return await get_token_for(async_client, "crew@example.com", "CrewSecret123!")
 

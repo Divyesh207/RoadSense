@@ -16,6 +16,7 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 PROCESS_INSPECTION_TASK = "tasks.process_inspection"
+VERIFY_REPAIR_TASK = "tasks.verify_repair"
 
 
 class TaskDispatchError(RuntimeError):
@@ -67,5 +68,27 @@ def dispatch_inspection_processing(
         )
     except (OperationalError, KombuError, OSError, TimeoutError) as exc:
         logger.error("Failed to dispatch %s for job %s: %s", PROCESS_INSPECTION_TASK, job_id, exc)
+        raise TaskDispatchError(str(exc)) from exc
+    return result.id
+
+
+def dispatch_repair_verification(
+    job_id: uuid.UUID,
+    verification_id: uuid.UUID,
+    organization_id: uuid.UUID,
+) -> str:
+    """Publish the before/after repair image analysis task (task id = job id)."""
+    try:
+        result = get_celery_producer().send_task(
+            VERIFY_REPAIR_TASK,
+            kwargs={
+                "job_id": str(job_id),
+                "verification_id": str(verification_id),
+                "organization_id": str(organization_id),
+            },
+            task_id=str(job_id),
+        )
+    except (OperationalError, KombuError, OSError, TimeoutError) as exc:
+        logger.error("Failed to dispatch %s for job %s: %s", VERIFY_REPAIR_TASK, job_id, exc)
         raise TaskDispatchError(str(exc)) from exc
     return result.id

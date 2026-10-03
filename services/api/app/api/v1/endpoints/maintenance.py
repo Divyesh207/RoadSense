@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from geoalchemy2.shape import to_shape
@@ -11,11 +11,14 @@ from sqlalchemy.orm import selectinload
 from app.core.auth import OrgContext, require_permission
 from app.core.database import get_db
 from app.models.damage import DamageRecord
+from app.models.identity import Organization, OrganizationMembership, Role, User
+from app.models.intelligence import RoadHealthSnapshot
 from app.models.maintenance import (
     MaintenanceDamageLink,
     MaintenanceJob,
     MaintenanceStatusHistory,
 )
+from app.models.road import Road, RoadSegment
 from app.schemas.common import (
     PaginatedResponseEnvelope,
     PaginationMeta,
@@ -33,12 +36,14 @@ from app.schemas.maintenance import (
     MaintenanceStatusTransition,
 )
 from app.services.maintenance_service import (
+    VALID_TRANSITIONS,
     assign_maintenance_job,
     create_maintenance_job,
     link_damages_to_job,
     transition_job_status,
     update_maintenance_job,
 )
+from app.services.spatial import wkt_or_geom_to_point
 
 router = APIRouter()
 
@@ -186,6 +191,134 @@ async def create_job(
 
 
 @router.get(
+    "/assignees",
+    response_model=ResponseEnvelope[dict[str, Any]],
+    summary="Users and contractor organizations a maintenance job can be assigned to",
+)
+async def list_assignees(
+    org_context: Annotated[OrgContext, Depends(require_permission("maintenance:assign"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Only existing records: active members of this organization and active CONTRACTOR organizations."""
+    members = (
+        await db.execute(
+            select(User, Role.code)
+            .join(OrganizationMembership, OrganizationMembership.user_id == User.id)
+            .join(Role, Role.id == OrganizationMembership.role_id)
+            .where(
+                OrganizationMembership.organization_id == org_context.organization_id,
+                OrganizationMembership.status == "ACTIVE",
+                User.is_active.is_(True),
+            )
+            .order_by(User.full_name)
+        )
+    ).all()
+    contractors = (
+        await db.execute(
+            select(Organization)
+            .where(Organization.organization_type == "CONTRACTOR", Organization.is_active.is_(True))
+            .order_by(Organization.name)
+        )
+    ).scalars().all()
+    return ResponseEnvelope(
+        data={
+            "users": [
+                {"id": str(u.id), "full_name": u.full_name, "email": u.email, "role": role} for u, role in members
+            ],
+            "contractor_organizations": [{"id": str(o.id), "name": o.name, "code": o.code} for o in contractors],
+        }
+    )
+
+
+@router.get(
+    "/{maintenance_job_id}/context",
+    response_model=ResponseEnvelope[dict[str, Any]],
+    summary="Job with linked damage, original inspection, road/segment, health and assignment context",
+)
+async def get_job_context(
+    maintenance_job_id: uuid.UUID,
+    org_context: Annotated[OrgContext, Depends(require_permission("maintenance:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    job = await db.get(MaintenanceJob, maintenance_job_id)
+    if not job or job.organization_id != org_context.organization_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "JOB_NOT_FOUND", "message": "Maintenance job was not found."},
+        )
+    links = (
+        await db.execute(
+            select(MaintenanceDamageLink)
+            .options(selectinload(MaintenanceDamageLink.damage_record).selectinload(DamageRecord.damage_type))
+            .where(MaintenanceDamageLink.maintenance_job_id == job.id)
+            .order_by(MaintenanceDamageLink.created_at)
+        )
+    ).scalars().all()
+    road = await db.get(Road, job.road_id) if job.road_id else None
+    segment = await db.get(RoadSegment, job.road_segment_id) if job.road_segment_id else None
+    damages = []
+    for link in links:
+        d = link.damage_record
+        if d is None:
+            continue
+        coords = wkt_or_geom_to_point(d.location) if d.location is not None else None
+        damages.append({
+            "id": str(d.id),
+            "relationship_type": link.relationship_type,
+            "damage_type": d.damage_type.code if d.damage_type else None,
+            "severity": d.severity,
+            "status": d.status,
+            "source_type": d.source_type,
+            "confidence": float(d.confidence) if d.confidence is not None else None,
+            "observation_count": d.observation_count,
+            "inspection_id": str(d.inspection_id) if d.inspection_id else None,
+            "source_detection_id": str(d.source_detection_id) if d.source_detection_id else None,
+            "road_id": str(d.road_id) if d.road_id else None,
+            "road_segment_id": str(d.road_segment_id) if d.road_segment_id else None,
+            "location": {"latitude": coords[0], "longitude": coords[1]} if coords else None,
+            "detected_at": d.detected_at.isoformat() if d.detected_at else None,
+        })
+
+    async def latest_health(segment_id=None, road_id=None):
+        conds = [RoadHealthSnapshot.organization_id == job.organization_id]
+        if segment_id is not None:
+            conds.append(RoadHealthSnapshot.road_segment_id == segment_id)
+        else:
+            conds += [RoadHealthSnapshot.road_id == road_id, RoadHealthSnapshot.road_segment_id.is_(None)]
+        snap = (
+            await db.execute(
+                select(RoadHealthSnapshot).where(*conds).order_by(desc(RoadHealthSnapshot.calculated_at)).limit(1)
+            )
+        ).scalar_one_or_none()
+        if snap is None:
+            return None
+        return {
+            "health_score": float(snap.health_score) if snap.health_score is not None else None,
+            "health_status": snap.health_status,
+            "calculation_version": snap.calculation_version,
+            "calculated_at": snap.calculated_at.isoformat(),
+        }
+
+    assignee = await db.get(User, job.assigned_to_user_id) if job.assigned_to_user_id else None
+    contractor = await db.get(Organization, job.assigned_to_organization_id) if job.assigned_to_organization_id else None
+    return ResponseEnvelope(
+        data={
+            "road": {"id": str(road.id), "name": road.name, "road_code": road.road_code,
+                     "traffic_volume_class": road.traffic_volume_class} if road else None,
+            "segment": {"id": str(segment.id), "name": segment.name, "segment_number": segment.segment_number}
+            if segment else None,
+            "damages": damages,
+            "segment_health": await latest_health(segment_id=segment.id) if segment else None,
+            "road_health": await latest_health(road_id=road.id) if road else None,
+            "assigned_user": {"id": str(assignee.id), "full_name": assignee.full_name, "email": assignee.email}
+            if assignee else None,
+            "assigned_organization": {"id": str(contractor.id), "name": contractor.name} if contractor else None,
+            "allowed_transitions": VALID_TRANSITIONS.get(job.status, []),
+        }
+    )
+
+
+@router.get(
     "/{maintenance_job_id}",
     response_model=ResponseEnvelope[MaintenanceJobResponse],
     summary="Get maintenance job details",
@@ -262,6 +395,29 @@ async def assign_job(
         )
 
     assignee_id = payload.assigned_to_user_id or payload.assigned_to
+    # Only real assignees: an active member of this organization / an active contractor organization.
+    if assignee_id is not None:
+        member = (
+            await db.execute(
+                select(OrganizationMembership.id).where(
+                    OrganizationMembership.organization_id == org_context.organization_id,
+                    OrganizationMembership.user_id == assignee_id,
+                    OrganizationMembership.status == "ACTIVE",
+                )
+            )
+        ).first()
+        if member is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "INVALID_ASSIGNEE", "message": "Assignee is not an active member of this organization."},
+            )
+    if payload.assigned_to_organization_id is not None:
+        contractor = await db.get(Organization, payload.assigned_to_organization_id)
+        if contractor is None or not contractor.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "INVALID_CONTRACTOR", "message": "Contractor organization does not exist or is inactive."},
+            )
     assigned_job = await assign_maintenance_job(
         db=db,
         job=job,

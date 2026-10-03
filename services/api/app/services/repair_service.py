@@ -27,6 +27,7 @@ from app.schemas.repair import (
 from app.services.road_lifecycle import refresh_after_damage_change
 from app.services.storage import (
     StorageError,
+    StorageObjectNotFoundError,
     get_storage_backend,
     safe_filename,
     storage_http_exception,
@@ -123,8 +124,22 @@ async def complete_repair_evidence(
         )
     try:
         validate_object_key(payload.storage_bucket, payload.storage_path)
+        # The object must actually have been uploaded; a failed upload is never registered.
+        await run_in_threadpool(
+            lambda: get_storage_backend().create_signed_download_url(payload.storage_bucket, payload.storage_path, 60)
+        )
+    except StorageObjectNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "UPLOAD_NOT_FOUND", "message": "Upload the file to the signed URL before completing it."},
+        ) from exc
     except StorageError as exc:
         raise storage_http_exception(exc) from exc
+    if payload.media_type == "IMAGE" and not payload.mime_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INVALID_MEDIA_TYPE", "message": "IMAGE evidence must have an image/* MIME type."},
+        )
 
     location_geom = None
     if payload.latitude is not None and payload.longitude is not None:
@@ -150,9 +165,8 @@ async def complete_repair_evidence(
     )
     db.add(evidence)
 
-    # If job was in COMPLETED and contractor uploads after-repair evidence,
-    # auto-advance status to VERIFICATION_PENDING if not already pending
-    if job.status == "COMPLETED":
+    # After-repair evidence on a COMPLETED job moves it to VERIFICATION_PENDING.
+    if job.status == "COMPLETED" and payload.evidence_type == "AFTER_REPAIR":
         old_status = job.status
         job.status = "VERIFICATION_PENDING"
         job.updated_at = utc_now()
@@ -311,6 +325,7 @@ async def run_ai_repair_verification(
         ai_processing_run_id=None,
         verified_by_user_id=None,
         verification_status="AUTOMATED_CHECK",
+        verification_type="AUTOMATED_EVIDENCE_CHECK",
         ai_confidence=None,  # no model ran; a confidence value would be fabricated
         comparison_metrics=metrics,
         findings=findings,
@@ -368,6 +383,8 @@ async def submit_human_verification(
         ai_processing_run_id=None,
         verified_by_user_id=user_id,
         verification_status=payload.decision,
+        verification_type="HUMAN_SIGNOFF",
+        result="SUCCESSFUL" if payload.decision == "VERIFIED" else "SUBSTANDARD",
         ai_confidence=None,
         comparison_metrics=None,
         findings={"human_decision": payload.decision, "damages_updated": len(damages)},

@@ -30,6 +30,8 @@ from app.models.ai import (
 )
 from app.models.inspection import Inspection, InspectionMedia
 from app.models.jobs import ProcessingJob
+from app.models.maintenance import MaintenanceJob
+from app.models.repair import RepairEvidence, RepairVerification
 from app.models.road import Road, RoadSegment
 
 # Bypass SpatiaLite DDL event triggers when testing on vanilla SQLite
@@ -88,6 +90,9 @@ TEST_TABLES = [
     DamageType.__table__,
     AIProcessingRun.__table__,
     AIDetection.__table__,
+    MaintenanceJob.__table__,
+    RepairEvidence.__table__,
+    RepairVerification.__table__,
 ]
 
 

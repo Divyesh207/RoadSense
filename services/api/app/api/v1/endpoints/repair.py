@@ -1,7 +1,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from geoalchemy2.shape import to_shape
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,13 +10,17 @@ from app.core.database import get_db
 from app.models.repair import RepairEvidence, RepairVerification
 from app.schemas.common import ResponseEnvelope
 from app.schemas.repair import (
+    EvidenceDownloadUrl,
     RepairEvidenceCompleteRequest,
     RepairEvidenceResponse,
     RepairEvidenceUploadUrlRequest,
     RepairEvidenceUploadUrlResponse,
+    RepairImageVerificationRequest,
     RepairVerificationAIEvalRequest,
     RepairVerificationResponse,
+    RepairVerificationReviewRequest,
     RepairVerificationSubmitRequest,
+    SignedImageUrls,
 )
 from app.services.repair_service import (
     complete_repair_evidence,
@@ -25,6 +29,13 @@ from app.services.repair_service import (
     list_job_verifications,
     run_ai_repair_verification,
     submit_human_verification,
+)
+from app.services.repair_verification_service import (
+    SIGNED_URL_TTL_SECONDS,
+    evidence_download_url,
+    request_image_verification,
+    review_image_verification,
+    verification_image_urls,
 )
 
 router = APIRouter()
@@ -72,6 +83,20 @@ def build_verification_response(ver: RepairVerification) -> RepairVerificationRe
         findings=ver.findings or {},
         reviewer_notes=ver.reviewer_notes,
         verified_at=ver.verified_at,
+        verification_type=ver.verification_type,
+        result=ver.result,
+        before_evidence_id=ver.before_evidence_id,
+        before_media_id=ver.before_media_id,
+        after_evidence_id=ver.after_evidence_id,
+        processing_job_id=ver.processing_job_id,
+        model_name=ver.model_name,
+        model_version=ver.model_version,
+        algorithm_version=ver.algorithm_version,
+        reviewed_verification_id=ver.reviewed_verification_id,
+        previous_result=ver.previous_result,
+        review_decision=ver.review_decision,
+        error_code=ver.error_code,
+        error_message=ver.error_message,
         created_at=ver.created_at,
         updated_at=ver.updated_at,
     )
@@ -201,3 +226,76 @@ async def get_verifications_list(
         organization_id=org_context.organization_id,
     )
     return ResponseEnvelope(data=[build_verification_response(i) for i in items])
+
+
+@router.get(
+    "/{maintenance_job_id}/repair-evidence/{evidence_id}/download-url",
+    response_model=ResponseEnvelope[EvidenceDownloadUrl],
+    summary="Short-lived signed URL to view one repair evidence object",
+)
+async def get_evidence_download_url(
+    maintenance_job_id: uuid.UUID,
+    evidence_id: uuid.UUID,
+    org_context: Annotated[OrgContext, Depends(require_permission("maintenance:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    url = await evidence_download_url(db, maintenance_job_id, evidence_id, org_context.organization_id)
+    return ResponseEnvelope(data=EvidenceDownloadUrl(download_url=url, expires_in_seconds=SIGNED_URL_TTL_SECONDS))
+
+
+@router.post(
+    "/{maintenance_job_id}/repair-verifications",
+    response_model=ResponseEnvelope[RepairVerificationResponse],
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Queue before/after image analysis (OpenCV alignment + trained YOLO) for a repair",
+)
+async def queue_image_verification(
+    maintenance_job_id: uuid.UUID,
+    response: Response,
+    org_context: Annotated[OrgContext, Depends(require_permission("maintenance:update"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    payload: RepairImageVerificationRequest | None = None,
+):
+    ver, queued = await request_image_verification(
+        db, maintenance_job_id, org_context.organization_id, org_context.user_id,
+        payload or RepairImageVerificationRequest(),
+    )
+    if not queued:
+        response.status_code = status.HTTP_200_OK  # same pair already analysed or in progress
+    return ResponseEnvelope(data=build_verification_response(ver))
+
+
+@router.post(
+    "/{maintenance_job_id}/repair-verifications/{verification_id}/review",
+    response_model=ResponseEnvelope[RepairVerificationResponse],
+    status_code=status.HTTP_201_CREATED,
+    summary="Human review of an automated image analysis (confirm, reject or mark unresolved)",
+)
+async def review_verification(
+    maintenance_job_id: uuid.UUID,
+    verification_id: uuid.UUID,
+    payload: RepairVerificationReviewRequest,
+    request: Request,
+    org_context: Annotated[OrgContext, Depends(require_permission("maintenance:verify"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    review = await review_image_verification(
+        db, maintenance_job_id, verification_id, org_context.organization_id, org_context.user_id, payload,
+        request_id=getattr(request.state, "request_id", None),
+    )
+    return ResponseEnvelope(data=build_verification_response(review))
+
+
+@router.get(
+    "/{maintenance_job_id}/repair-verifications/{verification_id}/image-urls",
+    response_model=ResponseEnvelope[SignedImageUrls],
+    summary="Short-lived signed URLs for the BEFORE and AFTER images of a verification",
+)
+async def get_verification_image_urls(
+    maintenance_job_id: uuid.UUID,
+    verification_id: uuid.UUID,
+    org_context: Annotated[OrgContext, Depends(require_permission("maintenance:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    data = await verification_image_urls(db, maintenance_job_id, verification_id, org_context.organization_id)
+    return ResponseEnvelope(data=SignedImageUrls(**data))

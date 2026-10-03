@@ -69,7 +69,7 @@ async def test_migrated_schema_has_all_tables_postgis_and_one_gist_per_spatial_c
     assert tables == set(Base.metadata.tables)
     assert version.startswith("3.4")
     assert int(server) // 10000 == 16
-    assert revision == "003_phase3a_foundation"
+    assert revision == "004_phase3b_repair_verif"
     indexed = [(t, c) for t, c in gist]
     assert set(indexed) == EXPECTED_GIST
     assert len(indexed) == len(EXPECTED_GIST), "each spatial column must have exactly one GIST index"

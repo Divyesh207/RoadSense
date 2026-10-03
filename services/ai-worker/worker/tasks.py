@@ -4,6 +4,7 @@ import uuid
 from typing import Any
 
 from pipelines.media_pipeline import execute_inspection_pipeline, execute_media_pipeline
+from pipelines.repair_pipeline import execute_repair_verification
 from worker.celery_app import celery_app
 from worker.db import WorkerSessionLocal
 
@@ -80,3 +81,25 @@ def process_inspection_media(
             )
 
     return _jsonable(asyncio.run(_run()))
+
+
+@celery_app.task(name="tasks.verify_repair", bind=True, max_retries=3)
+def verify_repair(self, job_id: str, verification_id: str, organization_id: str) -> dict[str, Any]:
+    """Before/after repair image analysis (published by POST /maintenance-jobs/{id}/repair-verifications).
+    Transient storage failures re-queue the job and retry; the job row records every attempt."""
+    logger.info("Worker received verify_repair: job=%s verification=%s", job_id, verification_id)
+
+    async def _run() -> dict[str, Any]:
+        async with WorkerSessionLocal() as session:
+            return await execute_repair_verification(
+                db=session,
+                job_id=uuid.UUID(job_id),
+                verification_id=uuid.UUID(verification_id),
+                organization_id=uuid.UUID(organization_id),
+                worker_version=WORKER_VERSION,
+            )
+
+    result = asyncio.run(_run())
+    if result.get("status") == "RETRY":
+        raise self.retry(countdown=15)
+    return result

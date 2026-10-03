@@ -12,6 +12,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -68,6 +69,25 @@ class RepairVerification(Base):
     findings = Column(JSONB, nullable=False, default=dict)
     reviewer_notes = Column(Text, nullable=True)
     verified_at = Column(DateTime(timezone=True), nullable=True)
+    # Phase 3B: image-based verification and human review provenance.
+    # verification_type: AUTOMATED_IMAGE_ANALYSIS | HUMAN_REVIEW | HUMAN_SIGNOFF | AUTOMATED_EVIDENCE_CHECK
+    verification_type = Column(String(40), nullable=True)
+    result = Column(String(20), nullable=True)  # SUCCESSFUL | SUBSTANDARD | UNRESOLVED
+    before_evidence_id = Column(UUID(as_uuid=True), ForeignKey("repair_evidence.id", ondelete="SET NULL"), nullable=True)
+    before_media_id = Column(UUID(as_uuid=True), ForeignKey("inspection_media.id", ondelete="SET NULL"), nullable=True)
+    after_evidence_id = Column(UUID(as_uuid=True), ForeignKey("repair_evidence.id", ondelete="SET NULL"), nullable=True)
+    processing_job_id = Column(UUID(as_uuid=True), ForeignKey("processing_jobs.id", ondelete="SET NULL"), nullable=True)
+    model_name = Column(String(150), nullable=True)
+    model_version = Column(String(50), nullable=True)
+    algorithm_version = Column(String(50), nullable=True)
+    # A HUMAN_REVIEW row points at the automated row it reviewed; that row is never modified.
+    reviewed_verification_id = Column(
+        UUID(as_uuid=True), ForeignKey("repair_verifications.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    previous_result = Column(String(20), nullable=True)
+    review_decision = Column(String(20), nullable=True)  # CONFIRMED | REJECTED | UNRESOLVED
+    error_code = Column(String(100), nullable=True)
+    error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
 
@@ -77,6 +97,14 @@ class RepairVerification(Base):
 
     __table_args__ = (
         CheckConstraint("ai_confidence IS NULL OR (ai_confidence >= 0 AND ai_confidence <= 1)", name="chk_verification_confidence_range"),
+        CheckConstraint(
+            "result IS NULL OR result IN ('SUCCESSFUL', 'SUBSTANDARD', 'UNRESOLVED')", name="chk_verification_result"
+        ),
+        CheckConstraint(
+            "review_decision IS NULL OR review_decision IN ('CONFIRMED', 'REJECTED', 'UNRESOLVED')",
+            name="chk_verification_review_decision",
+        ),
+        UniqueConstraint("processing_job_id", name="uq_repair_verifications_processing_job"),
         Index("repair_verifications_org_idx", "organization_id"),
         Index("repair_verifications_job_idx", "maintenance_job_id"),
     )

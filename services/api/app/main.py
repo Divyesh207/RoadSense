@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -87,7 +88,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             error=ErrorDetail(
                 code="VALIDATION_ERROR",
                 message="Request validation failed",
-                details=exc.errors(),
+                # jsonable_encoder: validator errors carry the raised exception in ctx.
+                details=jsonable_encoder(exc.errors(), custom_encoder={Exception: str}),
             ),
             meta=ResponseMeta(request_id=request_id),
         ).model_dump(mode="json"),

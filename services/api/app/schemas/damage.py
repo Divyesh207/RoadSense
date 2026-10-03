@@ -74,7 +74,9 @@ class DamageRecordResponseData(BaseModel):
     severity_score: float | None = None
     severity_method_version: str | None = None
     location: LocationOutput | None = None
-    status: Literal["DETECTED", "PENDING_REVIEW", "CONFIRMED", "REJECTED", "REPAIRED"]
+    status: Literal[
+        "DETECTED", "PENDING_REVIEW", "CONFIRMED", "REJECTED", "MAINTENANCE_SCHEDULED", "IN_PROGRESS", "REPAIRED"
+    ]
     confidence: float | None = None
     # How the record was produced: TRAINED_MODEL, HEURISTIC_FALLBACK (OpenCV rules), MANUAL or UNKNOWN.
     detection_method: str | None = None

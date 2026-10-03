@@ -12,8 +12,10 @@ import {
   InspectionMedia,
   LoginResponseData,
   MaintenanceAnalyticsData,
+  MaintenanceAssignees,
   MaintenanceDamageLink,
   MaintenanceJob,
+  MaintenanceJobContext,
   MaintenanceStatusHistory,
   MapDamageFeature,
   MapRoadFeature,
@@ -219,6 +221,12 @@ class ApiClient {
     get: async (jobId: string): Promise<ResponseEnvelope<MaintenanceJob>> => {
       return this.request<ResponseEnvelope<MaintenanceJob>>(`/maintenance-jobs/${jobId}`);
     },
+    getContext: async (jobId: string): Promise<ResponseEnvelope<MaintenanceJobContext>> => {
+      return this.request<ResponseEnvelope<MaintenanceJobContext>>(`/maintenance-jobs/${jobId}/context`);
+    },
+    getAssignees: async (): Promise<ResponseEnvelope<MaintenanceAssignees>> => {
+      return this.request<ResponseEnvelope<MaintenanceAssignees>>("/maintenance-jobs/assignees");
+    },
     create: async (payload: {
       title: string;
       description?: string;
@@ -239,7 +247,10 @@ class ApiClient {
         body: JSON.stringify(payload),
       });
     },
-    assign: async (jobId: string, payload: { assigned_to?: string; assigned_to_organization_id?: string }): Promise<ResponseEnvelope<MaintenanceJob>> => {
+    assign: async (
+      jobId: string,
+      payload: { assigned_to?: string; assigned_to_user_id?: string; assigned_to_organization_id?: string }
+    ): Promise<ResponseEnvelope<MaintenanceJob>> => {
       return this.request<ResponseEnvelope<MaintenanceJob>>(`/maintenance-jobs/${jobId}/assign`, {
         method: "POST",
         body: JSON.stringify(payload),
@@ -330,6 +341,72 @@ class ApiClient {
     },
     listVerifications: async (jobId: string): Promise<ResponseEnvelope<RepairVerification[]>> => {
       return this.request<ResponseEnvelope<RepairVerification[]>>(`/maintenance-jobs/${jobId}/verifications`);
+    },
+    // Real file upload: signed URL -> PUT the bytes -> register. No manual storage paths.
+    uploadEvidenceFile: async (
+      jobId: string,
+      file: File,
+      evidenceType: "BEFORE_REPAIR" | "AFTER_REPAIR",
+      location?: { latitude: number; longitude: number }
+    ): Promise<ResponseEnvelope<RepairEvidence>> => {
+      const signed = await this.request<
+        ResponseEnvelope<{ upload_url: string; storage_path: string; storage_bucket: string; upload_headers: Record<string, string> }>
+      >(`/maintenance-jobs/${jobId}/repair-evidence/upload-url`, {
+        method: "POST",
+        body: JSON.stringify({ filename: file.name, content_type: file.type, size_bytes: file.size, evidence_type: evidenceType }),
+      });
+      const put = await fetch(signed.data!.upload_url, {
+        method: "PUT",
+        headers: { ...(signed.data!.upload_headers || {}), "Content-Type": file.type },
+        body: file,
+      });
+      if (!put.ok) {
+        throw new Error(`Upload failed (${put.status}); the evidence was not registered.`);
+      }
+      return this.request<ResponseEnvelope<RepairEvidence>>(`/maintenance-jobs/${jobId}/repair-evidence/complete`, {
+        method: "POST",
+        body: JSON.stringify({
+          storage_path: signed.data!.storage_path,
+          storage_bucket: signed.data!.storage_bucket,
+          evidence_type: evidenceType,
+          media_type: "IMAGE",
+          mime_type: file.type,
+          file_size_bytes: file.size,
+          latitude: location?.latitude,
+          longitude: location?.longitude,
+        }),
+      });
+    },
+    getEvidenceDownloadUrl: async (
+      jobId: string,
+      evidenceId: string
+    ): Promise<ResponseEnvelope<{ download_url: string; expires_in_seconds: number }>> => {
+      return this.request(`/maintenance-jobs/${jobId}/repair-evidence/${evidenceId}/download-url`);
+    },
+    queueImageVerification: async (
+      jobId: string,
+      payload: { before_evidence_id?: string; after_evidence_id?: string } = {}
+    ): Promise<ResponseEnvelope<RepairVerification>> => {
+      return this.request<ResponseEnvelope<RepairVerification>>(`/maintenance-jobs/${jobId}/repair-verifications`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    reviewVerification: async (
+      jobId: string,
+      verificationId: string,
+      payload: { decision: "CONFIRMED" | "REJECTED" | "UNRESOLVED"; final_result?: string; notes?: string }
+    ): Promise<ResponseEnvelope<RepairVerification>> => {
+      return this.request<ResponseEnvelope<RepairVerification>>(
+        `/maintenance-jobs/${jobId}/repair-verifications/${verificationId}/review`,
+        { method: "POST", body: JSON.stringify(payload) }
+      );
+    },
+    getVerificationImageUrls: async (
+      jobId: string,
+      verificationId: string
+    ): Promise<ResponseEnvelope<{ before_url: string | null; before_source: string | null; after_url: string | null }>> => {
+      return this.request(`/maintenance-jobs/${jobId}/repair-verifications/${verificationId}/image-urls`);
     },
   };
 

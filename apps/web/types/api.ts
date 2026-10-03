@@ -263,8 +263,57 @@ export interface MaintenanceJob {
   latitude?: number;
   longitude?: number;
   damage_count?: number;
+  priority_factors?: PriorityFactors | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PriorityFactors {
+  mode?: "AUTO" | "MANUAL" | "MANUAL_LEVEL";
+  method?: string;
+  version?: string;
+  inputs?: Record<string, any>;
+  components?: Record<string, number>;
+  level_floor_from_severity?: string;
+  calculated_at?: string;
+}
+
+export interface HealthSummary {
+  health_score: number | null;
+  health_status: string;
+  calculation_version: string;
+  calculated_at: string;
+}
+
+export interface MaintenanceJobContext {
+  road: { id: string; name: string; road_code?: string; traffic_volume_class?: string | null } | null;
+  segment: { id: string; name?: string; segment_number: number } | null;
+  damages: {
+    id: string;
+    relationship_type: string;
+    damage_type: string | null;
+    severity: string;
+    status: string;
+    source_type: string;
+    confidence: number | null;
+    observation_count: number;
+    inspection_id: string | null;
+    source_detection_id: string | null;
+    road_id: string | null;
+    road_segment_id: string | null;
+    location: { latitude: number; longitude: number } | null;
+    detected_at: string | null;
+  }[];
+  segment_health: HealthSummary | null;
+  road_health: HealthSummary | null;
+  assigned_user: { id: string; full_name: string; email: string } | null;
+  assigned_organization: { id: string; name: string } | null;
+  allowed_transitions: string[];
+}
+
+export interface MaintenanceAssignees {
+  users: { id: string; full_name: string; email: string; role: string }[];
+  contractor_organizations: { id: string; name: string; code: string }[];
 }
 
 export interface MaintenanceStatusHistory {
@@ -293,9 +342,14 @@ export interface RepairEvidence {
   organization_id: string;
   maintenance_job_id: string;
   evidence_type: "BEFORE_REPAIR" | "DURING_REPAIR" | "AFTER_REPAIR" | "SIGN_OFF_DOCUMENT";
+  storage_bucket?: string;
   storage_path: string;
+  media_type?: "IMAGE" | "VIDEO";
+  mime_type?: string;
+  uploaded_by_user_id?: string;
   file_size_bytes?: number;
   content_type?: string;
+  notes?: string;
   latitude?: number;
   longitude?: number;
   captured_at?: string;
@@ -309,12 +363,43 @@ export interface RepairVerification {
   verified_by_user_id?: string;
   // AUTOMATED_CHECK: evidence presence + GPS location only (no image analysis).
   // AI_EVALUATED appears only on records created before that relabelling.
-  verification_status: "PENDING" | "AUTOMATED_CHECK" | "AI_EVALUATED" | "VERIFIED" | "REJECTED";
+  // AUTOMATED_IMAGE_ANALYSIS rows move QUEUED -> PROCESSING -> COMPLETED | FAILED;
+  // HUMAN_REVIEW rows are REVIEWED.
+  verification_status:
+    | "PENDING"
+    | "AUTOMATED_CHECK"
+    | "AI_EVALUATED"
+    | "VERIFIED"
+    | "REJECTED"
+    | "QUEUED"
+    | "PROCESSING"
+    | "COMPLETED"
+    | "FAILED"
+    | "REVIEWED";
+  verification_type?:
+    | "AUTOMATED_IMAGE_ANALYSIS"
+    | "HUMAN_REVIEW"
+    | "HUMAN_SIGNOFF"
+    | "AUTOMATED_EVIDENCE_CHECK"
+    | null;
+  result?: "SUCCESSFUL" | "SUBSTANDARD" | "UNRESOLVED" | null;
   ai_confidence?: number;
   comparison_metrics?: Record<string, any>;
   findings?: Record<string, any>;
   reviewer_notes?: string;
   verified_at?: string;
+  before_evidence_id?: string | null;
+  before_media_id?: string | null;
+  after_evidence_id?: string | null;
+  processing_job_id?: string | null;
+  model_name?: string | null;
+  model_version?: string | null;
+  algorithm_version?: string | null;
+  reviewed_verification_id?: string | null;
+  previous_result?: string | null;
+  review_decision?: "CONFIRMED" | "REJECTED" | "UNRESOLVED" | null;
+  error_code?: string | null;
+  error_message?: string | null;
   created_at: string;
 }
 
