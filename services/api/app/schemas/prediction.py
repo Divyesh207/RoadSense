@@ -35,6 +35,8 @@ class PredictionResponseData(BaseModel):
     input_data_timestamp: datetime | None = None
     generated_at: datetime
     status: str
+    # RULE_BASED_ESTIMATE (current hand-weighted rules) or TRAINED_MODEL once a real model exists.
+    estimation_method: str | None = None
     disclaimer: str = (
         "Predictions are statistical decision-support estimates for proactive maintenance and "
         "must not be treated as guaranteed future outcomes."

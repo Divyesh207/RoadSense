@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.auth import OrgContext, require_permission
 from app.core.database import get_db
-from app.models.ai import AIDetection, DamageType
+from app.models.ai import AIDetection, AIProcessingRun, DamageType
 from app.models.damage import DamageRecord, DamageReview
 from app.models.inspection import Inspection
 from app.schemas.common import (
@@ -30,6 +30,7 @@ from app.schemas.damage import (
 )
 from app.schemas.inspection import LocationOutput
 from app.services.audit_service import AuditService
+from app.services.provenance import detection_provenance
 from app.services.spatial import point_to_wkt, wkt_or_geom_to_point
 
 router = APIRouter()
@@ -37,6 +38,14 @@ router = APIRouter()
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# Loads the detector that produced an AI damage record (detection -> run -> model)
+SOURCE_MODEL_LOAD = (
+    selectinload(DamageRecord.source_detection)
+    .selectinload(AIDetection.processing_run)
+    .selectinload(AIProcessingRun.model)
+)
 
 
 def get_loaded_rel(instance: Any, attr_name: str, default: Any = None) -> Any:
@@ -87,6 +96,13 @@ def build_damage_response(
         loaded_rev = get_loaded_rel(rec, "reviewed_by")
         rev_name = loaded_rev.full_name if loaded_rev else None
 
+    if rec.source_type == "AI":
+        det = get_loaded_rel(rec, "source_detection")
+        run = get_loaded_rel(det, "processing_run") if det is not None else None
+        prov = detection_provenance(get_loaded_rel(run, "model") if run is not None else None)
+    else:
+        prov = {"detection_method": "MANUAL", "score_type": None}
+
     return DamageRecordResponseData(
         id=rec.id,
         organization_id=rec.organization_id,
@@ -106,6 +122,8 @@ def build_damage_response(
         location=loc_out,
         status=rec.status,
         confidence=float(rec.confidence) if rec.confidence is not None else None,
+        detection_method=prov["detection_method"],
+        score_type=prov["score_type"],
         estimated_area_m2=float(rec.estimated_area_m2) if rec.estimated_area_m2 is not None else None,
         detected_at=rec.detected_at,
         reviewed_at=rec.reviewed_at,
@@ -210,6 +228,7 @@ async def list_damages(
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
             selectinload(DamageRecord.reviewed_by),
+            SOURCE_MODEL_LOAD,
         )
         .order_by(DamageRecord.created_at.desc())
         .offset(offset)
@@ -318,6 +337,7 @@ async def create_damage_record(
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
             selectinload(DamageRecord.reviewed_by),
+            SOURCE_MODEL_LOAD,
         )
     )
     loaded_rec = (await db.execute(rel_stmt)).scalar_one()
@@ -371,6 +391,7 @@ async def create_damage_from_detection(
         selectinload(DamageRecord.road),
         selectinload(DamageRecord.road_segment),
         selectinload(DamageRecord.reviewed_by),
+        SOURCE_MODEL_LOAD,
     )
     existing = (await db.execute(exist_stmt)).scalar_one_or_none()
     if existing:
@@ -390,12 +411,10 @@ async def create_damage_from_detection(
     road_id = insp.road_id if insp else None
     segment_id = insp.road_segment_id if insp else None
 
-    # Calculate estimated area in m2 from bounding box if pixel dimensions available
+    # Physical area cannot be derived from a bounding box without camera calibration
+    # (height, angle, lens). It is left unset rather than guessed; the relative
+    # image area used for severity is kept in the detection's severity_assessment.
     area_m2 = None
-    if det.pixel_width and det.pixel_height:
-        # Normalized bbox area fraction * estimated road frame area (~12 m2 for typical road camera frame)
-        bbox_area_frac = float(det.bbox_x_max - det.bbox_x_min) * float(det.bbox_y_max - det.bbox_y_min)
-        area_m2 = round(bbox_area_frac * 12.0, 4)
 
     record = DamageRecord(
         organization_id=org_ctx.organization_id,
@@ -427,6 +446,7 @@ async def create_damage_from_detection(
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
             selectinload(DamageRecord.reviewed_by),
+            SOURCE_MODEL_LOAD,
         )
     )
     loaded_rec = (await db.execute(rel_stmt)).scalar_one()
@@ -461,6 +481,7 @@ async def get_damage_record(
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
             selectinload(DamageRecord.reviewed_by),
+            SOURCE_MODEL_LOAD,
         )
     )
     record = (await db.execute(stmt)).scalar_one_or_none()
@@ -501,6 +522,7 @@ async def update_damage_record(
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
             selectinload(DamageRecord.reviewed_by),
+            SOURCE_MODEL_LOAD,
         )
     )
     record = (await db.execute(stmt)).scalar_one_or_none()
@@ -563,6 +585,7 @@ async def review_damage_record(
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
             selectinload(DamageRecord.reviewed_by),
+            SOURCE_MODEL_LOAD,
         )
     )
     record = (await db.execute(stmt)).scalar_one_or_none()
@@ -641,6 +664,7 @@ async def review_damage_record(
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
             selectinload(DamageRecord.reviewed_by),
+            SOURCE_MODEL_LOAD,
         )
     )
     loaded_rec = (await db.execute(rel_stmt)).scalar_one()

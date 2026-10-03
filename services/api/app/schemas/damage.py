@@ -76,6 +76,10 @@ class DamageRecordResponseData(BaseModel):
     location: LocationOutput | None = None
     status: Literal["DETECTED", "PENDING_REVIEW", "CONFIRMED", "REJECTED", "REPAIRED"]
     confidence: float | None = None
+    # How the record was produced: TRAINED_MODEL, HEURISTIC_FALLBACK (OpenCV rules), MANUAL or UNKNOWN.
+    detection_method: str | None = None
+    # MODEL_CONFIDENCE (model probability) or HEURISTIC_SCORE (rule-derived score, not a probability).
+    score_type: str | None = None
     estimated_area_m2: float | None = None
     detected_at: datetime | None = None
     reviewed_at: datetime | None = None

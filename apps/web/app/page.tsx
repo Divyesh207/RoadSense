@@ -1,32 +1,25 @@
-import Link from "next/link";
-import { 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle2, 
-  MapPin, 
-  Layers, 
-  ShieldAlert, 
-  TrendingUp, 
-  Wrench 
-} from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Layers, ShieldAlert } from "lucide-react";
+import { ApiStatusBadge, AuthNavButton } from "@/components/landing-header";
 
 export default function HomePage() {
-  const stats = [
-    { label: "Tracked Road Segments", value: "1,248", icon: Layers, change: "+12 this month" },
-    { label: "Active Detections", value: "342", icon: AlertTriangle, change: "48 high severity" },
-    { label: "Pending AI Review", value: "29", icon: ShieldAlert, change: "Requires attention" },
-    { label: "Verified Repairs", value: "891", icon: CheckCircle2, change: "96.4% success rate" },
+  // Platform capabilities (descriptive, not metrics). Live figures for an organization
+  // are on the authenticated dashboard (GET /dashboard/summary).
+  const capabilities = [
+    { label: "Road Segments", title: "PostGIS segment network", icon: Layers, desc: "Roads split into authoritative segments with spatial geometry" },
+    { label: "Damage Detection", title: "Automated detection", icon: AlertTriangle, desc: "Field photos analyzed into typed, located damage candidates for review" },
+    { label: "Human Review", title: "Reviewer confirmation", icon: ShieldAlert, desc: "AI results stay candidates until an authorized reviewer decides" },
+    { label: "Repair Verification", title: "Before/after evidence", icon: CheckCircle2, desc: "Repairs closed with field evidence and verification sign-off" },
   ];
 
   const lifecycleStages = [
     { step: "01", name: "Data Collection", desc: "GPS & visual evidence capture via Android field app" },
-    { step: "02", name: "AI Damage Detection", desc: "Local YOLO inference detects damage & bounding boxes" },
-    { step: "03", name: "Severity Assessment", desc: "Multi-factor severity scoring (depth, area, traffic)" },
+    { step: "02", name: "Damage Detection", desc: "Trained YOLO11s (RDD2022 India) detects cracks & potholes; heuristic fallback only if configured" },
+    { step: "03", name: "Severity Assessment", desc: "Rule-based severity from detected damage size and type" },
     { step: "04", name: "GIS Segment Mapping", desc: "PostGIS spatial alignment to authoritative road segments" },
     { step: "05", name: "Human Review", desc: "Authority confirmation preserving raw AI provenance" },
-    { step: "06", name: "Health & Prediction", desc: "Road health indices & XGBoost deterioration prediction" },
+    { step: "06", name: "Health & Prediction", desc: "Rule-based road health index & deterioration estimate (trained model planned)" },
     { step: "07", name: "Maintenance & Repair", desc: "Work order dispatch, field repair, and after-evidence" },
-    { step: "08", name: "AI Repair Verification", desc: "Automated before/after evidence validation & recurrence" },
+    { step: "08", name: "Repair Verification", desc: "Evidence & location checks, human sign-off, recurrence matching" },
   ];
 
   return (
@@ -46,10 +39,8 @@ export default function HomePage() {
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/80 text-emerald-400 text-xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              API Connected: v1.0.0
-            </span>
+            <ApiStatusBadge />
+            <AuthNavButton />
           </div>
         </div>
       </header>
@@ -68,27 +59,27 @@ export default function HomePage() {
           <p className="text-slate-400 max-w-3xl text-base leading-relaxed">
             A unified municipal intelligence platform that traces road damage from initial field capture,
             local AI damage detection, PostGIS segment association, deterioration forecasting, to maintenance
-            dispatch and AI-verified repairs.
+            dispatch and verified repairs.
           </p>
         </section>
 
-        {/* Operational Stats */}
+        {/* Platform Capabilities */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => {
-            const Icon = stat.icon;
+          {capabilities.map((item, idx) => {
+            const Icon = item.icon;
             return (
               <div 
                 key={idx}
                 className="p-5 rounded-xl border border-slate-800 bg-slate-900/40 backdrop-blur hover:border-slate-700 transition"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-slate-400">{stat.label}</span>
+                  <span className="text-xs font-medium text-slate-400">{item.label}</span>
                   <div className="p-2 rounded-lg bg-slate-800/60 text-slate-300">
                     <Icon className="h-4 w-4" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white tracking-tight">{stat.value}</div>
-                <div className="text-xs text-slate-400 mt-2">{stat.change}</div>
+                <div className="text-base font-semibold text-white tracking-tight">{item.title}</div>
+                <div className="text-xs text-slate-400 mt-2">{item.desc}</div>
               </div>
             );
           })}

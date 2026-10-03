@@ -14,6 +14,7 @@ import {
   Calendar,
   Layers,
 } from "lucide-react";
+import { detectionMethodLabel, isHeuristic } from "@/lib/provenance";
 
 export default function DamagesPage() {
   const [damages, setDamages] = useState<DamageRecord[]>([]);
@@ -138,7 +139,7 @@ export default function DamagesPage() {
                   <th className="py-3 px-4 font-semibold">Status</th>
                   <th className="py-3 px-4 font-semibold">Road Location</th>
                   <th className="py-3 px-4 font-semibold">Source</th>
-                  <th className="py-3 px-4 font-semibold">Confidence</th>
+                  <th className="py-3 px-4 font-semibold">Score</th>
                   <th className="py-3 px-4 font-semibold">Area (m²)</th>
                   <th className="py-3 px-4 text-right font-semibold">Review Action</th>
                 </tr>
@@ -197,8 +198,11 @@ export default function DamagesPage() {
                         {dmg.road_name || "Unassigned Road"}
                       </td>
                       <td className="py-3 px-4 text-slate-400">{dmg.source_type}</td>
-                      <td className="py-3 px-4 font-mono text-slate-300">
+                      <td className="py-3 px-4 font-mono text-slate-300" title={detectionMethodLabel(dmg.detection_method)}>
                         {dmg.confidence ? `${(dmg.confidence * 100).toFixed(1)}%` : "—"}
+                        {dmg.confidence && isHeuristic(dmg.detection_method, dmg.score_type) ? (
+                          <span className="block text-[10px] text-amber-400 font-sans">heuristic, not a probability</span>
+                        ) : null}
                       </td>
                       <td className="py-3 px-4 text-slate-400 font-mono">
                         {dmg.estimated_area_m2 ? `${dmg.estimated_area_m2.toFixed(2)} m²` : "—"}

@@ -177,16 +177,19 @@ async def test_create_segment_prediction_success(async_client, seeded_prediction
     data = resp.json()["data"]
     assert data["status"] == "GENERATED"
     assert data["prediction_horizon_days"] == 180
-    assert data["model_name"] == "XGBoost-Road-Deterioration"
+    # Honest provenance: a hand-weighted rule estimate, not a trained (XGBoost) model
+    assert data["model_name"] == "Rule-Based-Deterioration-Estimate"
+    assert data["estimation_method"] == "RULE_BASED_ESTIMATE"
+    assert "xgboost" not in data["model_name"].lower()
     assert data["predicted_risk"] is not None
     assert 0.0 <= data["predicted_risk"] <= 100.0
     assert data["predicted_value"] is not None
-    assert data["uncertainty_lower"] is not None
-    assert data["uncertainty_upper"] is not None
-    assert data["confidence"] is not None
-    assert 0.0 <= data["confidence"] <= 1.0
-    assert "disclaimer" in data
-    assert "must not be treated as guaranteed" in data["disclaimer"]
+    # No statistical basis for confidence/uncertainty in a rule set: must not be fabricated
+    assert data["uncertainty_lower"] is None
+    assert data["uncertainty_upper"] is None
+    assert data["confidence"] is None
+    assert "not a trained" in data["disclaimer"]
+    assert "must not be treated as a guaranteed" in data["disclaimer"]
 
 
 @pytest.mark.asyncio
@@ -201,7 +204,7 @@ async def test_get_segment_prediction_latest(async_client, seeded_prediction_con
     data = resp.json()["data"]
     assert data["road_segment_id"] == seg_id
     assert data["status"] == "GENERATED"
-    assert data["model_name"] == "XGBoost-Road-Deterioration"
+    assert data["model_name"] == "Rule-Based-Deterioration-Estimate"
 
 
 @pytest.mark.asyncio

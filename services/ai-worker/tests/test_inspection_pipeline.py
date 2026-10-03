@@ -195,6 +195,15 @@ async def test_fallback_runs_record_heuristic_provenance(async_db, tmp_path):
     assert model.name == "opencv-heuristic-road-damage"
     assert model.model_family == "OPENCV_HEURISTIC"
     assert not model.metrics
+    assert model.metadata_["trained"] is False
+
+    # Every stored detection says which detector produced it and that its score is heuristic
+    dets = (await async_db.execute(select(AIDetection).where(AIDetection.ai_processing_run_id == run.id))).scalars().all()
+    assert dets
+    for det in dets:
+        assert det.raw_output["detector"]["backend"] == "opencv-heuristic"
+        assert det.raw_output["detector"]["score_type"] == "HEURISTIC_SCORE"
+        assert det.raw_output["severity_assessment"]["contributing_factors"]["method"] == "RULE_BASED"
 
 
 @pytest.mark.asyncio

@@ -7,6 +7,7 @@ import L from "leaflet";
 import { CircleMarker, GeoJSON, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { MapDamageFeature, MapSegmentFeature } from "@/types/api";
+import { isHeuristic, scoreLabel } from "@/lib/provenance";
 
 export const SEVERITY_COLORS: Record<string, string> = {
   CRITICAL: "#ef4444",
@@ -143,7 +144,10 @@ export default function SpatialMap({ damages, segments, showDamages, showSegment
                   Severity: {d.severity} &middot; Status: {d.status}
                 </div>
                 {d.confidence !== null && d.confidence !== undefined && (
-                  <div>Confidence: {(d.confidence * 100).toFixed(0)}%</div>
+                  <div>
+                    {scoreLabel(d.score_type)}: {(d.confidence * 100).toFixed(0)}%
+                    {isHeuristic(d.detection_method, d.score_type) ? " (OpenCV rules, not a trained model)" : ""}
+                  </div>
                 )}
                 {d.road_name && (
                   <div>

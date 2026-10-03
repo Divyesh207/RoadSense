@@ -28,7 +28,6 @@ import {
   Layers,
   MapPin,
   TrendingUp,
-  Sparkles,
   UploadCloud,
   Camera,
   Check,
@@ -90,7 +89,7 @@ export default function MaintenancePage() {
   const [uploadingEvidence, setUploadingEvidence] = useState(false);
 
   // AI Verification & Human Sign-off
-  const [aiEvaluating, setAiEvaluating] = useState(false);
+  const [checkRunning, setCheckRunning] = useState(false);
   const [verifyingDecision, setVerifyingDecision] = useState(false);
   const [verifyDecisionModal, setVerifyDecisionModal] = useState<"VERIFIED" | "REJECTED" | null>(null);
   const [verifyNotes, setVerifyNotes] = useState("");
@@ -169,17 +168,17 @@ export default function MaintenancePage() {
     }
   };
 
-  const handleRunAIEvaluation = async () => {
+  const handleRunAutomatedCheck = async () => {
     if (!selectedJob) return;
-    setAiEvaluating(true);
+    setCheckRunning(true);
     try {
-      await api.repair.evaluateAI(selectedJob.id);
+      await api.repair.runAutomatedCheck(selectedJob.id);
       const verRes = await api.repair.listVerifications(selectedJob.id);
       if (verRes.data) setJobVerifications(verRes.data);
     } catch (err: any) {
-      alert(`AI Verification evaluation failed: ${err?.message || "Ensure evidence has been uploaded"}`);
+      alert(`Automated evidence check failed: ${err?.message || "Ensure evidence has been uploaded"}`);
     } finally {
-      setAiEvaluating(false);
+      setCheckRunning(false);
     }
   };
 
@@ -913,26 +912,27 @@ export default function MaintenancePage() {
                 )}
               </div>
 
-              {/* Phase 12: AI Repair Verification & Human Authority Sign-off */}
+              {/* Repair verification: automated evidence checks + human authority sign-off */}
               <div className="space-y-3 bg-slate-950/80 p-4 rounded-xl border border-purple-500/20">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-semibold text-purple-300 flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                    AI Verification & Sign-off
+                    <ShieldCheck className="h-3.5 w-3.5 text-purple-400" />
+                    Repair Verification & Sign-off
                   </h4>
                   <button
                     type="button"
-                    disabled={aiEvaluating || jobEvidence.length === 0}
-                    onClick={handleRunAIEvaluation}
+                    disabled={checkRunning || jobEvidence.length === 0}
+                    onClick={handleRunAutomatedCheck}
                     className="text-xs bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-md font-medium flex items-center gap-1 disabled:opacity-40 transition-colors"
                   >
-                    <Sparkles className="h-3 w-3" />
-                    {aiEvaluating ? "Analyzing..." : "Run AI Analysis"}
+                    <ShieldCheck className="h-3 w-3" />
+                    {checkRunning ? "Checking..." : "Run Automated Checks"}
                   </button>
                 </div>
 
                 <p className="text-[11px] text-slate-400 leading-tight">
-                  AI performs spatial proximity and surface texture clearance checks. Authoritative sign-off requires human decision.
+                  Automated checks confirm that after-repair evidence exists and compare its GPS location with the
+                  recorded damage. No image analysis is performed yet. The repair is verified only by a human decision.
                 </p>
 
                 {/* Latest Verification Status */}
@@ -950,6 +950,24 @@ export default function MaintenancePage() {
                         {jobVerifications[0].verification_status.replace(/_/g, " ")}
                       </span>
                     </div>
+
+                    {jobVerifications[0].findings?.check_result && (
+                      <div className="text-[11px] text-slate-300 space-y-1">
+                        <div>
+                          Check result:{" "}
+                          <span className="font-semibold text-purple-300">
+                            {String(jobVerifications[0].findings.check_result).replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        {Array.isArray(jobVerifications[0].findings.reasons) && (
+                          <ul className="list-disc pl-4 text-slate-400">
+                            {jobVerifications[0].findings.reasons.map((r: string, i: number) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
 
                     {jobVerifications[0].ai_confidence !== undefined && jobVerifications[0].ai_confidence !== null && (
                       <div className="flex items-center gap-2 text-[11px] text-slate-300">

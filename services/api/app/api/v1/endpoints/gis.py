@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.auth import OrgContext, require_permission
 from app.core.database import get_db
+from app.models.ai import AIDetection, AIProcessingRun
 from app.models.damage import DamageRecord
 from app.models.intelligence import RoadHealthSnapshot
 from app.models.road import Road, RoadSegment
@@ -17,6 +18,7 @@ from app.schemas.gis import (
     MapRoadFeature,
     MapSegmentFeature,
 )
+from app.services.provenance import detection_provenance
 from app.services.spatial import (
     bbox_intersects_linestring,
     geometry_to_geojson,
@@ -50,6 +52,9 @@ async def get_map_damages(
             selectinload(DamageRecord.damage_type),
             selectinload(DamageRecord.road),
             selectinload(DamageRecord.road_segment),
+            selectinload(DamageRecord.source_detection)
+            .selectinload(AIDetection.processing_run)
+            .selectinload(AIProcessingRun.model),
         )
         .where(DamageRecord.organization_id == org_context.organization_id)
     )
@@ -85,6 +90,12 @@ async def get_map_damages(
         if has_bbox and not (min_lat <= lat <= max_lat and min_lon <= lon <= max_lon):
             continue
 
+        if record.source_type == "AI":
+            det = record.source_detection
+            prov = detection_provenance(det.processing_run.model if det and det.processing_run else None)
+        else:
+            prov = {"detection_method": "MANUAL", "score_type": None}
+
         features.append(
             MapDamageFeature(
                 id=record.id,
@@ -92,6 +103,8 @@ async def get_map_damages(
                 severity=record.severity,
                 status=record.status,
                 confidence=float(record.confidence) if record.confidence is not None else None,
+                detection_method=prov["detection_method"],
+                score_type=prov["score_type"],
                 latitude=lat,
                 longitude=lon,
                 road_id=record.road_id,

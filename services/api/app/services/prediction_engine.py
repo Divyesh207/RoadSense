@@ -12,9 +12,20 @@ from app.models.inspection import Inspection
 from app.models.intelligence import DeteriorationPrediction, RoadHealthSnapshot
 from app.models.road import RoadSegment
 
-MODEL_NAME = "XGBoost-Road-Deterioration"
-MODEL_VERSION = "v1.0.0"
+# Deterioration estimate provenance. This is a deterministic, hand-weighted rule
+# set, NOT a trained model: there is no learned artifact, training data or
+# evaluation. A trained regressor (e.g. XGBoost) can replace it later behind the
+# same API by registering a new AIModel and setting ESTIMATION_METHOD accordingly.
+MODEL_NAME = "Rule-Based-Deterioration-Estimate"
+MODEL_VERSION = "rules-v1"
+MODEL_FAMILY = "RULE_BASED"
+ESTIMATION_METHOD = "RULE_BASED_ESTIMATE"
 FEATURE_VERSION = "feat-v1.0.0"
+RULE_BASED_DISCLAIMER = (
+    "Rule-based deterioration estimate from hand-weighted factors (damage severity counts, "
+    "recurrence, current health, inspection age). It is not a trained or validated model, has no "
+    "statistical confidence, and must not be treated as a guaranteed future outcome."
+)
 
 
 def utc_now() -> datetime:
@@ -32,12 +43,17 @@ async def get_or_create_prediction_model(db: AsyncSession) -> AIModel:
         model = AIModel(
             id=uuid.uuid4(),
             name=MODEL_NAME,
-            model_family="XGBoost",
+            model_family=MODEL_FAMILY,
             model_type="DETERIORATION_PREDICTION",
             version=MODEL_VERSION,
-            artifact_uri="models/xgboost/deterioration_v1.json",
-            framework="xgboost",
+            artifact_uri="builtin://app/services/prediction_engine.py#predict_segment_deterioration",
+            framework="python-rules",
             status="ACTIVE",
+            metadata_={
+                "trained": False,
+                "description": "Hand-weighted rules over damage severity counts, recurrence, current "
+                "health and inspection age. Not a trained or evaluated model.",
+            },
             created_at=utc_now(),
         )
         db.add(model)
@@ -170,7 +186,7 @@ async def predict_segment_deterioration(
         "prediction_horizon_days": prediction_horizon_days,
     }
 
-    # 5. Model Inference (XGBoost / Gradient Deterioration Regressor)
+    # 5. Rule-based estimate (hand-picked weights; not a trained regressor)
     time_factor = prediction_horizon_days / 365.0
     damage_severity_weight = (
         crit_count * 28.0 + high_count * 16.0 + med_count * 7.0 + low_count * 2.0
@@ -194,12 +210,11 @@ async def predict_segment_deterioration(
     )
     predicted_value = round(max(0.0, current_health - health_drop), 2)
 
-    unc_spread = 4.0 + (3.0 * time_factor)
-    uncertainty_lower = round(max(0.0, predicted_value - unc_spread), 2)
-    uncertainty_upper = round(min(100.0, predicted_value + unc_spread), 2)
-
-    freshness_penalty = min(0.25, (days_since_inspection / 365.0) * 0.15)
-    confidence = round(max(0.55, min(0.95, 0.92 - freshness_penalty)), 4)
+    # No confidence or uncertainty interval: a hand-weighted rule has no statistical
+    # basis for one. These stay None until a trained model with evaluated error exists.
+    uncertainty_lower = None
+    uncertainty_upper = None
+    confidence = None
 
     prediction = DeteriorationPrediction(
         id=uuid.uuid4(),

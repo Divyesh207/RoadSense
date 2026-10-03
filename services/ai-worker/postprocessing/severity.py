@@ -63,6 +63,8 @@ def assess_damage_severity(
         severity = "LOW"
 
     factors = {
+        # Deterministic rule over bounding-box size and damage class, not a learned model.
+        "method": "RULE_BASED",
         "damage_type_code": damage_type_code,
         "type_weight": type_weight,
         "normalized_area": round(area_ratio, 6),

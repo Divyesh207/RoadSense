@@ -148,6 +148,7 @@ class ModelRegistry:
     def _load_yolo(self, weights: Path) -> YOLODetector:
         sidecar = _read_sidecar(weights)
         sha = _sha256(weights)
+        threshold = (sidecar.get("training") or {}).get("confidence_threshold", {}).get("value")
         model_id = str(sidecar.get("model_id") or DEFAULT_YOLO_MODEL_ID)
         version = str(sidecar.get("version") or f"sha256-{sha[:12]}")
         detector = YOLODetector(
@@ -156,6 +157,7 @@ class ModelRegistry:
             model_version=version,
             device=os.getenv("AI_DEVICE", "cpu"),
             image_size=int(sidecar.get("input_size") or 640),
+            recommended_confidence_threshold=float(threshold) if threshold is not None else None,
         )
         self.register_model(
             RegisteredModelInfo(

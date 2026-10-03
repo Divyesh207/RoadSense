@@ -234,11 +234,18 @@ async def test_ai_repair_verification_eval(async_client, seeded_repair_context, 
     )
     assert eval_resp.status_code == 200, eval_resp.text
     eval_data = eval_resp.json()["data"]
-    assert eval_data["verification_status"] == "AI_EVALUATED"
-    assert eval_data["ai_confidence"] is not None
-    assert eval_data["ai_confidence"] >= 0.8
-    assert eval_data["findings"]["ai_recommendation"] == "VERIFIED"
-    assert eval_data["findings"]["residual_damage_detected"] is False
+    # Automated evidence check only: no model ran, so no confidence and no VERIFIED verdict
+    assert eval_data["verification_status"] == "AUTOMATED_CHECK"
+    assert eval_data["ai_confidence"] is None
+    assert eval_data["findings"]["check_result"] == "LOCATION_CONSISTENT"
+    assert eval_data["findings"]["image_comparison_performed"] is False
+    assert eval_data["findings"]["human_review_required"] is True
+    # Only measured values; no fabricated image-comparison metrics
+    metrics = eval_data["comparison_metrics"]
+    assert "texture_homogeneity_score" not in metrics
+    assert "edge_discontinuity_index" not in metrics
+    assert "spatial_match_score" not in metrics
+    assert metrics["closest_after_evidence_distance_meters"] < 25.0
 
     # CRITICAL RULE: Job must NOT be auto-verified by AI evaluation alone!
     job = await db_session.get(MaintenanceJob, job_id)
@@ -357,3 +364,65 @@ async def test_repair_verification_rbac_and_tenant_isolation(async_client, seede
         headers=org2_headers,
     )
     assert notfound_resp.status_code == 404
+
+
+async def _run_automated_check(async_client, headers, job_id, evidence_payloads):
+    for ev in evidence_payloads:
+        resp = await async_client.post(
+            f"/api/v1/maintenance-jobs/{job_id}/repair-evidence/complete", headers=headers, json=ev
+        )
+        assert resp.status_code == 201, resp.text
+    resp = await async_client.post(f"/api/v1/maintenance-jobs/{job_id}/ai-verify", headers=headers, json={})
+    assert resp.status_code == 200, resp.text
+    return resp.json()["data"]
+
+
+@pytest.mark.asyncio
+async def test_automated_check_without_gps_is_never_verified(async_client, seeded_repair_context, db_session):
+    """Regression: after-repair evidence without coordinates used to return VERIFIED (0.92)."""
+    token = await get_token_for(async_client)
+    headers = {"Authorization": f"Bearer {token}", "X-Organization-ID": str(ORG_1_ID)}
+    job_id = seeded_repair_context["job"].id
+
+    data = await _run_automated_check(
+        async_client, headers, job_id, [{"storage_path": f"{job_id}/no_gps.jpg", "evidence_type": "AFTER_REPAIR"}]
+    )
+    assert data["verification_status"] == "AUTOMATED_CHECK"
+    assert data["findings"]["check_result"] == "REVIEW_REQUIRED"
+    assert data["ai_confidence"] is None
+    assert any("no GPS" in r for r in data["findings"]["reasons"])
+    job = await db_session.get(MaintenanceJob, job_id)
+    assert job.verified_at is None
+
+
+@pytest.mark.asyncio
+async def test_automated_check_requires_after_repair_evidence(async_client, seeded_repair_context):
+    token = await get_token_for(async_client)
+    headers = {"Authorization": f"Bearer {token}", "X-Organization-ID": str(ORG_1_ID)}
+    job_id = seeded_repair_context["job"].id
+
+    data = await _run_automated_check(
+        async_client,
+        headers,
+        job_id,
+        [{"storage_path": f"{job_id}/before.jpg", "evidence_type": "BEFORE_REPAIR", "latitude": 18.5204, "longitude": 73.8567}],
+    )
+    assert data["findings"]["check_result"] == "REVIEW_REQUIRED"
+    assert data["findings"]["after_repair_evidence_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_automated_check_flags_far_evidence(async_client, seeded_repair_context):
+    token = await get_token_for(async_client)
+    headers = {"Authorization": f"Bearer {token}", "X-Organization-ID": str(ORG_1_ID)}
+    job_id = seeded_repair_context["job"].id
+
+    # ~1.1 km north of the recorded damage (18.5204, 73.8567)
+    data = await _run_automated_check(
+        async_client,
+        headers,
+        job_id,
+        [{"storage_path": f"{job_id}/far.jpg", "evidence_type": "AFTER_REPAIR", "latitude": 18.5304, "longitude": 73.8567}],
+    )
+    assert data["findings"]["check_result"] == "LOCATION_MISMATCH"
+    assert data["comparison_metrics"]["closest_after_evidence_distance_meters"] > 1000

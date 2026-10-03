@@ -11,6 +11,10 @@ from inference.model_registry import (
     ModelRegistry,
     TrainedModelRequiredError,
 )
+from pipelines.media_pipeline import (
+    DEFAULT_CONFIDENCE_THRESHOLD,
+    resolve_confidence_threshold,
+)
 
 
 def test_registry_falls_back_and_reports_missing_weights(tmp_path, monkeypatch):
@@ -102,7 +106,12 @@ def test_ultralytics_inference_path_with_untrained_architecture(tmp_path, monkey
     weights = tmp_path / "pothole_yolov8.pt"
     ultralytics.YOLO("yolov8n.yaml").save(str(weights))
     weights.with_suffix(".pt.json").write_text(
-        json.dumps({"model_id": "untrained-test-yolo", "version": "0.0.0-test", "metrics": {}}),
+        json.dumps({
+            "model_id": "untrained-test-yolo",
+            "version": "0.0.0-test",
+            "metrics": {},
+            "training": {"confidence_threshold": {"value": 0.31}},
+        }),
         encoding="utf-8",
     )
     monkeypatch.setenv("YOLO_MODEL_PATH", str(weights))
@@ -115,6 +124,10 @@ def test_ultralytics_inference_path_with_untrained_architecture(tmp_path, monkey
     info = registry.get_model_info("untrained-test-yolo", "0.0.0-test")
     assert info.model_family == "YOLO"
     assert len(info.metadata["weights_sha256"]) == 64
+    # Validation-selected threshold from the sidecar is used when no explicit threshold is given
+    assert detector.recommended_confidence_threshold == 0.31
+    assert resolve_confidence_threshold(None, detector) == 0.31
+    assert resolve_confidence_threshold(0.5, detector) == 0.5
 
     result = detector.detect(np.full((480, 640, 3), 120, dtype=np.uint8), confidence_threshold=0.25)
     assert result.backend == "ultralytics-yolo"
@@ -149,3 +162,10 @@ def test_heuristic_detector_identifies_defect_features():
     assert 0.0 <= det.confidence <= 1.0
     assert 0.0 <= det.bbox_x_min < det.bbox_x_max <= 1.0
     assert 0.0 <= det.bbox_y_min < det.bbox_y_max <= 1.0
+
+
+def test_threshold_resolution_without_model_recommendation():
+    heuristic = OpenCVHeuristicDetector()
+    assert heuristic.recommended_confidence_threshold is None
+    assert resolve_confidence_threshold(None, heuristic) == DEFAULT_CONFIDENCE_THRESHOLD == 0.25
+    assert resolve_confidence_threshold(0.4, heuristic) == 0.4

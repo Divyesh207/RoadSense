@@ -196,11 +196,11 @@ async def run_ai_repair_verification(
     organization_id: uuid.UUID,
     evidence_ids: list[uuid.UUID] | None = None,
 ) -> RepairVerification:
-    """Run AI verification pipeline on uploaded repair evidence vs pre-repair damage records.
-    
-    CRITICAL RULE: AI verification does NOT equal human approval.
-    This creates an AI evaluation result record with recommendations,
-    leaving the final operational sign-off to human review.
+    """Run automated evidence checks on uploaded repair evidence vs the linked damage records.
+
+    Checks only that after-repair evidence exists and where it was captured. No image
+    analysis is performed (before/after image comparison is not implemented yet), so the
+    result is never VERIFIED: final sign-off is always a human decision.
     """
     await get_verified_job(db, maintenance_job_id, organization_id)
 
@@ -233,63 +233,74 @@ async def run_ai_repair_verification(
     )
     damages = list((await db.execute(dmg_query)).scalars().all())
 
-    # Evaluate spatial proximity & visual recovery
-    min_dist_m = None
-    all_within_threshold = True
-    evidence_with_coords = 0
+    # Automated evidence check (no image analysis). It only establishes whether
+    # after-repair evidence exists and whether it was captured near the recorded
+    # damage. It cannot judge repair quality and never marks a repair as verified;
+    # that remains a human decision (submit_human_verification).
+    after_evidence = [e for e in evidence_list if e.evidence_type == "AFTER_REPAIR"]
+    damages_with_location = [d for d in damages if d.location is not None]
 
-    for ev in evidence_list:
-        if ev.location is not None:
+    distances_m: list[float] = []
+    after_with_coords = 0
+    for ev in after_evidence:
+        if ev.location is None:
+            continue
+        try:
+            pt_ev = to_shape(ev.location)
+        except (AttributeError, ValueError, TypeError):
+            continue
+        after_with_coords += 1
+        for dmg in damages_with_location:
             try:
-                pt_ev = to_shape(ev.location)
-                ev_lat, ev_lon = pt_ev.y, pt_ev.x
-                evidence_with_coords += 1
-
-                for dmg in damages:
-                    if dmg.location is not None:
-                        pt_dmg = to_shape(dmg.location)
-                        dist = haversine_distance_meters(ev_lat, ev_lon, pt_dmg.y, pt_dmg.x)
-                        if min_dist_m is None or dist < min_dist_m:
-                            min_dist_m = dist
-                        if dist > 50.0:  # Threshold for spatial relevance: 50m
-                            all_within_threshold = False
+                pt_dmg = to_shape(dmg.location)
             except (AttributeError, ValueError, TypeError):
-                pass
+                continue
+            distances_m.append(haversine_distance_meters(pt_ev.y, pt_ev.x, pt_dmg.y, pt_dmg.x))
+    min_dist_m = min(distances_m) if distances_m else None
 
-    has_after_evidence = any(e.evidence_type == "AFTER_REPAIR" for e in evidence_list)
-
-    # Determine AI confidence and recommendation
-    if has_after_evidence and (min_dist_m is None or min_dist_m <= 25.0):
-        ai_recommendation = "VERIFIED"
-        confidence = 0.92
-        residual_damage_detected = False
-        summary = "AI analysis indicates road surface restored with high spatial and visual correlation."
-    elif has_after_evidence and min_dist_m is not None and min_dist_m <= 50.0:
-        ai_recommendation = "PARTIALLY_VERIFIED"
-        confidence = 0.74
-        residual_damage_detected = False
-        summary = "Repair evidence detected in moderate vicinity; manual review advised."
+    reasons: list[str] = []
+    if not after_evidence:
+        check_result = "REVIEW_REQUIRED"
+        reasons.append("No after-repair evidence has been uploaded.")
+    elif min_dist_m is None:
+        # Previously this case was reported as VERIFIED; without coordinates on both
+        # sides the location cannot be checked at all.
+        check_result = "REVIEW_REQUIRED"
+        if after_with_coords == 0:
+            reasons.append("After-repair evidence has no GPS coordinates; location could not be checked.")
+        if not damages_with_location:
+            reasons.append("Linked damage records have no location; location could not be checked.")
+    elif min_dist_m <= 25.0:
+        check_result = "LOCATION_CONSISTENT"
+        reasons.append(f"After-repair evidence was captured {min_dist_m:.1f} m from the recorded damage.")
+    elif min_dist_m <= 50.0:
+        check_result = "LOCATION_UNCERTAIN"
+        reasons.append(f"Closest after-repair evidence is {min_dist_m:.1f} m from the recorded damage.")
     else:
-        ai_recommendation = "REVIEW_REQUIRED"
-        confidence = 0.58
-        residual_damage_detected = True
-        summary = "Evidence inconclusive or spatial coordinates deviate from recorded damage location."
+        check_result = "LOCATION_MISMATCH"
+        reasons.append(f"Closest after-repair evidence is {min_dist_m:.1f} m away (> 50 m) from the recorded damage.")
 
     findings: dict[str, Any] = {
-        "ai_recommendation": ai_recommendation,
+        "check_type": "AUTOMATED_EVIDENCE_CHECK",
+        "check_result": check_result,
+        "reasons": reasons,
+        "image_comparison_performed": False,
+        "human_review_required": True,
         "evidence_analyzed_count": len(evidence_list),
+        "after_repair_evidence_count": len(after_evidence),
         "damage_records_evaluated": len(damages),
         "closest_evidence_distance_meters": round(min_dist_m, 2) if min_dist_m is not None else None,
-        "residual_damage_detected": residual_damage_detected,
-        "spatial_consistency": all_within_threshold,
-        "has_post_repair_imagery": has_after_evidence,
-        "summary": summary,
+        "summary": (
+            "Automated check of evidence presence and capture location only. No before/after image "
+            "comparison was performed; repair quality must be confirmed by a reviewer."
+        ),
     }
 
+    # Only measured values; no image-derived scores exist yet.
     metrics: dict[str, Any] = {
-        "spatial_match_score": 0.95 if (min_dist_m is not None and min_dist_m < 15.0) else 0.70,
-        "texture_homogeneity_score": 0.88,
-        "edge_discontinuity_index": 0.12,
+        "closest_after_evidence_distance_meters": round(min_dist_m, 2) if min_dist_m is not None else None,
+        "after_evidence_with_coordinates": after_with_coords,
+        "damage_records_with_location": len(damages_with_location),
     }
 
     verification = RepairVerification(
@@ -298,12 +309,12 @@ async def run_ai_repair_verification(
         maintenance_job_id=maintenance_job_id,
         ai_processing_run_id=None,
         verified_by_user_id=None,
-        verification_status="AI_EVALUATED",
-        ai_confidence=confidence,
+        verification_status="AUTOMATED_CHECK",
+        ai_confidence=None,  # no model ran; a confidence value would be fabricated
         comparison_metrics=metrics,
         findings=findings,
-        reviewer_notes=f"Automated AI Evaluation: {ai_recommendation} (Confidence: {confidence * 100:.1f}%)",
-        verified_at=None,  # Not verified yet until human approves
+        reviewer_notes=f"Automated evidence check (no image analysis): {check_result}. " + " ".join(reasons),
+        verified_at=None,  # Not verified until a human decides
         created_at=utc_now(),
         updated_at=utc_now(),
     )

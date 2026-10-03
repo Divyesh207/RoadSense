@@ -143,7 +143,7 @@ async def get_evidence_list(
 @router.post(
     "/{maintenance_job_id}/ai-verify",
     response_model=ResponseEnvelope[RepairVerificationResponse],
-    summary="Run AI evaluation on repair evidence against recorded damages",
+    summary="Run automated evidence checks (presence + GPS location; no image analysis) on repair evidence",
 )
 async def trigger_ai_repair_verification(
     maintenance_job_id: uuid.UUID,
@@ -187,7 +187,7 @@ async def submit_verification_decision(
 @router.get(
     "/{maintenance_job_id}/verifications",
     response_model=ResponseEnvelope[list[RepairVerificationResponse]],
-    summary="List verification history and AI evaluation records for a job",
+    summary="List verification history and automated check records for a job",
 )
 async def get_verifications_list(
     maintenance_job_id: uuid.UUID,

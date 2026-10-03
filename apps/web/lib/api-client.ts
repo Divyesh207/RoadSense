@@ -115,6 +115,18 @@ class ApiClient {
     },
   };
 
+  // Health (public, unauthenticated)
+  health = {
+    live: async (): Promise<ResponseEnvelope<{ status: string; version: string; environment: string }>> => {
+      return this.request("/health/live");
+    },
+    ready: async (): Promise<
+      ResponseEnvelope<{ status: string; checks: { database: string; redis: string; storage: string } }>
+    > => {
+      return this.request("/health/ready");
+    },
+  };
+
   // Roads
   roads = {
     list: async (params: Record<string, any> = {}): Promise<PaginatedResponseEnvelope<Road>> => {
@@ -294,12 +306,13 @@ class ApiClient {
     listEvidence: async (jobId: string): Promise<ResponseEnvelope<RepairEvidence[]>> => {
       return this.request<ResponseEnvelope<RepairEvidence[]>>(`/maintenance-jobs/${jobId}/repair-evidence`);
     },
-    evaluateAI: async (
+    // Automated evidence checks (presence + GPS location; no image analysis).
+    runAutomatedCheck: async (
       jobId: string,
       evidenceIds?: string[]
     ): Promise<ResponseEnvelope<RepairVerification>> => {
       return this.request<ResponseEnvelope<RepairVerification>>(
-        `/maintenance-jobs/${jobId}/ai-evaluate`,
+        `/maintenance-jobs/${jobId}/ai-verify`,
         {
           method: "POST",
           body: JSON.stringify(evidenceIds ? { evidence_ids: evidenceIds } : {}),

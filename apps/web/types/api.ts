@@ -168,7 +168,12 @@ export interface InspectionDetection {
   media_id: string;
   damage_type: string;
   damage_type_id: string;
+  // Heuristic fallback scores are not probabilities; see score_type / detection_method.
   confidence: number;
+  score_type?: "MODEL_CONFIDENCE" | "HEURISTIC_SCORE" | null;
+  detection_method?: "TRAINED_MODEL" | "HEURISTIC_FALLBACK" | "UNKNOWN";
+  model_name?: string | null;
+  model_version?: string | null;
   bbox: { x_min: number; y_min: number; x_max: number; y_max: number };
   pixel_width?: number | null;
   pixel_height?: number | null;
@@ -205,6 +210,8 @@ export interface DamageRecord {
   location?: LocationData;
   status: "DETECTED" | "PENDING_REVIEW" | "CONFIRMED" | "REJECTED" | "REPAIRED";
   confidence?: number;
+  detection_method?: "TRAINED_MODEL" | "HEURISTIC_FALLBACK" | "MANUAL" | "UNKNOWN" | null;
+  score_type?: "MODEL_CONFIDENCE" | "HEURISTIC_SCORE" | null;
   estimated_area_m2?: number;
   detected_at?: string;
   reviewed_at?: string;
@@ -300,7 +307,9 @@ export interface RepairVerification {
   organization_id: string;
   maintenance_job_id: string;
   verified_by_user_id?: string;
-  verification_status: "PENDING" | "AI_EVALUATED" | "VERIFIED" | "REJECTED";
+  // AUTOMATED_CHECK: evidence presence + GPS location only (no image analysis).
+  // AI_EVALUATED appears only on records created before that relabelling.
+  verification_status: "PENDING" | "AUTOMATED_CHECK" | "AI_EVALUATED" | "VERIFIED" | "REJECTED";
   ai_confidence?: number;
   comparison_metrics?: Record<string, any>;
   findings?: Record<string, any>;
@@ -481,6 +490,8 @@ export interface MapDamageFeature {
   severity: string;
   status: string;
   confidence?: number | null;
+  detection_method?: string | null;
+  score_type?: string | null;
   latitude: number;
   longitude: number;
   road_id?: string | null;

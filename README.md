@@ -1,6 +1,6 @@
 # Road Intelligence & Pothole Management Platform
 
-An end-to-end, multi-tenant road infrastructure intelligence and pothole management platform. The platform collects road condition data, detects and classifies damage using local AI/ML models, associates findings with road segments in PostGIS, predicts deterioration, prioritizes maintenance, and verifies repairs using before/after evidence.
+An end-to-end, multi-tenant road infrastructure intelligence and pothole management platform. The platform collects road condition data, runs a damage-detection pipeline (a YOLO11s model trained on RDD2022 India for cracks and potholes; a rule-based OpenCV heuristic fallback is used only when no trained weights are configured), associates findings with road segments in PostGIS, produces rule-based health and deterioration estimates, manages maintenance, and records repair evidence for human verification. See section 4 for what is actually implemented.
 
 ---
 
@@ -31,8 +31,8 @@ An end-to-end, multi-tenant road infrastructure intelligence and pothole managem
                |                                          v
                |                                 +------------------+
                +---------------------------------+  AI Worker       |
-                                                 |  (YOLO/PyTorch/  |
-                                                 |   XGBoost)       |
+                                                 |  (YOLO path +    |
+                                                 |  OpenCV fallback)|
                                                  +------------------+
 ```
 
@@ -46,7 +46,7 @@ An end-to-end, multi-tenant road infrastructure intelligence and pothole managem
 │   └── android/           # Android Field Inspection App (Kotlin, Jetpack Compose, Room)
 ├── services/
 │   ├── api/               # FastAPI Backend Service (SQLAlchemy 2.0, Alembic, Pydantic v2)
-│   └── ai-worker/         # Local AI Inference Service (YOLOv8, PyTorch, OpenCV, XGBoost)
+│   └── ai-worker/         # Detection worker (Ultralytics YOLO path, OpenCV heuristic fallback, Celery)
 ├── packages/
 │   └── shared/            # Shared schema definitions and constants
 ├── infrastructure/
@@ -87,29 +87,29 @@ Access services:
 
 ## 4. Platform Implementation Status & Roadmap Milestones
 
-All Master Development Phases defined in `15_ROADMAP.md` are fully implemented, verified, and passing:
+Status reflects the code as it currently runs, not the target design in the specification documents.
+**Implemented** = works end to end; **Partial** = works with stated limits; **Rule-based** = deterministic
+formulas, not trained ML; **Not implemented** = absent.
 
-| Phase | Description | Status | Verification Summary |
-|---|---|---|---|
-| **Phase 0** | Project Initialization & Standards | Complete | Repository structure, linters, pre-commit, environment configs |
-| **Phase 1** | Backend Foundation & Architecture | Complete | FastAPI, async SQLAlchemy, Pydantic v2, custom exception handling |
-| **Phase 2** | Database Foundation & PostGIS Schema | Complete | PostgreSQL/PostGIS tables, GiST spatial indexing, Alembic migrations |
-| **Phase 3** | Authentication & RBAC Engine | Complete | JWT, bcrypt, organization isolation, role permissions hierarchy |
-| **Phase 4** | Road Intelligence Foundation | Complete | Roads, road segments, spatial distance calculations, GeoJSON |
-| **Phase 5** | Inspection & Media Ingestion | Complete | Inspection lifecycle, presigned upload URLs, offline idempotent sync |
-| **Phase 6** | AI Processing Pipeline | Complete | Celery async worker, YOLOv8 inference, bounding boxes, severity score |
-| **Phase 7** | Damage Intelligence Lifecycle | Complete | Canonical damage tracking, human review workflow, status transitions |
-| **Phase 8** | Web Application Core | Complete | Next.js 14 App Router, dark glassmorphism, responsive navigation shell |
-| **Phase 9** | GIS & Road Health Engine | Complete | Leaflet interactive map, health score calculation (IRC-aligned) |
-| **Phase 10** | Deterioration Prediction | Complete | Feature extraction, XGBoost deterioration regression, risk scoring |
-| **Phase 11** | Maintenance Operations | Complete | Maintenance jobs, crew dispatch, finite state machine transitions |
-| **Phase 12** | Repair Verification | Complete | Before/after photographic evidence, AI verification, manual sign-off |
-| **Phase 13** | Recurrence & Historical Intelligence | Complete | Spatio-temporal cluster detection, recurring damage tracking |
-| **Phase 14** | Android Field Application | Complete | Kotlin, Jetpack Compose, Room offline queue, CameraX, WorkManager |
-| **Phase 15** | Analytics & Operational Reporting | Complete | Dashboard metrics, temporal trends, async PDF/CSV operational reports |
-| **Phase 16** | Production Hardening & Security | Complete | OWASP headers (CSP, HSTS), rate limiting, payload protection, audit log |
-| **Phase 17** | Complete System Validation | Complete | Full multi-tenant, multi-role Master E2E lifecycle test suite |
-| **Phase 18** | Production Release Readiness | Complete | Docker Compose production topology, readiness probes, smoke tests |
+| Area | Status | Notes |
+|---|---|---|
+| Backend foundation, PostGIS schema, Alembic | Implemented | Verified on PostgreSQL 16 / PostGIS 3.4 (integration tests) |
+| Authentication, organization isolation | Implemented | JWT + permissions; only the administrator role is seeded by `app.bootstrap` |
+| Roads, segments, inspections, signed media upload | Implemented | Local signed storage verified; Supabase tested against a mocked API only |
+| Android field app | Implemented | Photo capture, GPS, runtime permissions, sync and upload verified on a physical Android 15 device; no video capture |
+| AI processing pipeline (Celery + Redis) | Implemented | Dispatch, retries and result storage verified end to end |
+| Damage detection model | Implemented, Partial | YOLO11s fine-tuned on RDD2022 India (`rdd2022-india-yolo11s` / `india-v1`); detects cracks (D00/D10/D20 → CRACK) and potholes (D40 → POTHOLE) only, not depressions, waterlogging or surface damage. Held-out RDD2022 India test split: mAP50 0.326, mAP50-95 0.134 (transverse cracks D10 effectively undetected). Not validated on Pune roads or other cities. Scores are uncalibrated model confidence. Weights are not in git; see `services/ai-worker/training/README.md`. The OpenCV heuristic fallback (rule-based, not a trained model) is used only when no trained weights are configured and is labelled as such |
+| Severity assessment | Rule-based | Bounding-box size and damage class only |
+| Damage area | Not implemented | Physical area is not estimated without camera calibration (field left empty) |
+| Human damage review | Implemented | |
+| Road health score (0-100) | Rule-based, Partial | Severity-weighted deductions; computed only when its endpoint is called; no traffic factor |
+| Deterioration prediction | Rule-based | Hand-weighted rules (`Rule-Based-Deterioration-Estimate`), no trained model, no confidence/uncertainty; no weather or traffic data |
+| Maintenance jobs, assignment, status machine | Implemented | No scheduling optimisation |
+| Repair verification | Partial | Evidence upload API + human VERIFIED/REJECTED decision. Automated check covers evidence presence and GPS distance only; no before/after image comparison yet |
+| Recurrence tracking | Rule-based, Partial | Distance (30 m) + time matching; run only when its endpoint is called; no escalation |
+| Web dashboard, inspection detail, GIS map | Implemented | No charts; prediction and health are not yet shown |
+| Reports | Partial | JSON reports only (no PDF/CSV) |
+| Production deployment | Not implemented | No TLS/secret management/monitoring; CI workflow defined but not yet run |
 
 ---
 
@@ -141,7 +141,7 @@ All 16 authoritative specifications reside in the `docs/` directory:
 - `05_TECH_STACK.md` — Technology selection and dependency lockdown
 - `06_DATABASE_SCHEMA.md` — PostgreSQL 16 & PostGIS physical schema
 - `07_API_SPECIFICATION.md` — Authoritative REST API contracts
-- `08_AI_ML_SPECIFICATION.md` — YOLOv8 detection and XGBoost deterioration specs
+- `08_AI_ML_SPECIFICATION.md` — Target AI/ML design (YOLOv8 detection, XGBoost deterioration); see its implementation-status note
 - `09_USER_ROLES_PERMISSIONS.md` — RBAC matrix and security boundaries
 - `10_UI_UX_SPECIFICATION.md` — Design system and dark mode interface guidelines
 - `11_ANDROID_APP_SPEC.md` — Android architecture and offline-first sync engine

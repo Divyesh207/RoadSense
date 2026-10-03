@@ -31,7 +31,7 @@ def process_inspection(
     job_id: str,
     inspection_id: str,
     organization_id: str,
-    confidence_threshold: float = 0.25,
+    confidence_threshold: float | None = None,
 ) -> dict[str, Any]:
     """
     Entry point published by the API (POST /inspections/{id}/process).
@@ -60,7 +60,7 @@ def process_inspection_media(
     media_id: str,
     organization_id: str,
     file_path: str | None = None,
-    confidence_threshold: float = 0.25,
+    confidence_threshold: float | None = None,
 ) -> dict[str, Any]:
     """
     Single-media entry point (reprocessing one media item under its own job).

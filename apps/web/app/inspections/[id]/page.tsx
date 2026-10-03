@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AppShell } from "@/components/shell";
 import { api } from "@/lib/api-client";
+import { detectionMethodLabel, isHeuristic, scoreLabel } from "@/lib/provenance";
 import { AuditLogItem, DamageRecord, Inspection, InspectionDetection, InspectionMedia } from "@/types/api";
 import {
   AlertTriangle,
@@ -207,6 +208,11 @@ export default function InspectionDetailPage() {
     ? "Not started"
     : "Awaiting submission";
 
+  // All detections of one inspection come from the detector(s) recorded on its processing runs.
+  const methods = Array.from(new Set(detections.data.map((d) => d.detection_method ?? "UNKNOWN")));
+  const heuristicOnly = detections.data.length > 0 && detections.data.every((d) => isHeuristic(d.detection_method, d.score_type));
+  const scoreHeader = scoreLabel(heuristicOnly ? "HEURISTIC_SCORE" : detections.data.every((d) => d.score_type === "MODEL_CONFIDENCE") && detections.data.length > 0 ? "MODEL_CONFIDENCE" : null);
+
   const pendingReview = damages.data.filter((d) => d.status === "PENDING_REVIEW" || d.status === "DETECTED").length;
   const reviewStatus = damages.loading
     ? "…"
@@ -299,6 +305,11 @@ export default function InspectionDetailPage() {
             </h2>
             <p className="text-2xl font-bold text-white">{detections.loading ? "…" : detections.error ? "—" : detections.data.length}</p>
             <p className="text-[11px] text-slate-500">detections · AI status: {aiStatus}</p>
+            {methods.length > 0 && (
+              <p className={`text-[11px] mt-1 ${heuristicOnly ? "text-amber-400" : "text-slate-400"}`}>
+                Method: {methods.map(detectionMethodLabel).join(", ")}
+              </p>
+            )}
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
             <h2 className="text-xs font-semibold text-slate-300 mb-3 flex items-center gap-1.5">
@@ -318,11 +329,18 @@ export default function InspectionDetailPage() {
 
         {/* AI detections */}
         <Panel title="AI Detections" icon={<Cpu className="h-3.5 w-3.5 text-blue-400" />} section={detections} empty="No AI detections for this inspection yet.">
+          {heuristicOnly && (
+            <p className="px-4 py-2 text-[11px] text-amber-400 bg-amber-950/30 border-b border-slate-800">
+              These results were produced by the OpenCV heuristic fallback (rule-based, not a trained model), not by
+              the trained detection model. Scores are rule-derived, not probabilities; treat these as unverified
+              candidates.
+            </p>
+          )}
           <table className="w-full text-left text-xs">
             <thead className="text-slate-500 border-b border-slate-800">
               <tr>
                 <th className="py-2 px-4 font-medium">Damage Type</th>
-                <th className="py-2 px-4 font-medium">Confidence</th>
+                <th className="py-2 px-4 font-medium">{scoreHeader}</th>
                 <th className="py-2 px-4 font-medium">Severity</th>
                 <th className="py-2 px-4 font-medium">Bounding Box (normalized)</th>
                 <th className="py-2 px-4 font-medium">Location</th>

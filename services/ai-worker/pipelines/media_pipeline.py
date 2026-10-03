@@ -99,6 +99,18 @@ async def ensure_damage_types(db: AsyncSession) -> dict[str, uuid.UUID]:
     return mapping
 
 
+DEFAULT_CONFIDENCE_THRESHOLD = 0.25
+
+
+def resolve_confidence_threshold(requested: float | None, detector: BaseDetector) -> float:
+    """An explicit threshold wins; otherwise the trained model's validation-selected
+    threshold (from its metadata sidecar); otherwise the historical default."""
+    if requested is not None:
+        return requested
+    recommended = getattr(detector, "recommended_confidence_threshold", None)
+    return float(recommended) if recommended is not None else DEFAULT_CONFIDENCE_THRESHOLD
+
+
 async def ensure_ai_model(
     db: AsyncSession, model_id_name: str = FALLBACK_MODEL_ID, version: str = FALLBACK_MODEL_VERSION
 ) -> uuid.UUID:
@@ -289,6 +301,13 @@ async def persist_media_analysis(
             pixel_height=validation.height_px,
             location=pt_geom,
             raw_output={
+                # Which detector actually produced this detection and what its score means.
+                "detector": {
+                    "model_id": analysis.model_id,
+                    "model_version": analysis.model_version,
+                    "backend": analysis.backend,
+                    "score_type": "HEURISTIC_SCORE" if analysis.backend == "opencv-heuristic" else "MODEL_CONFIDENCE",
+                },
                 "severity_assessment": sev_data,
                 "geospatial_association": _json_safe(geo_assoc.__dict__),
                 "metadata": det.metadata,
@@ -328,7 +347,7 @@ async def execute_media_pipeline(
     media_id: uuid.UUID,
     organization_id: uuid.UUID,
     file_path: str | Path | None = None,
-    confidence_threshold: float = 0.25,
+    confidence_threshold: float | None = None,
     iou_threshold: float = 0.45,
 ) -> dict[str, Any]:
     """
@@ -373,6 +392,7 @@ async def execute_media_pipeline(
 
     try:
         detector = ModelRegistry().get_detector()
+        confidence_threshold = resolve_confidence_threshold(confidence_threshold, detector)
         analysis = analyze_media_file(target_file, media.media_type, detector, confidence_threshold, iou_threshold)
         damage_type_map = await ensure_damage_types(db)
         run, detection_ids = await persist_media_analysis(
@@ -443,7 +463,7 @@ async def execute_inspection_pipeline(
     job_id: uuid.UUID,
     inspection_id: uuid.UUID,
     organization_id: uuid.UUID,
-    confidence_threshold: float = 0.25,
+    confidence_threshold: float | None = None,
     iou_threshold: float = 0.45,
     resolve_media: MediaResolver | None = None,
     worker_version: str | None = None,
@@ -522,6 +542,7 @@ async def execute_inspection_pipeline(
     except TrainedModelRequiredError as exc:
         await _mark_job_failed(db, job, "MODEL_UNAVAILABLE", str(exc), inspection=inspection)
         return {"status": "FAILED", "job_id": job_id, "error_code": "MODEL_UNAVAILABLE", "error_message": str(exc)}
+    confidence_threshold = resolve_confidence_threshold(confidence_threshold, detector)
 
     try:
         damage_type_map = await ensure_damage_types(db)

@@ -892,7 +892,8 @@ async def get_inspection_detections(
             detail={"code": "NOT_FOUND", "message": "Inspection not found."},
         )
 
-    from app.models.ai import AIDetection
+    from app.models.ai import AIDetection, AIProcessingRun
+    from app.services.provenance import detection_provenance
 
     det_stmt = (
         select(AIDetection)
@@ -900,7 +901,10 @@ async def get_inspection_detections(
             AIDetection.inspection_id == inspection_id,
             AIDetection.organization_id == org_ctx.organization_id,
         )
-        .options(selectinload(AIDetection.damage_type))
+        .options(
+            selectinload(AIDetection.damage_type),
+            selectinload(AIDetection.processing_run).selectinload(AIProcessingRun.model),
+        )
         .order_by(AIDetection.created_at.desc())
     )
     dets = (await db.execute(det_stmt)).scalars().all()
@@ -910,6 +914,8 @@ async def get_inspection_detections(
         coords = wkt_or_geom_to_point(d.location)
         loc = {"latitude": coords[0], "longitude": coords[1]} if coords else None
         sev = (d.raw_output or {}).get("severity_assessment", {}).get("severity", "MEDIUM")
+        # Which detector produced this row; heuristic scores are not model probabilities.
+        prov = detection_provenance(d.processing_run.model if d.processing_run else None)
 
         data.append(
             {
@@ -919,6 +925,10 @@ async def get_inspection_detections(
                 "damage_type": d.damage_type.code if d.damage_type else "UNKNOWN",
                 "damage_type_id": str(d.damage_type_id),
                 "confidence": float(d.confidence),
+                "score_type": prov["score_type"],
+                "detection_method": prov["detection_method"],
+                "model_name": prov["model_name"],
+                "model_version": prov["model_version"],
                 "bbox": {
                     "x_min": float(d.bbox_x_min),
                     "y_min": float(d.bbox_y_min),

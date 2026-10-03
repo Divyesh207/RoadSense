@@ -76,6 +76,8 @@ class BaseDetector(ABC):
     model_id: str
     model_version: str
     backend: str
+    # Confidence threshold selected on validation data for trained weights (None = no recommendation).
+    recommended_confidence_threshold: float | None = None
 
     @abstractmethod
     def detect(
@@ -111,8 +113,10 @@ class YOLODetector(BaseDetector):
         model_version: str = "unversioned",
         device: str = "cpu",
         image_size: int = 640,
+        recommended_confidence_threshold: float | None = None,
     ):
         self.model_id = model_id
+        self.recommended_confidence_threshold = recommended_confidence_threshold
         self.model_version = model_version
         self.weights_path = weights_path
         self.device = device
@@ -291,6 +295,8 @@ class OpenCVHeuristicDetector(BaseDetector):
                 cls_code = "SURFACE_DAMAGE"
                 base_conf = 0.45
 
+            # Heuristic score from contour size/shape, stored in the confidence field for
+            # schema compatibility. It is NOT a model probability (score_type HEURISTIC_SCORE).
             confidence = round(min(0.98, max(0.10, base_conf)), 4)
 
             if confidence >= confidence_threshold:

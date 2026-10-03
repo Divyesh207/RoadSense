@@ -13,6 +13,9 @@ class MapDamageFeature(BaseModel):
     severity: str
     status: str
     confidence: float | None = None
+    # TRAINED_MODEL / HEURISTIC_FALLBACK / MANUAL / UNKNOWN; HEURISTIC_SCORE is not a probability.
+    detection_method: str | None = None
+    score_type: str | None = None
     latitude: float
     longitude: float
     road_id: uuid.UUID | None = None

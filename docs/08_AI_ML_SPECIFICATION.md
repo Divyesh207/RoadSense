@@ -6,6 +6,19 @@
 **Status:** Approved Technical Specification  
 **Parent Documents:** `01_PROJECT_CONTEXT.md`, `02_PRD.md`, `03_SRS.md`, `04_SYSTEM_ARCHITECTURE.md`, `05_TECH_STACK.md`, `06_DATABASE_SCHEMA.md`, `07_API_SPECIFICATION.md`
 
+> **Implementation status (current code):** this document is the *target* design.
+> - **Trained detector:** YOLO11s fine-tuned on RDD2022 India (`rdd2022-india-yolo11s` / `india-v1`),
+>   trained on D00/D10/D20 (cracks → CRACK) and D40 (potholes → POTHOLE). Its scores are uncalibrated
+>   model confidence, not probabilities.
+> - **Unsupported classes:** the model does not detect DEPRESSION, WATERLOGGING, SURFACE_DAMAGE or OTHER.
+> - **Metrics vs generalization:** held-out RDD2022 India test split mAP50 0.326 / mAP50-95 0.134. These
+>   are not a measure of accuracy on Pune roads or other cities and cameras.
+> - **Heuristic fallback:** the deterministic OpenCV heuristic (`OPENCV_HEURISTIC` / `HEURISTIC_FALLBACK`)
+>   is used only when no trained weights are configured and is labelled as rule-based.
+> - Deterioration prediction is a hand-weighted rule set (`Rule-Based-Deterioration-Estimate`), not
+>   XGBoost, and reports no confidence or uncertainty. Repair verification checks evidence presence and
+>   GPS distance only; no before/after image comparison is implemented yet. See README section 4.
+
 ---
 
 ## 1. Purpose

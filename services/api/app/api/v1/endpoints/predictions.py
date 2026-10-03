@@ -20,7 +20,14 @@ from app.schemas.prediction import (
     PredictionRequest,
     PredictionResponseData,
 )
-from app.services.prediction_engine import predict_segment_deterioration
+from app.services.prediction_engine import (
+    ESTIMATION_METHOD,
+    MODEL_FAMILY,
+    MODEL_NAME,
+    MODEL_VERSION,
+    RULE_BASED_DISCLAIMER,
+    predict_segment_deterioration,
+)
 
 router = APIRouter()
 
@@ -40,8 +47,9 @@ def get_loaded_rel(instance: Any, attr_name: str, default: Any = None) -> Any:
 
 def build_prediction_response(prediction: DeteriorationPrediction) -> PredictionResponseData:
     model = get_loaded_rel(prediction, "model")
-    model_name = model.name if model else "XGBoost-Road-Deterioration"
-    model_version = model.version if model else "v1.0.0"
+    model_name = model.name if model else MODEL_NAME
+    model_version = model.version if model else MODEL_VERSION
+    rule_based = (model.model_family == MODEL_FAMILY) if model else True
 
 
     return PredictionResponseData(
@@ -64,6 +72,8 @@ def build_prediction_response(prediction: DeteriorationPrediction) -> Prediction
         input_data_timestamp=prediction.input_data_timestamp,
         generated_at=prediction.generated_at,
         status=prediction.status,
+        estimation_method=ESTIMATION_METHOD if rule_based else "TRAINED_MODEL",
+        **({"disclaimer": RULE_BASED_DISCLAIMER} if rule_based else {}),
     )
 
 

@@ -5,7 +5,7 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import select
 
-from app.models.ai import AIDetection, DamageType
+from app.models.ai import AIDetection, AIModel, AIProcessingRun, DamageType
 from app.models.damage import DamageRecord
 from app.models.inspection import Inspection, InspectionMedia
 from app.models.road import Road
@@ -405,3 +405,68 @@ async def test_damage_rbac_permissions(async_client, db_session, seeded_damage_c
     )
     assert resp.status_code == 403
     assert resp.json()["error"]["code"] == "FORBIDDEN"
+
+
+@pytest.mark.asyncio
+async def test_heuristic_detection_provenance_is_labelled(async_client, db_session, seeded_damage_context):
+    """OpenCV fallback output must be labelled as heuristic, and no area is guessed from a bbox."""
+    ctx = seeded_damage_context
+    token = await get_token_for(async_client)
+    headers = {"Authorization": f"Bearer {token}", "X-Organization-ID": str(ORG_1_ID)}
+
+    model = AIModel(
+        id=uuid.uuid4(),
+        name="opencv-heuristic-road-damage",
+        model_family="OPENCV_HEURISTIC",
+        model_type="OBJECT_DETECTION",
+        version="1.0.0",
+        artifact_uri="builtin://inference/detector.py#OpenCVHeuristicDetector",
+        framework="OpenCV",
+        metadata_={"trained": False},
+    )
+    run = AIProcessingRun(
+        id=uuid.uuid4(),
+        organization_id=ORG_1_ID,
+        model_id=model.id,
+        inspection_id=ctx["inspection"].id,
+        media_id=ctx["media"].id,
+        run_type="DAMAGE_DETECTION",
+        status="COMPLETED",
+    )
+    det = AIDetection(
+        id=uuid.uuid4(),
+        organization_id=ORG_1_ID,
+        ai_processing_run_id=run.id,
+        inspection_id=ctx["inspection"].id,
+        media_id=ctx["media"].id,
+        damage_type_id=ctx["type_map"]["POTHOLE"],
+        confidence=0.61,
+        bbox_x_min=0.10,
+        bbox_y_min=0.10,
+        bbox_x_max=0.60,
+        bbox_y_max=0.60,
+        pixel_width=1280,
+        pixel_height=720,
+        location=point_to_wkt(18.5204, 73.8567),
+        raw_output={"severity_assessment": {"severity": "MEDIUM", "score": 0.4}},
+        created_at=datetime.now(timezone.utc),
+    )
+    db_session.add_all([model, run, det])
+    await db_session.commit()
+
+    dets = (await async_client.get(f"/api/v1/inspections/{ctx['inspection'].id}/detections", headers=headers)).json()["data"]
+    mine = next(d for d in dets if d["id"] == str(det.id))
+    assert mine["detection_method"] == "HEURISTIC_FALLBACK"
+    assert mine["score_type"] == "HEURISTIC_SCORE"
+    assert mine["model_name"] == "opencv-heuristic-road-damage"
+
+    resp = await async_client.post(f"/api/v1/damages/from-detection/{det.id}", headers=headers)
+    assert resp.status_code == 201, resp.text
+    dmg = resp.json()["data"]
+    assert dmg["detection_method"] == "HEURISTIC_FALLBACK"
+    assert dmg["score_type"] == "HEURISTIC_SCORE"
+    # Previously bbox fraction x an assumed 12 m2 frame was reported as physical area
+    assert dmg["estimated_area_m2"] is None
+
+    listed = (await async_client.get("/api/v1/damages", headers=headers)).json()["data"]
+    assert next(d for d in listed if d["id"] == dmg["id"])["detection_method"] == "HEURISTIC_FALLBACK"
