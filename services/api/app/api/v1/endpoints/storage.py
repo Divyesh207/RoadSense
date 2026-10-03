@@ -15,6 +15,7 @@ from app.services.storage import (
     StorageObjectNotFoundError,
     UploadTooLargeError,
     get_storage_backend,
+    safe_filename,
 )
 
 router = APIRouter()
@@ -72,6 +73,7 @@ async def download_local_object(
     path: str,
     expires: int = Query(...),
     signature: str = Query(..., min_length=64, max_length=64),
+    download: str | None = Query(None, max_length=255, description="Serve as an attachment with this file name"),
 ) -> FileResponse:
     backend = _local_backend()
     _check_signature(backend, "GET", bucket, path, expires, signature)
@@ -82,4 +84,11 @@ async def download_local_object(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "OBJECT_NOT_FOUND", "message": str(exc)},
         ) from exc
-    return FileResponse(file_path)
+    # Explicit types for generated report artifacts (OS MIME tables differ, e.g. .csv on Windows).
+    media_type = {".pdf": "application/pdf", ".csv": "text/csv; charset=utf-8", ".json": "application/json"}.get(
+        file_path.suffix.lower()
+    )
+    if download:
+        # Content-Disposition: attachment; the name is reduced to a safe base name.
+        return FileResponse(file_path, media_type=media_type, filename=safe_filename(download))
+    return FileResponse(file_path, media_type=media_type)

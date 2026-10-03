@@ -300,14 +300,14 @@ async def test_report_artifact_is_generated_and_downloadable(async_client):
     detail = (await async_client.get(f"/api/v1/reports/{report_id}", headers=headers)).json()["data"]
     assert detail["status"] == "COMPLETED"
     assert detail["parameters"]["requested_format"] == "PDF"
-    assert detail["parameters"]["artifact_format"] == "JSON"
+    assert detail["parameters"]["artifact_format"] == "PDF"
 
     dl = (await async_client.get(f"/api/v1/reports/{report_id}/download-url", headers=headers)).json()["data"]
     artifact = await async_client.get(_relative(dl["download_url"]))
     assert artifact.status_code == 200
-    body = artifact.json()
-    assert body["report_type"] == "ROAD_HEALTH"
-    assert "road_health" in body["sections"]
+    assert artifact.headers["content-type"] == "application/pdf"
+    assert artifact.content.startswith(b"%PDF-1.4")
+    assert b"Road Health Report" in artifact.content and b"Road Health" in artifact.content
 
 
 @pytest.mark.asyncio

@@ -73,7 +73,9 @@ export default function ReportsPage() {
       setDownloadingId(reportId);
       const res = await api.reports.getDownloadUrl(reportId);
       if (res.data?.download_url) {
-        window.open(res.data.download_url, "_blank");
+        // The signed URL is served as an attachment (Content-Disposition), so this downloads the
+        // actual report file instead of navigating away or rendering it in a blank tab.
+        window.location.assign(res.data.download_url);
       }
     } catch (err) {
       console.error("Failed to download report:", err);
@@ -215,7 +217,8 @@ export default function ReportsPage() {
                       </td>
                       <td className="py-3.5 text-slate-300">
                         <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-mono font-semibold text-slate-300">
-                          {report.parameters?.format || "PDF"}
+                          {/* The format actually produced; older reports requested PDF but were stored as JSON. */}
+                          {report.parameters?.artifact_format || report.parameters?.format || "—"}
                         </span>
                       </td>
                       <td className="py-3.5">

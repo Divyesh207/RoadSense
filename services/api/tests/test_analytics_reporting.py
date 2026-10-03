@@ -234,3 +234,46 @@ async def test_reports_lifecycle_and_download(
         headers=other_headers,
     )
     assert other_resp.status_code == 404
+
+
+async def _generate_and_download(async_client, headers, fmt):
+    created = await async_client.post(
+        "/api/v1/reports", json={"report_type": "ROAD_HEALTH", "parameters": {"format": fmt}}, headers=headers
+    )
+    assert created.status_code == 202, created.text
+    report_id = created.json()["data"]["report_id"]
+    detail = (await async_client.get(f"/api/v1/reports/{report_id}", headers=headers)).json()["data"]
+    url = (await async_client.get(f"/api/v1/reports/{report_id}/download-url", headers=headers)).json()["data"]["download_url"]
+    resp = await async_client.get("/api/v1" + url.split("/api/v1", 1)[1])
+    return detail, resp
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("fmt", "content_type", "magic"),
+    [("PDF", "application/pdf", b"%PDF-1.4"), ("CSV", "text/csv", b"section,field,value"), ("JSON", "application/json", b"{")],
+)
+async def test_report_artifact_is_rendered_in_requested_format(async_client: AsyncClient, make_headers, fmt, content_type, magic):
+    token = await get_token_for(async_client)
+    detail, resp = await _generate_and_download(async_client, make_headers(token, ORG_1_ID), fmt)
+    assert detail["parameters"]["artifact_format"] == fmt
+    assert detail["storage_path"].endswith("." + fmt.lower())
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith(content_type)
+    disposition = resp.headers["content-disposition"]
+    assert disposition.startswith("attachment") and f".{fmt.lower()}" in disposition
+    assert resp.content.startswith(magic)
+    if fmt == "PDF":
+        assert resp.content.rstrip().endswith(b"%%EOF")
+        assert b"Road Health Report" in resp.content
+
+
+@pytest.mark.asyncio
+async def test_unsupported_report_format_is_rejected(async_client: AsyncClient, make_headers):
+    token = await get_token_for(async_client)
+    resp = await async_client.post(
+        "/api/v1/reports", json={"report_type": "ROAD_HEALTH", "parameters": {"format": "DOCX"}},
+        headers=make_headers(token, ORG_1_ID),
+    )
+    assert resp.status_code == 422
+    assert resp.json()["error"]["code"] == "UNSUPPORTED_REPORT_FORMAT"

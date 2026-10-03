@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   ShieldCheck,
   Search,
   Filter,
@@ -17,10 +20,23 @@ import {
   Eye,
   AlertCircle,
 } from "lucide-react";
+import { AppShell } from "@/components/shell";
 import { api } from "@/lib/api-client";
 import { AuditLogItem } from "@/types/api";
 
 export default function AuditLogsPage() {
+  const router = useRouter();
+  // Back to the previous in-app page; opened directly (or from another site) -> Dashboard.
+  // navigation.canGoBack only counts same-origin entries of this tab; browsers without the
+  // Navigation API fall back to a same-origin referrer check.
+  const goBack = () => {
+    if (typeof window === "undefined") return;
+    const nav = (window as Window & { navigation?: { canGoBack?: boolean } }).navigation;
+    const canGoBack =
+      typeof nav?.canGoBack === "boolean" ? nav.canGoBack : document.referrer.startsWith(window.location.origin);
+    if (canGoBack) router.back();
+    else router.push("/dashboard");
+  };
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -76,7 +92,26 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <AppShell>
+    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+      {/* Navigation */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-3 text-xs">
+        <button
+          type="button"
+          onClick={goBack}
+          className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          <ArrowLeft className="h-3 w-3" aria-hidden="true" />
+          Back
+        </button>
+        <span className="text-slate-600" aria-hidden="true">|</span>
+        <Link href="/dashboard" className="text-slate-400 hover:text-slate-200 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+          Operations
+        </Link>
+        <span className="text-slate-600" aria-hidden="true">/</span>
+        <span className="text-slate-300" aria-current="page">Audit &amp; Security</span>
+      </nav>
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -348,5 +383,6 @@ export default function AuditLogsPage() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }

@@ -1,7 +1,7 @@
-import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
+from urllib.parse import urlencode
 
 from fastapi import HTTPException, status
 from fastapi.concurrency import run_in_threadpool
@@ -16,6 +16,7 @@ from app.schemas.report import (
     ReportDownloadUrlResponseData,
     ReportResponseData,
 )
+from app.services.report_render import RENDERERS, SUPPORTED_FORMATS
 from app.services.storage import (
     StorageError,
     get_storage_backend,
@@ -40,19 +41,34 @@ class ReportService:
         now = utc_now()
         report_type = payload.report_type.upper()
         requested_format = str(payload.parameters.get("format", "JSON")).upper()
+        if requested_format not in SUPPORTED_FORMATS:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "code": "UNSUPPORTED_REPORT_FORMAT",
+                    "message": f"Report format must be one of {', '.join(SUPPORTED_FORMATS)}.",
+                },
+            )
 
-        # Artifacts are JSON snapshots of live analytics; PDF/CSV rendering is not
-        # implemented, so the requested and produced formats are recorded separately.
+        # One snapshot of live analytics, rendered in the requested format (JSON, CSV or PDF).
         content = await ReportService._build_report_content(db, org_id, report_type, payload.parameters, now)
+        extension, content_type = SUPPORTED_FORMATS[requested_format]
+        filename = f"{report_type.lower()}_report_{now:%Y%m%d_%H%M%S}.{extension}"
         bucket = settings.SUPABASE_STORAGE_BUCKET_REPORTS
-        storage_path = f"reports/{org_id}/{report_id}.json"
-        parameters = {**payload.parameters, "requested_format": requested_format, "artifact_format": "JSON"}
+        storage_path = f"reports/{org_id}/{report_id}.{extension}"
+        parameters = {
+            **payload.parameters,
+            "requested_format": requested_format,
+            "artifact_format": requested_format,
+            "artifact_filename": filename,
+            "artifact_content_type": content_type,
+        }
 
         status_value, error_message, generated_at = "COMPLETED", None, now
         try:
-            body = json.dumps(content, default=str, indent=2).encode("utf-8")
+            body = RENDERERS[requested_format](content)
             await run_in_threadpool(
-                lambda: get_storage_backend().put_object(bucket, storage_path, body, "application/json")
+                lambda: get_storage_backend().put_object(bucket, storage_path, body, content_type)
             )
         except StorageError as exc:
             status_value, error_message, generated_at = "FAILED", f"Report artifact upload failed: {exc}", None
@@ -209,6 +225,12 @@ class ReportService:
             )
         except StorageError as exc:
             raise storage_http_exception(exc) from exc
+
+        # Ask storage to serve the object as an attachment with its real file name
+        # (Supabase and the local backend both honour the `download` query parameter).
+        filename = (report.parameters or {}).get("artifact_filename") or report.storage_path.rsplit("/", 1)[-1]
+        separator = "&" if "?" in download_url else "?"
+        download_url = f"{download_url}{separator}{urlencode({'download': filename})}"
 
         return ReportDownloadUrlResponseData(
             report_id=report.id,
