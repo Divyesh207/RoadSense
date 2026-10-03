@@ -7,7 +7,7 @@ import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContai
 import { AppShell } from "@/components/shell";
 import { api } from "@/lib/api-client";
 import { deductionBars, filterTimeline, healthClass, healthSeries } from "@/lib/intelligence";
-import { RoadIntelligence, TimelineEvent } from "@/types/api";
+import { DeteriorationEstimate, RoadIntelligence, TimelineEvent } from "@/types/api";
 import { ArrowLeft, History } from "lucide-react";
 
 // Historical Road Intelligence: Inspection -> Damage -> Health -> Priority -> Maintenance ->
@@ -30,6 +30,63 @@ const eventLink = (e: TimelineEvent): string | null => {
   if (e.type === "DAMAGE" && e.data.inspection_id) return `/inspections/${e.data.inspection_id}`;
   return null;
 };
+
+function EstimatePanel({ segmentId, segmentNumber }: { segmentId: string; segmentNumber: number }) {
+  const [est, setEst] = useState<DeteriorationEstimate | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    api.predictions.history(segmentId).then((r) => setEst(r.data?.[0] ?? null)).catch(() => setEst(null));
+  }, [segmentId]);
+  const generate = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      setEst((await api.predictions.generate(segmentId, 90)).data ?? null);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const f = est?.features || {};
+  return (
+    <div className="rounded-lg border border-slate-800 p-3 text-xs">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-slate-200">Segment {segmentNumber}: deterioration estimate</span>
+        <button onClick={generate} disabled={busy} className="px-2 py-0.5 rounded border border-slate-700 text-slate-300 disabled:opacity-50">
+          {busy ? "Calculating…" : "Recalculate (90 days)"}
+        </button>
+      </div>
+      {error && <p className="text-red-400 mt-1">{error}</p>}
+      {!est ? (
+        <p className="text-slate-500 mt-2">No estimate generated yet.</p>
+      ) : est.status !== "GENERATED" ? (
+        <p className="text-slate-500 mt-2">{est.status}: {f.reason ?? "insufficient inspection/health history"}.</p>
+      ) : (
+        <div className="mt-2 space-y-1 text-slate-300">
+          <p>
+            Risk <b>{est.predicted_risk}</b> ({f.risk_band}) over {est.prediction_horizon_days} days ·{" "}
+            {est.predicted_value != null
+              ? `health ${est.predicted_value} by linear extrapolation of the observed trend (${f.health_trend_points_per_day}/day)`
+              : "no future health value (no observed trend)"}
+          </p>
+          <div className="flex flex-wrap gap-1">
+            {Object.entries(f.contributions || {}).map(([k, v]) => (
+              <span key={k} className="px-1.5 rounded border border-slate-800 text-[10px]">{k.replace(/_/g, " ")}: {String(v)}</span>
+            ))}
+          </div>
+          {Array.isArray(f.notes) && f.notes.map((n: string, i: number) => <p key={i} className="text-[10px] text-slate-500">{n}</p>)}
+          <p className="text-[10px] text-slate-500">
+            {est.model_name} {est.model_version} · {est.estimation_method} · no confidence value (none is statistically justified) ·
+            training data: {f.ml_training_readiness?.segments_with_outcome_history ?? 0}/{f.ml_training_readiness?.required_segments ?? "—"} segments
+            with outcome history ({f.ml_training_readiness?.status ?? "unknown"})
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function RoadDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -184,6 +241,19 @@ export default function RoadDetailPage() {
             </table>
           )}
         </div>
+
+        {data.segments.length > 0 && (
+          <div className={card}>
+            <h3 className="text-sm font-semibold text-white mb-1">Deterioration risk (rule-based estimate)</h3>
+            <p className="text-[11px] text-slate-500 mb-3">
+              Hand-weighted rules over current damage, health and its observed trend, recurrence, previous repair verification,
+              inspection age and documented traffic. Not a trained or validated model; not a guaranteed outcome.
+            </p>
+            <div className="grid md:grid-cols-2 gap-3">
+              {data.segments.map((s) => <EstimatePanel key={s.id} segmentId={s.id} segmentNumber={s.segment_number} />)}
+            </div>
+          </div>
+        )}
 
         <div className={card}>
           <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2"><History className="h-4 w-4" />Historical timeline</h3>

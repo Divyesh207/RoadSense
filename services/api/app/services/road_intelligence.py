@@ -351,3 +351,97 @@ async def road_intelligence(db: AsyncSession, org_id: uuid.UUID, road_id: uuid.U
         },
         "timeline": events,
     }
+
+
+LEVEL_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+
+
+async def priority_overview(db: AsyncSession, org_id: uuid.UUID) -> list[dict[str, Any]]:
+    """Open maintenance jobs ranked by priority, each with the full factor breakdown and the
+    context behind it (health, recurrence/escalation, latest rule-based estimate)."""
+    from app.models.intelligence import DeteriorationPrediction
+
+    jobs = (
+        await db.execute(
+            select(MaintenanceJob).where(
+                MaintenanceJob.organization_id == org_id, MaintenanceJob.status.not_in(("VERIFIED", "CANCELLED"))
+            )
+        )
+    ).scalars().all()
+    out = []
+    for j in jobs:
+        damages = (
+            await db.execute(
+                select(DamageRecord)
+                .join(MaintenanceDamageLink, MaintenanceDamageLink.damage_record_id == DamageRecord.id)
+                .where(MaintenanceDamageLink.maintenance_job_id == j.id)
+            )
+        ).scalars().all()
+        dmg_ids = [d.id for d in damages]
+        recs = (
+            await db.execute(
+                select(RecurrenceRecord.escalation_level).where(
+                    RecurrenceRecord.status.in_(ACTIVE_RECURRENCE),
+                    or_(RecurrenceRecord.new_damage_id.in_(dmg_ids), RecurrenceRecord.historical_damage_id.in_(dmg_ids)),
+                )
+            )
+        ).scalars().all() if dmg_ids else []
+        road = await db.get(Road, j.road_id) if j.road_id else None
+        seg = await db.get(RoadSegment, j.road_segment_id) if j.road_segment_id else None
+        health = None
+        estimate = None
+        if seg is not None:
+            snap = (
+                await db.execute(
+                    select(RoadHealthSnapshot)
+                    .where(RoadHealthSnapshot.road_segment_id == seg.id)
+                    .order_by(desc(RoadHealthSnapshot.calculated_at))
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            health = _snapshot(snap) if snap else None
+            pred = (
+                await db.execute(
+                    select(DeteriorationPrediction)
+                    .where(DeteriorationPrediction.road_segment_id == seg.id, DeteriorationPrediction.status == "GENERATED")
+                    .order_by(desc(DeteriorationPrediction.generated_at))
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
+            if pred is not None:
+                estimate = {
+                    "predicted_risk": float(pred.predicted_risk) if pred.predicted_risk is not None else None,
+                    "risk_band": (pred.features or {}).get("risk_band"),
+                    "horizon_days": pred.prediction_horizon_days,
+                    "method": "RULE_BASED_ESTIMATE",
+                    "generated_at": _iso(pred.generated_at),
+                }
+        pf = j.priority_factors or {}
+        out.append({
+            "job_id": str(j.id),
+            "title": j.title,
+            "status": j.status,
+            "priority_level": j.priority_level,
+            "priority_score": float(j.priority_score) if j.priority_score is not None else None,
+            "mode": pf.get("mode"),
+            "version": pf.get("version"),
+            "components": pf.get("components"),
+            "inputs": pf.get("inputs"),
+            "calculated_at": pf.get("calculated_at"),
+            "road_id": str(road.id) if road else None,
+            "road_name": road.name if road else None,
+            "segment_number": seg.segment_number if seg else None,
+            "linked_damage_count": len(damages),
+            "max_severity": min((d.severity for d in damages), key=lambda s: LEVEL_ORDER.get(s, 9), default=None),
+            "segment_health": health,
+            "active_recurrences": len(recs),
+            "escalation_level": max(
+                (lvl for lvl in recs if lvl), key=lambda lvl: ("NONE", "ELEVATED", "CRITICAL").index(lvl), default=None
+            ),
+            "deterioration_estimate": estimate,
+            "created_at": _iso(j.created_at),
+        })
+    out.sort(key=lambda x: (LEVEL_ORDER.get(x["priority_level"], 9), -(x["priority_score"] or 0)))
+    for rank, item in enumerate(out, 1):
+        item["rank"] = rank
+    return out

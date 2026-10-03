@@ -7,7 +7,12 @@ score = severity base (unchanged bands from the original rule)
       + recurrence    5 pts per active recurrence on the location     (max 15)
       + prior repairs 4 pts per earlier verified repair on location   (max 12)
       + road health   0.15 x (100 - latest health score), if known    (max 15)
-capped at 100. The level is the band of the final score, but never lower than the
+      + escalation    5 (ELEVATED) / 10 (CRITICAL) for the highest active
+                      recurrence escalation on the linked damage
+      + deterioration 0.1 x risk of the latest rule-based estimate for the segment,
+                      if one was generated in the last 30 days            (max 10)
+capped at 100. Traffic is already applied inside the health score, so it is reported
+as an input only (not added twice). The level is the band of the final score, but never lower than the
 level implied by the most severe linked damage. Every input and component is
 returned in `factors` so the result can be audited; unknown inputs contribute 0
 and are recorded as unknown rather than estimated.
@@ -27,7 +32,7 @@ from app.models.history import RecurrenceRecord
 from app.models.intelligence import RoadHealthSnapshot
 from app.models.maintenance import MaintenanceDamageLink, MaintenanceJob
 
-PRIORITY_VERSION = "priority-v2.0.0"
+PRIORITY_VERSION = "priority-v2.1.0"
 LEVELS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
 INACTIVE_RECURRENCE_STATUSES = ("DISMISSED", "FALSE_POSITIVE")
 CLOSED_JOB_STATUSES = ("VERIFIED", "CANCELLED")
@@ -36,6 +41,8 @@ FREQUENCY_POINTS_PER_REPEAT, FREQUENCY_CAP = 2.0, 10.0
 RECURRENCE_POINTS_EACH, RECURRENCE_CAP = 5.0, 15.0
 PRIOR_REPAIR_POINTS_EACH, PRIOR_REPAIR_CAP = 4.0, 12.0
 HEALTH_DEFICIT_FACTOR, HEALTH_CAP = 0.15, 15.0
+ESCALATION_POINTS = {"NONE": 0.0, "ELEVATED": 5.0, "CRITICAL": 10.0}
+ESTIMATE_FACTOR, ESTIMATE_CAP, ESTIMATE_MAX_AGE_DAYS = 0.1, 10.0, 30
 
 
 def utc_now() -> datetime:
@@ -163,9 +170,54 @@ async def compute_priority(
     prior_repair_pts = min(PRIOR_REPAIR_CAP, prior_repairs * PRIOR_REPAIR_POINTS_EACH)
 
     health_score, health_scope = await _latest_health(db, organization_id, segment_ids, road_ids)
+    escalation_level = "NONE"
+    if damage_ids:
+        levels = (
+            await db.execute(
+                select(RecurrenceRecord.escalation_level).where(
+                    RecurrenceRecord.organization_id == organization_id,
+                    RecurrenceRecord.status.not_in(INACTIVE_RECURRENCE_STATUSES),
+                    or_(RecurrenceRecord.new_damage_id.in_(damage_ids), RecurrenceRecord.historical_damage_id.in_(damage_ids)),
+                )
+            )
+        ).scalars().all()
+        escalation_level = max((lvl for lvl in levels if lvl in ESCALATION_POINTS), key=list(ESCALATION_POINTS).index,
+                               default="NONE")
+    escalation_pts = ESCALATION_POINTS[escalation_level]
+    estimate_risk = None
+    if segment_ids:
+        from datetime import timedelta
+
+        from app.models.intelligence import DeteriorationPrediction
+
+        estimate_risk = (
+            await db.execute(
+                select(DeteriorationPrediction.predicted_risk)
+                .where(
+                    DeteriorationPrediction.organization_id == organization_id,
+                    DeteriorationPrediction.road_segment_id.in_(segment_ids),
+                    DeteriorationPrediction.status == "GENERATED",
+                    DeteriorationPrediction.predicted_risk.is_not(None),
+                    DeteriorationPrediction.generated_at >= utc_now() - timedelta(days=ESTIMATE_MAX_AGE_DAYS),
+                )
+                .order_by(desc(DeteriorationPrediction.predicted_risk))
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+    estimate_pts = 0.0 if estimate_risk is None else min(ESTIMATE_CAP, round(float(estimate_risk) * ESTIMATE_FACTOR, 2))
+    traffic_classes = []
+    if road_ids:
+        from app.models.road import Road
+
+        traffic_classes = sorted({
+            t for t in (await db.execute(select(Road.traffic_volume_class).where(Road.id.in_(road_ids)))).scalars() if t
+        })
     health_pts = 0.0 if health_score is None else min(HEALTH_CAP, round((100.0 - health_score) * HEALTH_DEFICIT_FACTOR, 2))
 
-    total = round(min(100.0, base_score + frequency_pts + recurrence_pts + prior_repair_pts + health_pts), 2)
+    total = round(
+        min(100.0, base_score + frequency_pts + recurrence_pts + prior_repair_pts + health_pts + escalation_pts + estimate_pts),
+        2,
+    )
     level = LEVELS[max(LEVELS.index(base_level), LEVELS.index(band_for_score(total)))]
     factors = {
         "method": "RULE_BASED",
@@ -178,6 +230,10 @@ async def compute_priority(
             "prior_verified_repairs": prior_repairs,
             "road_health_score": health_score,
             "road_health_scope": health_scope,
+            "recurrence_escalation_level": escalation_level,
+            "deterioration_estimate_risk": float(estimate_risk) if estimate_risk is not None else None,
+            "deterioration_estimate_method": "RULE_BASED_ESTIMATE" if estimate_risk is not None else None,
+            "traffic_volume_class": traffic_classes[0] if len(traffic_classes) == 1 else (traffic_classes or None),
         },
         "components": {
             "severity_base": base_score,
@@ -185,6 +241,8 @@ async def compute_priority(
             "recurrence": recurrence_pts,
             "prior_repairs": prior_repair_pts,
             "road_health": health_pts,
+            "escalation": escalation_pts,
+            "deterioration_estimate": estimate_pts,
         },
         "level_floor_from_severity": base_level,
         "calculated_at": utc_now().isoformat(),

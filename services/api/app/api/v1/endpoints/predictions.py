@@ -28,6 +28,7 @@ from app.services.prediction_engine import (
     RULE_BASED_DISCLAIMER,
     predict_segment_deterioration,
 )
+from app.services.road_lifecycle import refresh_segment_job_priorities
 
 router = APIRouter()
 
@@ -153,6 +154,9 @@ async def create_segment_prediction(
         target_type=target_type,
         persist=persist,
     )
+    if persist and prediction.status == "GENERATED":
+        # The estimate is a priority input for open AUTO jobs on this segment.
+        await refresh_segment_job_priorities(db, org_context.organization_id, segment.id)
 
     return ResponseEnvelope(
         data=build_prediction_response(prediction),

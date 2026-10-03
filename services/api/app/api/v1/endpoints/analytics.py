@@ -18,6 +18,7 @@ from app.schemas.common import ResponseEnvelope, ResponseMeta
 from app.services.analytics_service import AnalyticsService
 from app.services.road_intelligence import (
     contractor_history,
+    priority_overview,
     recurrence_overview,
     verification_overview,
 )
@@ -165,3 +166,15 @@ async def get_recurrence_overview(
     limit: Annotated[int, Query(ge=1, le=1000)] = 200,
 ):
     return ResponseEnvelope(data=await recurrence_overview(db, org_ctx.organization_id, limit))
+
+
+@router.get(
+    "/priorities",
+    response_model=ResponseEnvelope[list[dict[str, Any]]],
+    summary="Open maintenance jobs ranked by priority with the factors behind each score",
+)
+async def get_priority_overview(
+    org_ctx: Annotated[OrgContext, Depends(require_permission("maintenance:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return ResponseEnvelope(data=await priority_overview(db, org_ctx.organization_id))

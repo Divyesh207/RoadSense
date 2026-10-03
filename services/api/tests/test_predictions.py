@@ -183,7 +183,12 @@ async def test_create_segment_prediction_success(async_client, seeded_prediction
     assert "xgboost" not in data["model_name"].lower()
     assert data["predicted_risk"] is not None
     assert 0.0 <= data["predicted_risk"] <= 100.0
-    assert data["predicted_value"] is not None
+    # Only one health snapshot exists: there is no observed trend, so no future health
+    # value is produced (rules-v2 no longer invents one).
+    assert data["predicted_value"] is None
+    assert data["features"]["projection_method"] is None
+    assert data["features"]["risk_band"] in ("LOW", "MODERATE", "HIGH", "SEVERE")
+    assert data["features"]["ml_training_readiness"]["status"] == "INSUFFICIENT_DATA"
     # No statistical basis for confidence/uncertainty in a rule set: must not be fabricated
     assert data["uncertainty_lower"] is None
     assert data["uncertainty_upper"] is None

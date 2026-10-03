@@ -14,6 +14,7 @@ import {
   LogOut,
   Repeat,
   BadgeCheck,
+  ListOrdered,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
@@ -23,6 +24,7 @@ const navItems = [
   { name: "Field Inspections", href: "/inspections", icon: ClipboardList },
   { name: "Damage Intelligence", href: "/damages", icon: AlertTriangle },
   { name: "Maintenance Operations", href: "/maintenance", icon: Wrench },
+  { name: "Priorities", href: "/priorities", icon: ListOrdered },
   { name: "Repairs & Verification", href: "/repairs", icon: BadgeCheck },
   { name: "Recurrence", href: "/recurrence", icon: Repeat },
   { name: "Spatial Map", href: "/map", icon: Map },

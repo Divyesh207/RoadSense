@@ -1,6 +1,8 @@
 import {
   ContractorHistoryItem,
   CurrentUserData,
+  DeteriorationEstimate,
+  PriorityOverviewItem,
   RecurrenceOverviewItem,
   RoadIntelligence,
   VerificationOverviewItem,
@@ -476,6 +478,24 @@ class ApiClient {
     },
     getRecurrences: async (): Promise<ResponseEnvelope<RecurrenceOverviewItem[]>> => {
       return this.request<ResponseEnvelope<RecurrenceOverviewItem[]>>("/analytics/recurrences");
+    },
+    getPriorities: async (): Promise<ResponseEnvelope<PriorityOverviewItem[]>> => {
+      return this.request<ResponseEnvelope<PriorityOverviewItem[]>>("/analytics/priorities");
+    },
+  };
+
+  // Rule-based deterioration estimates (not a trained model)
+  predictions = {
+    generate: async (segmentId: string, horizonDays = 90): Promise<ResponseEnvelope<DeteriorationEstimate>> => {
+      return this.request<ResponseEnvelope<DeteriorationEstimate>>(`/road-segments/${segmentId}/predictions`, {
+        method: "POST",
+        body: JSON.stringify({ prediction_horizon_days: horizonDays }),
+      });
+    },
+    history: async (segmentId: string): Promise<PaginatedResponseEnvelope<DeteriorationEstimate>> => {
+      return this.request<PaginatedResponseEnvelope<DeteriorationEstimate>>(
+        `/road-segments/${segmentId}/predictions/history?page=1&page_size=1`
+      );
     },
   };
 

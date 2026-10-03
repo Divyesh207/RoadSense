@@ -109,3 +109,25 @@ async def refresh_road_health(db: AsyncSession, organization_id: uuid.UUID, road
     except SQLAlchemyError:
         logger.exception("Road health refresh failed for road %s", road.id)
         await db.rollback()
+
+
+async def refresh_segment_job_priorities(db: AsyncSession, organization_id: uuid.UUID, segment_id: uuid.UUID) -> None:
+    """Re-prioritise open AUTO jobs on a segment (e.g. after a new deterioration estimate)."""
+    try:
+        jobs = (
+            await db.execute(
+                select(MaintenanceJob).where(
+                    MaintenanceJob.organization_id == organization_id,
+                    MaintenanceJob.road_segment_id == segment_id,
+                    MaintenanceJob.status.not_in(CLOSED_JOB_STATUSES),
+                )
+            )
+        ).scalars().all()
+        changed = False
+        for job in jobs:
+            changed |= await recalculate_job_priority(db, job)
+        if changed:
+            await db.commit()
+    except SQLAlchemyError:
+        logger.exception("Priority refresh failed for segment %s", segment_id)
+        await db.rollback()

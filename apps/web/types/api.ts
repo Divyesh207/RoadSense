@@ -578,6 +578,52 @@ export interface VerificationOverviewItem {
   reviewer_notes: string | null;
 }
 
+export interface PriorityOverviewItem {
+  rank: number;
+  job_id: string;
+  title: string;
+  status: string;
+  priority_level: string;
+  priority_score: number | null;
+  mode: string | null;
+  version: string | null;
+  components: Record<string, number> | null;
+  inputs: Record<string, any> | null;
+  calculated_at: string | null;
+  road_id: string | null;
+  road_name: string | null;
+  segment_number: number | null;
+  linked_damage_count: number;
+  max_severity: string | null;
+  segment_health: HealthPoint | null;
+  active_recurrences: number;
+  escalation_level: string | null;
+  deterioration_estimate: {
+    predicted_risk: number | null;
+    risk_band: string | null;
+    horizon_days: number;
+    method: string;
+    generated_at: string;
+  } | null;
+  created_at: string;
+}
+
+export interface DeteriorationEstimate {
+  id: string;
+  road_segment_id: string;
+  model_name: string;
+  model_version: string;
+  prediction_horizon_days: number;
+  predicted_risk: number | null;
+  predicted_value: number | null;
+  confidence: number | null;
+  features: Record<string, any>;
+  generated_at: string;
+  status: string;
+  estimation_method?: string | null;
+  disclaimer?: string;
+}
+
 export interface ContractorHistoryItem {
   assignee_type: "USER" | "CONTRACTOR";
   assignee_id: string;
