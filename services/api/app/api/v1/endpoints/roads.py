@@ -29,6 +29,7 @@ from app.schemas.road import (
     RoadSegmentUpdateRequest,
     RoadUpdateRequest,
 )
+from app.services.road_lifecycle import refresh_road_health
 from app.services.spatial import (
     bbox_intersects_linestring,
     geojson_to_wkt,
@@ -57,6 +58,9 @@ def build_road_response(road: Road, segment_count: int | None = None) -> RoadRes
         description=road.description,
         geometry=geometry_to_geojson(road.geometry),
         is_active=road.is_active,
+        traffic_volume_class=road.traffic_volume_class,
+        traffic_aadt=road.traffic_aadt,
+        traffic_data_source=road.traffic_data_source,
         segment_count=count,
         created_at=road.created_at,
         updated_at=road.updated_at,
@@ -183,6 +187,9 @@ async def create_road(
         description=payload.description,
         geometry=wkt_geom,
         is_active=True,
+        traffic_volume_class=payload.traffic_volume_class,
+        traffic_aadt=payload.traffic_aadt,
+        traffic_data_source=payload.traffic_data_source,
     )
     db.add(road)
     await db.commit()
@@ -281,10 +288,20 @@ async def update_road(
         road.geometry = geojson_to_wkt(payload.geometry)
     if payload.is_active is not None:
         road.is_active = payload.is_active
+    # Traffic fields may be cleared back to unknown with an explicit null.
+    traffic_changed = False
+    for field in ("traffic_volume_class", "traffic_aadt", "traffic_data_source"):
+        if field in payload.model_fields_set and getattr(road, field) != getattr(payload, field):
+            setattr(road, field, getattr(payload, field))
+            traffic_changed = traffic_changed or field == "traffic_volume_class"
 
     road.updated_at = utc_now()
     await db.commit()
     await db.refresh(road)
+    if traffic_changed:
+        # Traffic class scales health deductions: refresh this road's health snapshots.
+        await refresh_road_health(db, org_ctx.organization_id, road)
+        road = (await db.execute(stmt.execution_options(populate_existing=True))).scalar_one()
 
     return ResponseEnvelope(
         success=True,

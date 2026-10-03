@@ -24,6 +24,7 @@ from app.schemas.repair import (
     RepairEvidenceUploadUrlResponse,
     RepairVerificationSubmitRequest,
 )
+from app.services.road_lifecycle import refresh_after_damage_change
 from app.services.storage import (
     StorageError,
     get_storage_backend,
@@ -407,6 +408,8 @@ async def submit_human_verification(
 
     await db.commit()
     await db.refresh(verification)
+    # Repaired damage leaves the health count; rejected rework returns it.
+    await refresh_after_damage_change(db, organization_id, damages)
     return verification
 
 

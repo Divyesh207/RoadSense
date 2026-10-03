@@ -1,5 +1,4 @@
 import uuid
-from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
@@ -16,6 +15,12 @@ from app.models.maintenance import (
 )
 from app.models.road import Road, RoadSegment
 from app.schemas.maintenance import MaintenanceJobCreate, MaintenanceJobUpdate
+from app.services.priority_engine import (  # noqa: F401 (compute_priority_from_damages kept importable here)
+    compute_priority,
+    compute_priority_from_damages,
+    recalculate_job_priority,
+)
+from app.services.road_lifecycle import refresh_after_damage_change
 
 VALID_TRANSITIONS: dict[str, list[str]] = {
     "OPEN": ["ASSIGNED", "CANCELLED"],
@@ -31,26 +36,6 @@ VALID_TRANSITIONS: dict[str, list[str]] = {
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def compute_priority_from_damages(damages: Sequence[DamageRecord]) -> tuple[str, float]:
-    """Calculate priority level and score from a collection of linked damage records."""
-    if not damages:
-        return "MEDIUM", 50.0
-
-    severities = [str(d.severity).upper() for d in damages]
-    if "CRITICAL" in severities:
-        score = min(100.0, 85.0 + (len(damages) * 2.5))
-        return "CRITICAL", round(score, 2)
-    if "HIGH" in severities:
-        score = min(84.0, 65.0 + (len(damages) * 3.0))
-        return "HIGH", round(score, 2)
-    if "MEDIUM" in severities:
-        score = min(64.0, 40.0 + (len(damages) * 3.0))
-        return "MEDIUM", round(score, 2)
-
-    score = min(39.0, 20.0 + (len(damages) * 2.0))
-    return "LOW", round(score, 2)
 
 
 async def create_maintenance_job(
@@ -94,14 +79,24 @@ async def create_maintenance_job(
                 },
             )
 
-    # Determine priority
+    # Determine priority (rule-based, explainable; see app.services.priority_engine).
+    # AUTO: level and score from linked damage and historical wear, kept current
+    # automatically. MANUAL_LEVEL: caller chose a non-default level; score is computed
+    # for reference. MANUAL: caller supplied the score. Manual priorities are never
+    # overwritten by automatic recalculation.
     priority_level = payload.priority
     priority_score = payload.priority_score
-    if linked_damages and priority_score is None:
-        calc_level, calc_score = compute_priority_from_damages(linked_damages)
-        if payload.priority == "MEDIUM":  # default
-            priority_level = calc_level
-        priority_score = calc_score
+    priority_factors = None
+    if linked_damages:
+        result = await compute_priority(db, organization_id, linked_damages, payload.road_id, payload.road_segment_id)
+        if payload.priority_score is not None:
+            priority_factors = {**result.factors, "mode": "MANUAL"}
+        elif payload.priority != "MEDIUM":
+            priority_score = result.score
+            priority_factors = {**result.factors, "mode": "MANUAL_LEVEL"}
+        else:
+            priority_level, priority_score = result.level, result.score
+            priority_factors = {**result.factors, "mode": "AUTO"}
 
     # Due date
     due_at = payload.due_at
@@ -132,6 +127,7 @@ async def create_maintenance_job(
         description=payload.description,
         priority_level=priority_level,
         priority_score=priority_score,
+        priority_factors=priority_factors,
         status=initial_status,
         due_at=due_at,
         location=geom,
@@ -168,6 +164,9 @@ async def create_maintenance_job(
 
     await db.commit()
     await db.refresh(job)
+    if linked_damages:
+        await refresh_after_damage_change(db, organization_id, linked_damages)
+        await db.refresh(job)
     return job
 
 
@@ -240,6 +239,10 @@ async def transition_job_status(
 
     await db.commit()
     await db.refresh(job)
+    changed_damages = [link.damage_record for link in links if link.damage_record is not None]
+    if changed_damages and new_status in ("IN_PROGRESS", "VERIFIED"):
+        await refresh_after_damage_change(db, job.organization_id, changed_damages)
+        await db.refresh(job)
     return job
 
 
@@ -308,6 +311,11 @@ async def link_damages_to_job(
         dmg.updated_at = now
 
     await db.commit()
+    await db.refresh(dmg)
+    # The job now covers more damage: refresh health, then its (AUTO) priority.
+    await refresh_after_damage_change(db, job.organization_id, [dmg])
+    if await recalculate_job_priority(db, job):
+        await db.commit()
     return link
 
 
@@ -320,6 +328,9 @@ async def update_maintenance_job(
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(job, field, value)
+    if "priority_level" in update_data or "priority_score" in update_data:
+        # A person set the priority: automatic recalculation must not overwrite it.
+        job.priority_factors = {**(job.priority_factors or {}), "mode": "MANUAL"}
 
     job.updated_at = utc_now()
     await db.commit()

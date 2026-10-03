@@ -94,6 +94,8 @@ class MaintenanceJobResponse(BaseModel):
     description: str | None = None
     priority_level: str
     priority_score: float | None = None
+    # Rule-based priority inputs/components and mode (AUTO / MANUAL / MANUAL_LEVEL)
+    priority_factors: dict[str, Any] | None = None
     status: str
     due_at: datetime | None = None
     started_at: datetime | None = None

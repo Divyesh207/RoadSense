@@ -15,6 +15,7 @@ EXPECTED_GIST = {
     ("inspection_media", "location"),
     ("ai_detections", "location"),
     ("damage_records", "location"),
+    ("damage_observations", "location"),
     ("maintenance_jobs", "location"),
     ("repair_evidence", "location"),
 }
@@ -64,11 +65,11 @@ async def test_migrated_schema_has_all_tables_postgis_and_one_gist_per_spatial_c
         }
         revision = (await conn.execute(text("SELECT version_num FROM alembic_version"))).scalar_one()
 
-    assert len(tables) == 30
+    assert len(tables) == 31
     assert tables == set(Base.metadata.tables)
     assert version.startswith("3.4")
     assert int(server) // 10000 == 16
-    assert revision == "002_drop_duplicate_gist"
+    assert revision == "003_phase3a_foundation"
     indexed = [(t, c) for t, c in gist]
     assert set(indexed) == EXPECTED_GIST
     assert len(indexed) == len(EXPECTED_GIST), "each spatial column must have exactly one GIST index"
@@ -248,3 +249,85 @@ async def test_inspection_pipeline_persists_detections_with_postgis_geometry(api
     assert (job_status, insp_status) == ("COMPLETED", "ANALYZED")
     detections = await api_client.get(f"/api/v1/inspections/{insp_id}/detections")
     assert detections.json()["data"][0]["location"] == {"latitude": 18.5201, "longitude": 73.8525}
+
+
+@pytest.mark.asyncio
+async def test_detection_grouping_uses_postgis_geography_radius(api_client, session_factory):
+    """Repeat detections of one defect within GPS drift group via ST_DWithin(geography); far ones do not."""
+    from datetime import datetime, timezone
+
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    from app.models.ai import AIDetection, AIModel, AIProcessingRun, DamageType
+    from app.models.damage import DamageObservation
+    from app.models.inspection import InspectionMedia
+    from app.services.damage_grouping import promote_detection
+    from app.services.spatial import point_to_wkt
+    from tests_integration.conftest import ORG_ID
+
+    _, (seg1, _) = await _road_with_segments(api_client)
+    insp = await api_client.post(
+        "/api/v1/inspections",
+        json={"road_segment_id": seg1, "location": {"latitude": 18.5201, "longitude": 73.8525, "accuracy_m": 4.0}},
+    )
+    assert insp.status_code == 201, insp.text
+    insp_id = uuid.UUID(insp.json()["data"]["id"])
+    now = datetime.now(timezone.utc)
+
+    async with session_factory() as session:
+        pothole = DamageType(id=uuid.uuid4(), code="POTHOLE", name="Pothole")
+        model = AIModel(id=uuid.uuid4(), name="it", model_family="yolo", model_type="detection", version="t",
+                        artifact_uri="none")
+        run = AIProcessingRun(id=uuid.uuid4(), organization_id=ORG_ID, model_id=model.id, inspection_id=insp_id,
+                              run_type="INSPECTION", status="COMPLETED")
+        session.add_all([pothole, model, run])
+        det_ids = []
+        # (lon offset): same point, ~3 m east, ~50 m east. Each from its own photo.
+        for lon in (73.8525, 73.852528, 73.85297):
+            media = InspectionMedia(
+                id=uuid.uuid4(), organization_id=ORG_ID, inspection_id=insp_id, media_type="IMAGE",
+                storage_bucket="b", storage_path=f"p/{uuid.uuid4()}.jpg", original_filename="r.jpg",
+                mime_type="image/jpeg", file_size_bytes=1, upload_status="COMPLETED",
+            )
+            det = AIDetection(
+                id=uuid.uuid4(), organization_id=ORG_ID, ai_processing_run_id=run.id, inspection_id=insp_id,
+                media_id=media.id, damage_type_id=pothole.id, confidence=0.9, bbox_x_min=0.1, bbox_y_min=0.1,
+                bbox_x_max=0.3, bbox_y_max=0.3, location=point_to_wkt(18.5201, lon),
+                raw_output={"severity_assessment": {"severity": "HIGH", "score": 0.7}}, created_at=now,
+            )
+            session.add_all([media, det])
+            det_ids.append(det.id)
+        await session.commit()
+
+    results = []
+    for det_id in det_ids:
+        async with session_factory() as session:
+            det = (
+                await session.execute(
+                    select(AIDetection).where(AIDetection.id == det_id).options(selectinload(AIDetection.inspection))
+                )
+            ).scalar_one()
+            results.append(await promote_detection(session, ORG_ID, det))
+
+    assert [r.action for r in results] == ["CREATED", "GPS_GROUPED", "CREATED"]
+    assert results[1].record.id == results[0].record.id
+    assert results[2].record.id != results[0].record.id
+    assert results[1].distance_meters == pytest.approx(haversine_m(18.5201, 73.8525, 18.5201, 73.852528), abs=0.05)
+
+    async with session_factory() as session:
+        again = await promote_detection(
+            session, ORG_ID,
+            (await session.execute(
+                select(AIDetection).where(AIDetection.id == det_ids[1]).options(selectinload(AIDetection.inspection))
+            )).scalar_one(),
+        )
+        assert again.action == "ALREADY_PROMOTED"
+        counts = (
+            await session.execute(
+                text("SELECT observation_count FROM damage_records WHERE id = :id"), {"id": results[0].record.id}
+            )
+        ).scalar_one()
+        observations = (await session.execute(select(DamageObservation))).scalars().all()
+    assert counts == 2
+    assert len(observations) == 3

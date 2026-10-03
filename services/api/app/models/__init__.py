@@ -1,6 +1,6 @@
 from app.core.database import Base
 from app.models.ai import AIDetection, AIModel, AIProcessingRun, DamageType
-from app.models.damage import DamageRecord, DamageReview
+from app.models.damage import DamageObservation, DamageRecord, DamageReview
 from app.models.history import AuditLog, GeneratedReport, Notification, RecurrenceRecord
 from app.models.identity import (
     Organization,
@@ -32,6 +32,7 @@ __all__ = [
     "AIProcessingRun",
     "AuditLog",
     "Base",
+    "DamageObservation",
     "DamageRecord",
     "DamageReview",
     "DamageType",

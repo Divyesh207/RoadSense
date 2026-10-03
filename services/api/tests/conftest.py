@@ -17,7 +17,7 @@ from app.core.security import hash_password
 from app.main import app
 from app.models import Base
 from app.models.ai import AIDetection, AIModel, AIProcessingRun, DamageType
-from app.models.damage import DamageRecord, DamageReview
+from app.models.damage import DamageObservation, DamageRecord, DamageReview
 from app.models.history import AuditLog, GeneratedReport, Notification, RecurrenceRecord
 from app.models.identity import (
     Organization,
@@ -110,6 +110,7 @@ TEST_TABLES = [
     AIProcessingRun.__table__,
     AIDetection.__table__,
     DamageRecord.__table__,
+    DamageObservation.__table__,
     DamageReview.__table__,
     RoadHealthSnapshot.__table__,
     RecurrenceRecord.__table__,

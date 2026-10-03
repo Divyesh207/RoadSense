@@ -37,6 +37,11 @@ class Road(Base):
     description = Column(Text, nullable=True)
     geometry = Column(Geometry("LINESTRING", srid=4326, spatial_index=False), nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
+    # Road-level traffic, entered from a documented source (e.g. a municipal count).
+    # NULL means unknown; it is never defaulted or estimated.
+    traffic_volume_class = Column(String(20), nullable=True)
+    traffic_aadt = Column(Integer, nullable=True)  # annual average daily traffic (vehicles/day)
+    traffic_data_source = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
 
@@ -49,6 +54,11 @@ class Road(Base):
         Index("roads_organization_idx", "organization_id"),
         Index("roads_code_idx", "road_code"),
         Index("roads_geometry_gist", "geometry", postgresql_using="gist"),
+        CheckConstraint(
+            "traffic_volume_class IS NULL OR traffic_volume_class IN ('LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH')",
+            name="chk_roads_traffic_volume_class",
+        ),
+        CheckConstraint("traffic_aadt IS NULL OR traffic_aadt >= 0", name="chk_roads_traffic_aadt_nonnegative"),
     )
 
 

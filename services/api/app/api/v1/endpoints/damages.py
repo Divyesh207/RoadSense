@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 from app.core.auth import OrgContext, require_permission
 from app.core.database import get_db
 from app.models.ai import AIDetection, AIProcessingRun, DamageType
-from app.models.damage import DamageRecord, DamageReview
+from app.models.damage import DamageObservation, DamageRecord, DamageReview
 from app.models.inspection import Inspection
 from app.schemas.common import (
     PaginatedResponseEnvelope,
@@ -22,6 +22,7 @@ from app.schemas.common import (
 )
 from app.schemas.damage import (
     DamageCreateRequest,
+    DamageObservationResponseData,
     DamageRecordResponseData,
     DamageReviewRequest,
     DamageReviewResponseData,
@@ -30,7 +31,9 @@ from app.schemas.damage import (
 )
 from app.schemas.inspection import LocationOutput
 from app.services.audit_service import AuditService
+from app.services.damage_grouping import manual_observation, promote_detection
 from app.services.provenance import detection_provenance
+from app.services.road_lifecycle import refresh_after_damage_change
 from app.services.spatial import point_to_wkt, wkt_or_geom_to_point
 
 router = APIRouter()
@@ -125,6 +128,8 @@ def build_damage_response(
         detection_method=prov["detection_method"],
         score_type=prov["score_type"],
         estimated_area_m2=float(rec.estimated_area_m2) if rec.estimated_area_m2 is not None else None,
+        observation_count=rec.observation_count or 1,
+        last_observed_at=rec.last_observed_at,
         detected_at=rec.detected_at,
         reviewed_at=rec.reviewed_at,
         reviewed_by_user_id=rec.reviewed_by_user_id,
@@ -322,11 +327,16 @@ async def create_damage_record(
         reviewed_at=utc_now(),
         reviewed_by_user_id=org_ctx.membership.user_id,
         notes=payload.notes,
+        observation_count=1,
+        last_observed_at=utc_now(),
         created_at=utc_now(),
     )
     db.add(record)
+    await db.flush()
+    db.add(manual_observation(record))
     await db.commit()
     await db.refresh(record)
+    await refresh_after_damage_change(db, org_ctx.organization_id, [record])
 
     # Reload relationships
     rel_stmt = (
@@ -382,61 +392,12 @@ async def create_damage_from_detection(
             detail={"code": "NOT_FOUND", "message": "AI detection not found in organization."},
         )
 
-    # Check if a damage record already exists for this detection
-    exist_stmt = select(DamageRecord).where(
-        DamageRecord.source_detection_id == detection_id,
-        DamageRecord.organization_id == org_ctx.organization_id,
-    ).options(
-        selectinload(DamageRecord.damage_type),
-        selectinload(DamageRecord.road),
-        selectinload(DamageRecord.road_segment),
-        selectinload(DamageRecord.reviewed_by),
-        SOURCE_MODEL_LOAD,
-    )
-    existing = (await db.execute(exist_stmt)).scalar_one_or_none()
-    if existing:
-        return ResponseEnvelope(
-            success=True,
-            data=build_damage_response(existing),
-            meta=ResponseMeta(request_id=request_id),
-        )
-
-    # Extract severity from detection raw_output if present
-    sev_info = (det.raw_output or {}).get("severity_assessment", {})
-    severity = sev_info.get("severity", "MEDIUM")
-    sev_score = sev_info.get("score")
-
-    # Inherit road / segment from parent inspection
-    insp = det.inspection
-    road_id = insp.road_id if insp else None
-    segment_id = insp.road_segment_id if insp else None
-
-    # Physical area cannot be derived from a bounding box without camera calibration
-    # (height, angle, lens). It is left unset rather than guessed; the relative
-    # image area used for severity is kept in the detection's severity_assessment.
-    area_m2 = None
-
-    record = DamageRecord(
-        organization_id=org_ctx.organization_id,
-        inspection_id=det.inspection_id,
-        source_detection_id=det.id,
-        road_id=road_id,
-        road_segment_id=segment_id,
-        damage_type_id=det.damage_type_id,
-        source_type="AI",
-        severity=severity,
-        severity_score=sev_score,
-        severity_method_version="1.0.0",
-        location=det.location or (insp.location if insp else None),
-        status="PENDING_REVIEW",
-        confidence=det.confidence,
-        estimated_area_m2=area_m2,
-        detected_at=det.created_at,
-        created_at=utc_now(),
-    )
-    db.add(record)
-    await db.commit()
-    await db.refresh(record)
+    # Idempotent per detection; groups onto an open record of the same type within
+    # DAMAGE_GROUPING_RADIUS_METERS (GPS drift), otherwise creates a new record.
+    result = await promote_detection(db, org_ctx.organization_id, det)
+    record = result.record
+    if result.action != "ALREADY_PROMOTED":
+        await refresh_after_damage_change(db, org_ctx.organization_id, [record])
 
     rel_stmt = (
         select(DamageRecord)
@@ -553,6 +514,7 @@ async def update_damage_record(
     record.updated_at = utc_now()
     await db.commit()
     await db.refresh(record)
+    await refresh_after_damage_change(db, org_ctx.organization_id, [record])
 
     return ResponseEnvelope(
         success=True,
@@ -654,6 +616,7 @@ async def review_damage_record(
 
     await db.commit()
     await db.refresh(record)
+    await refresh_after_damage_change(db, org_ctx.organization_id, [record])
 
     # Reload relationships for response
     rel_stmt = (
@@ -734,3 +697,56 @@ async def get_damage_reviews(
         data=data,
         meta=ResponseMeta(request_id=request_id),
     )
+
+
+@router.get(
+    "/{damage_id}/observations",
+    response_model=ResponseEnvelope[list[DamageObservationResponseData]],
+    summary="List the inspection sightings (inspection -> media -> detection) grouped into a damage record",
+)
+async def list_damage_observations(
+    damage_id: uuid.UUID,
+    request: Request,
+    org_ctx: Annotated[OrgContext, Depends(require_permission("damage_records:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ResponseEnvelope[list[DamageObservationResponseData]]:
+    request_id = getattr(request.state, "request_id", None)
+    record = (
+        await db.execute(
+            select(DamageRecord.id).where(
+                DamageRecord.id == damage_id, DamageRecord.organization_id == org_ctx.organization_id
+            )
+        )
+    ).scalar_one_or_none()
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "NOT_FOUND", "message": "Damage record not found."},
+        )
+    rows = (
+        await db.execute(
+            select(DamageObservation)
+            .where(
+                DamageObservation.damage_record_id == damage_id,
+                DamageObservation.organization_id == org_ctx.organization_id,
+            )
+            .order_by(DamageObservation.observed_at)
+        )
+    ).scalars().all()
+    data = []
+    for o in rows:
+        coords = wkt_or_geom_to_point(o.location)
+        data.append(
+            DamageObservationResponseData(
+                id=o.id,
+                damage_record_id=o.damage_record_id,
+                detection_id=o.detection_id,
+                inspection_id=o.inspection_id,
+                media_id=o.media_id,
+                match_method=o.match_method,
+                distance_meters=float(o.distance_meters) if o.distance_meters is not None else None,
+                location=LocationOutput(latitude=coords[0], longitude=coords[1]) if coords else None,
+                observed_at=o.observed_at,
+            )
+        )
+    return ResponseEnvelope(success=True, data=data, meta=ResponseMeta(request_id=request_id))

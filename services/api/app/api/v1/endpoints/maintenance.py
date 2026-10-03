@@ -64,6 +64,7 @@ def build_job_response(job: MaintenanceJob, damage_count: int = 0) -> Maintenanc
         description=job.description,
         priority_level=job.priority_level,
         priority_score=float(job.priority_score) if job.priority_score is not None else None,
+        priority_factors=job.priority_factors,
         status=job.status,
         due_at=job.due_at,
         started_at=job.started_at,

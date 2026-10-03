@@ -81,6 +81,9 @@ class DamageRecordResponseData(BaseModel):
     # MODEL_CONFIDENCE (model probability) or HEURISTIC_SCORE (rule-derived score, not a probability).
     score_type: str | None = None
     estimated_area_m2: float | None = None
+    # GPS grouping: number of inspection sightings of this damage and the latest one
+    observation_count: int = 1
+    last_observed_at: datetime | None = None
     detected_at: datetime | None = None
     reviewed_at: datetime | None = None
     reviewed_by_user_id: uuid.UUID | None = None
@@ -114,3 +117,15 @@ class DamageReviewRequest(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] | None = None
     damage_type_id: uuid.UUID | None = None
     notes: str | None = Field(default=None, max_length=2000)
+
+
+class DamageObservationResponseData(BaseModel):
+    id: uuid.UUID
+    damage_record_id: uuid.UUID
+    detection_id: uuid.UUID | None = None
+    inspection_id: uuid.UUID
+    media_id: uuid.UUID | None = None
+    match_method: str
+    distance_meters: float | None = None
+    location: LocationOutput | None = None
+    observed_at: datetime

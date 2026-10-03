@@ -12,7 +12,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -36,6 +36,8 @@ class MaintenanceJob(Base):
     description = Column(Text, nullable=True)
     priority_level = Column(String(30), nullable=False, default="MEDIUM")
     priority_score = Column(Numeric(6, 2), nullable=True)
+    # Explainable rule-based priority inputs/components and mode (AUTO / MANUAL / MANUAL_LEVEL)
+    priority_factors = Column(JSONB, nullable=True)
     status = Column(String(40), nullable=False, default="OPEN", index=True)
     due_at = Column(DateTime(timezone=True), nullable=True, index=True)
     started_at = Column(DateTime(timezone=True), nullable=True)

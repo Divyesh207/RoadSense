@@ -222,7 +222,7 @@ async def test_segment_health_calculation_and_factors(async_client, seeded_gis_c
     # Deductions: Critical 25, Medium 7 => 100 - 32 = 68.0
     assert data["health_score"] == 68.0
     assert data["health_status"] == "FAIR"
-    assert data["calculation_version"] == "health-v1.0.0"
+    assert data["calculation_version"] == "health-v1.1.0"
     assert data["factors"]["total_damages"] == 2
     assert data["factors"]["severity_breakdown"]["critical"] == 1
     assert data["factors"]["severity_breakdown"]["medium"] == 1

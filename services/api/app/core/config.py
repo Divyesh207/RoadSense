@@ -85,6 +85,18 @@ class Settings(BaseSettings):
     SIGNED_UPLOAD_EXPIRES_SECONDS: int = 900
     SIGNED_DOWNLOAD_EXPIRES_SECONDS: int = 3600
 
+    # GPS damage grouping: detections of the same damage type within this radius of an
+    # open damage record are treated as the same physical damage. The synopsis notes
+    # 3-5 m smartphone GPS drift, so the default covers the upper end of that range.
+    DAMAGE_GROUPING_RADIUS_METERS: float = 5.0
+
+    @field_validator("DAMAGE_GROUPING_RADIUS_METERS")
+    @classmethod
+    def validate_grouping_radius(cls, v: float) -> float:
+        if not 0 < v <= 50:
+            raise ValueError("DAMAGE_GROUPING_RADIUS_METERS must be > 0 and <= 50")
+        return v
+
     # AI / ML
     AI_MODEL_DIR: str = "./data/models"
     YOLO_MODEL_PATH: str = "./data/models/pothole_yolov8.pt"

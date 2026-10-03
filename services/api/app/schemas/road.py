@@ -34,6 +34,11 @@ class RoadCreateRequest(BaseModel):
     administrative_area: str | None = Field(None, max_length=150, description="District or ward")
     description: str | None = Field(None, description="Additional context or notes")
     geometry: GeoJSONLineString | None = Field(None, description="GeoJSON LineString geometry in SRID 4326")
+    traffic_volume_class: Literal["LOW", "MEDIUM", "HIGH", "VERY_HIGH"] | None = Field(
+        None, description="Road-level traffic class from a documented source; null = unknown (never estimated)"
+    )
+    traffic_aadt: int | None = Field(None, ge=0, le=1_000_000, description="Annual average daily traffic (vehicles/day)")
+    traffic_data_source: str | None = Field(None, max_length=255, description="Where the traffic figure comes from")
 
 
 class RoadUpdateRequest(BaseModel):
@@ -44,6 +49,11 @@ class RoadUpdateRequest(BaseModel):
     description: str | None = Field(None)
     geometry: GeoJSONLineString | None = Field(None)
     is_active: bool | None = Field(None)
+    traffic_volume_class: Literal["LOW", "MEDIUM", "HIGH", "VERY_HIGH"] | None = Field(
+        None, description="Road-level traffic class from a documented source; null = unknown (never estimated)"
+    )
+    traffic_aadt: int | None = Field(None, ge=0, le=1_000_000, description="Annual average daily traffic (vehicles/day)")
+    traffic_data_source: str | None = Field(None, max_length=255, description="Where the traffic figure comes from")
 
 
 class RoadResponseData(BaseModel):
@@ -56,6 +66,9 @@ class RoadResponseData(BaseModel):
     description: str | None = None
     geometry: dict[str, Any] | None = None
     is_active: bool
+    traffic_volume_class: str | None = None
+    traffic_aadt: int | None = None
+    traffic_data_source: str | None = None
     segment_count: int = 0
     created_at: datetime
     updated_at: datetime

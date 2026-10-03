@@ -83,7 +83,8 @@ async def predict_segment_deterioration(
         select(Inspection)
         .where(
             Inspection.organization_id == organization_id,
-            Inspection.status.in_(["SUBMITTED", "PROCESSING", "PROCESSED", "COMPLETED"]),
+            # ANALYZED is the status the AI worker sets after processing.
+            Inspection.status.in_(["SUBMITTED", "PROCESSING", "PROCESSED", "ANALYZED", "COMPLETED"]),
             (Inspection.road_segment_id == segment.id) | (Inspection.road_id == segment.road_id),
         )
         .order_by(desc(Inspection.captured_at))
