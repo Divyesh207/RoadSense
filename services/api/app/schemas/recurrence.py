@@ -54,6 +54,10 @@ class RecurrenceRecordResponse(BaseModel):
     new_damage: DamageSummaryItem | None = None
     road_name: str | None = None
     segment_name: str | None = None
+    rule_factors: dict[str, Any] | None = None
+    escalation_level: str | None = None
+    escalation_reasons: list[dict[str, Any]] | None = None
+    escalated_at: datetime | None = None
 
 
 class SegmentTimelineEvent(BaseModel):

@@ -22,6 +22,47 @@ from app.schemas.analytics import (
     RoadHealthAnalyticsData,
 )
 
+# Confirmed or in the maintenance workflow (unreviewed AI candidates are PENDING_REVIEW).
+ACTIVE_DAMAGE_STATUSES = ["DETECTED", "CONFIRMED", "MAINTENANCE_SCHEDULED", "IN_PROGRESS"]
+
+
+async def latest_road_snapshots(db: AsyncSession, org_id: uuid.UUID) -> list[RoadHealthSnapshot]:
+    """Latest road-level (segment_id NULL) snapshot per road."""
+    snaps = (
+        await db.execute(
+            select(RoadHealthSnapshot)
+            .where(RoadHealthSnapshot.organization_id == org_id, RoadHealthSnapshot.road_segment_id.is_(None))
+            .order_by(RoadHealthSnapshot.calculated_at.desc())
+        )
+    ).scalars().all()
+    seen: set[uuid.UUID] = set()
+    out = []
+    for snap in snaps:
+        if snap.road_id not in seen:
+            seen.add(snap.road_id)
+            out.append(snap)
+    return out
+
+
+async def final_result_counts(db: AsyncSession, org_id: uuid.UUID) -> dict[str, int]:
+    """Final repair-verification outcome per maintenance job (latest human decision, else
+    latest completed automated analysis); jobs with neither are not counted."""
+    from app.services.recurrence_engine import final_verification
+
+    job_ids = (
+        await db.execute(
+            select(RepairVerification.maintenance_job_id)
+            .where(RepairVerification.organization_id == org_id)
+            .distinct()
+        )
+    ).scalars().all()
+    counts: dict[str, int] = {}
+    for job_id in job_ids:
+        _, result, _ = await final_verification(db, job_id)
+        if result:
+            counts[result] = counts.get(result, 0) + 1
+    return counts
+
 
 def ensure_utc(dt: datetime | None) -> datetime | None:
     if dt is None:
@@ -35,95 +76,59 @@ class AnalyticsService:
 
     @staticmethod
     async def get_dashboard_summary(db: AsyncSession, org_id: uuid.UUID) -> DashboardSummaryData:
-        # Total Roads
-        roads_q = select(func.count(Road.id)).where(Road.organization_id == org_id)
-        total_roads = (await db.execute(roads_q)).scalar() or 0
+        """Every value is a count/average over stored records; nothing is estimated."""
 
-        # Total Segments
-        segs_q = select(func.count(RoadSegment.id)).where(RoadSegment.organization_id == org_id)
-        total_segments = (await db.execute(segs_q)).scalar() or 0
+        async def count(model, *where) -> int:
+            return (await db.execute(select(func.count(model.id)).where(model.organization_id == org_id, *where))).scalar() or 0
 
-        # Active Inspections
-        active_insp_q = select(func.count(Inspection.id)).where(
-            Inspection.organization_id == org_id,
-            Inspection.status.in_(["DRAFT", "SUBMITTED", "PROCESSING"])
+        total_roads = await count(Road)
+        total_segments = await count(RoadSegment)
+        active_inspections = await count(Inspection, Inspection.status.in_(["DRAFT", "UPLOADING", "SUBMITTED", "PROCESSING"]))
+        open_damages = await count(DamageRecord, DamageRecord.status.in_(ACTIVE_DAMAGE_STATUSES))
+        pending_review = await count(DamageRecord, DamageRecord.status == "PENDING_REVIEW")
+        high = await count(DamageRecord, DamageRecord.status.in_(ACTIVE_DAMAGE_STATUSES), DamageRecord.severity == "HIGH")
+        critical = await count(
+            DamageRecord, DamageRecord.status.in_(ACTIVE_DAMAGE_STATUSES), DamageRecord.severity == "CRITICAL"
         )
-        active_inspections = (await db.execute(active_insp_q)).scalar() or 0
-
-        # Open damages
-        open_dmg_q = select(func.count(DamageRecord.id)).where(
-            DamageRecord.organization_id == org_id,
-            DamageRecord.status.in_(["DETECTED", "CONFIRMED"])
+        by_status = dict(
+            (
+                await db.execute(
+                    select(MaintenanceJob.status, func.count(MaintenanceJob.id))
+                    .where(MaintenanceJob.organization_id == org_id)
+                    .group_by(MaintenanceJob.status)
+                )
+            ).all()
         )
-        open_damages = (await db.execute(open_dmg_q)).scalar() or 0
+        verified_repairs = await count(MaintenanceJob, MaintenanceJob.status == "VERIFIED")
+        active_rec = RecurrenceRecord.status.in_(["POTENTIAL", "CONFIRMED"])
+        recurrence_count = await count(RecurrenceRecord, active_rec)
+        escalated = await count(RecurrenceRecord, active_rec, RecurrenceRecord.escalation_level.in_(["ELEVATED", "CRITICAL"]))
 
-        # High & Critical severity damages
-        high_dmg_q = select(func.count(DamageRecord.id)).where(
-            DamageRecord.organization_id == org_id,
-            DamageRecord.status.in_(["DETECTED", "CONFIRMED"]),
-            DamageRecord.severity == "HIGH"
-        )
-        high_severity_damages = (await db.execute(high_dmg_q)).scalar() or 0
-
-        crit_dmg_q = select(func.count(DamageRecord.id)).where(
-            DamageRecord.organization_id == org_id,
-            DamageRecord.status.in_(["DETECTED", "CONFIRMED"]),
-            DamageRecord.severity == "CRITICAL"
-        )
-        critical_damages = (await db.execute(crit_dmg_q)).scalar() or 0
-
-        # Maintenance counts
-        maint_open_q = select(func.count(MaintenanceJob.id)).where(
-            MaintenanceJob.organization_id == org_id,
-            MaintenanceJob.status.in_(["OPEN", "PLANNED"])
-        )
-        maintenance_open = (await db.execute(maint_open_q)).scalar() or 0
-
-        maint_prog_q = select(func.count(MaintenanceJob.id)).where(
-            MaintenanceJob.organization_id == org_id,
-            MaintenanceJob.status.in_(["SCHEDULED", "IN_PROGRESS"])
-        )
-        maintenance_in_progress = (await db.execute(maint_prog_q)).scalar() or 0
-
-        maint_verif_pending_q = select(func.count(RepairVerification.id)).where(
-            RepairVerification.organization_id == org_id,
-            RepairVerification.verification_status == "PENDING"
-        )
-        verification_pending = (await db.execute(maint_verif_pending_q)).scalar() or 0
-
-        maint_verified_q = select(func.count(MaintenanceJob.id)).where(
-            MaintenanceJob.organization_id == org_id,
-            MaintenanceJob.verified_at.isnot(None)
-        )
-        verified_repairs = (await db.execute(maint_verified_q)).scalar() or 0
-
-        # Recurrences
-        rec_q = select(func.count(RecurrenceRecord.id)).where(
-            RecurrenceRecord.organization_id == org_id,
-            RecurrenceRecord.status.in_(["POTENTIAL", "CONFIRMED"])
-        )
-        recurrence_count = (await db.execute(rec_q)).scalar() or 0
-
-        # Average road health
-        health_q = select(func.avg(RoadHealthSnapshot.health_score)).where(
-            RoadHealthSnapshot.organization_id == org_id
-        )
-        avg_health = (await db.execute(health_q)).scalar()
-        avg_health_float = float(avg_health) if avg_health is not None else None
+        latest_road = await latest_road_snapshots(db, org_id)
+        scored = [float(snap.health_score) for snap in latest_road if snap.health_score is not None]
+        status_counts: dict[str, int] = {}
+        for snap in latest_road:
+            status_counts[snap.health_status] = status_counts.get(snap.health_status, 0) + 1
 
         return DashboardSummaryData(
             total_roads=total_roads,
             total_segments=total_segments,
             active_inspections=active_inspections,
             open_damages=open_damages,
-            high_severity_damages=high_severity_damages,
-            critical_damages=critical_damages,
-            maintenance_open=maintenance_open,
-            maintenance_in_progress=maintenance_in_progress,
-            verification_pending=verification_pending,
+            high_severity_damages=high,
+            critical_damages=critical,
+            maintenance_open=by_status.get("OPEN", 0),
+            maintenance_in_progress=by_status.get("IN_PROGRESS", 0),
+            verification_pending=by_status.get("VERIFICATION_PENDING", 0),
             verified_repairs=verified_repairs,
             recurrence_count=recurrence_count,
-            average_road_health=avg_health_float
+            average_road_health=round(sum(scored) / len(scored), 2) if scored else None,
+            pending_review_damages=pending_review,
+            maintenance_by_status=by_status,
+            escalated_recurrences=escalated,
+            roads_with_health=len(scored),
+            road_health_status_counts=status_counts,
+            repair_verification_results=await final_result_counts(db, org_id),
         )
 
     @staticmethod
@@ -197,120 +202,95 @@ class AnalyticsService:
 
     @staticmethod
     async def get_road_health_analytics(db: AsyncSession, org_id: uuid.UUID) -> RoadHealthAnalyticsData:
-        # Get latest snapshots
-        stmt = (
-            select(RoadHealthSnapshot)
-            .where(RoadHealthSnapshot.organization_id == org_id)
-            .options(
-                selectinload(RoadHealthSnapshot.road_segment).selectinload(RoadSegment.road)
+        """Latest snapshot per segment. INSUFFICIENT_DATA segments are counted separately and
+        never given a score."""
+        snapshots = (
+            await db.execute(
+                select(RoadHealthSnapshot)
+                .where(RoadHealthSnapshot.organization_id == org_id, RoadHealthSnapshot.road_segment_id.is_not(None))
+                .options(selectinload(RoadHealthSnapshot.road_segment).selectinload(RoadSegment.road))
+                .order_by(RoadHealthSnapshot.calculated_at.desc())
             )
-            .order_by(RoadHealthSnapshot.calculated_at.desc())
-        )
-        snapshots = (await db.execute(stmt)).scalars().all()
-
-        # Deduplicate to latest snapshot per segment
-        seen_segs: set[uuid.UUID] = set()
-        latest_snapshots: list[RoadHealthSnapshot] = []
-        for s in snapshots:
-            if s.road_segment_id and s.road_segment_id not in seen_segs:
-                seen_segs.add(s.road_segment_id)
-                latest_snapshots.append(s)
+        ).scalars().all()
+        seen: set[uuid.UUID] = set()
+        latest = []
+        for snap in snapshots:
+            if snap.road_segment_id not in seen:
+                seen.add(snap.road_segment_id)
+                latest.append(snap)
 
         distribution = {"GOOD": 0, "FAIR": 0, "POOR": 0, "CRITICAL": 0}
-        total_score = 0.0
+        scores: list[float] = []
+        insufficient = 0
         critical_segments: list[CriticalSegmentSummary] = []
-
-        for s in latest_snapshots:
-            score = float(s.health_score) if s.health_score is not None else 100.0
-            total_score += score
-
-            classification = s.health_status or (
-                "GOOD" if score >= 80 else "FAIR" if score >= 60 else "POOR" if score >= 40 else "CRITICAL"
-            )
-            distribution[classification] = distribution.get(classification, 0) + 1
-
-            if classification == "CRITICAL" or score < 40:
-                road_name = s.road_segment.road.name if s.road_segment and s.road_segment.road else "Unknown Road"
-                seg_num = s.road_segment.segment_number if s.road_segment else 0
-                road_id = s.road_segment.road_id if s.road_segment else uuid.uuid4()
+        for snap in latest:
+            if snap.health_score is None:
+                insufficient += 1
+                continue
+            score = float(snap.health_score)
+            scores.append(score)
+            distribution[snap.health_status] = distribution.get(snap.health_status, 0) + 1
+            seg = snap.road_segment
+            if snap.health_status == "CRITICAL" and seg is not None:
+                open_cnt = (
+                    await db.execute(
+                        select(func.count(DamageRecord.id)).where(
+                            DamageRecord.road_segment_id == seg.id, DamageRecord.status.in_(ACTIVE_DAMAGE_STATUSES)
+                        )
+                    )
+                ).scalar() or 0
                 critical_segments.append(
                     CriticalSegmentSummary(
-                        segment_id=s.road_segment_id or uuid.uuid4(),
-                        road_id=road_id,
-                        road_name=road_name,
-                        segment_number=seg_num,
+                        segment_id=seg.id,
+                        road_id=seg.road_id,
+                        road_name=seg.road.name if seg.road else "",
+                        segment_number=seg.segment_number,
                         current_health_score=score,
-                        classification=classification,
-                        open_damages_count=0
+                        classification=snap.health_status,
+                        open_damages_count=open_cnt,
                     )
                 )
-
-        avg_health = (total_score / len(latest_snapshots)) if latest_snapshots else None
-
         return RoadHealthAnalyticsData(
-            average_health=round(avg_health, 2) if avg_health is not None else None,
+            average_health=round(sum(scores) / len(scores), 2) if scores else None,
             health_distribution=distribution,
             critical_segments=critical_segments,
-            total_segments_evaluated=len(latest_snapshots)
+            total_segments_evaluated=len(scores),
+            segments_insufficient_data=insufficient,
         )
 
     @staticmethod
     async def get_maintenance_analytics(db: AsyncSession, org_id: uuid.UUID) -> MaintenanceAnalyticsData:
-        # All jobs for org
-        stmt = select(MaintenanceJob).where(MaintenanceJob.organization_id == org_id)
-        jobs = (await db.execute(stmt)).scalars().all()
-
-        open_cnt = 0
-        in_prog_cnt = 0
-        comp_cnt = 0
-        verified_cnt = 0
-        rejected_cnt = 0
-        completion_days_list: list[float] = []
-
+        jobs = (await db.execute(select(MaintenanceJob).where(MaintenanceJob.organization_id == org_id))).scalars().all()
+        by_status: dict[str, int] = {}
+        completion_days: list[float] = []
         for j in jobs:
-            st = j.status
-            if st in ["OPEN", "PLANNED"]:
-                open_cnt += 1
-            elif st in ["SCHEDULED", "IN_PROGRESS"]:
-                in_prog_cnt += 1
-            elif st == "COMPLETED":
-                comp_cnt += 1
-
+            by_status[j.status] = by_status.get(j.status, 0) + 1
             if j.completed_at and j.created_at:
-                diff_sec = (ensure_utc(j.completed_at) - ensure_utc(j.created_at)).total_seconds()
-                completion_days_list.append(max(0.0, diff_sec / 86400.0))
-
-        # Verifications
-        verif_stmt = (
-            select(RepairVerification.verification_status, func.count(RepairVerification.id))
-            .where(RepairVerification.organization_id == org_id)
-            .group_by(RepairVerification.verification_status)
-        )
-        verif_counts = dict((await db.execute(verif_stmt)).all())
-        verified_cnt = verif_counts.get("VERIFIED", 0)
-        rejected_cnt = verif_counts.get("REJECTED", 0)
-
-        # Recurrence count after repair
-        rec_q = select(func.count(RecurrenceRecord.id)).where(
-            RecurrenceRecord.organization_id == org_id,
-            RecurrenceRecord.related_maintenance_job_id.isnot(None),
-            RecurrenceRecord.status.in_(["POTENTIAL", "CONFIRMED"])
-        )
-        rec_after_repair = (await db.execute(rec_q)).scalar() or 0
-
-        total_decisions = verified_cnt + rejected_cnt
-        verif_rate = (verified_cnt / total_decisions) if total_decisions > 0 else 0.0
-        avg_days = (sum(completion_days_list) / len(completion_days_list)) if completion_days_list else None
-
+                diff = (ensure_utc(j.completed_at) - ensure_utc(j.created_at)).total_seconds()
+                completion_days.append(max(0.0, diff / 86400.0))
+        verified = by_status.get("VERIFIED", 0)
+        rejected = by_status.get("REJECTED", 0)
+        rec_after_repair = (
+            await db.execute(
+                select(func.count(RecurrenceRecord.id)).where(
+                    RecurrenceRecord.organization_id == org_id,
+                    RecurrenceRecord.related_maintenance_job_id.isnot(None),
+                    RecurrenceRecord.status.in_(["POTENTIAL", "CONFIRMED"]),
+                )
+            )
+        ).scalar() or 0
+        decisions = verified + rejected
         return MaintenanceAnalyticsData(
-            open_jobs=open_cnt,
-            in_progress_jobs=in_prog_cnt,
-            completed_jobs=comp_cnt,
-            verified_repairs=verified_cnt,
-            rejected_repairs=rejected_cnt,
-            verification_rate=round(verif_rate, 4),
-            avg_completion_time_days=round(avg_days, 2) if avg_days is not None else None,
-            recurrence_after_repair_count=rec_after_repair
+            open_jobs=by_status.get("OPEN", 0),
+            in_progress_jobs=by_status.get("IN_PROGRESS", 0),
+            completed_jobs=by_status.get("COMPLETED", 0),
+            verified_repairs=verified,
+            rejected_repairs=rejected,
+            verification_rate=round(verified / decisions, 4) if decisions else 0.0,
+            avg_completion_time_days=round(sum(completion_days) / len(completion_days), 2) if completion_days else None,
+            recurrence_after_repair_count=rec_after_repair,
+            by_status=by_status,
+            verification_pending_jobs=by_status.get("VERIFICATION_PENDING", 0),
         )
 
     @staticmethod

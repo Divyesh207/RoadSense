@@ -24,6 +24,13 @@ class MapDamageFeature(BaseModel):
     segment_number: int | None = None
     segment_name: str | None = None
     detected_at: datetime | None = None
+    observation_count: int = 1
+    # Latest maintenance job linked to this damage (None = no job).
+    maintenance_status: str | None = None
+    active_recurrences: int = 0
+    escalation_level: str | None = None
+    segment_health_score: float | None = None
+    segment_health_status: str | None = None
 
 
 class MapRoadFeature(BaseModel):

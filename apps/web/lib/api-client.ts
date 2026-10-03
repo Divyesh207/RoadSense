@@ -1,5 +1,9 @@
 import {
+  ContractorHistoryItem,
   CurrentUserData,
+  RecurrenceOverviewItem,
+  RoadIntelligence,
+  VerificationOverviewItem,
   DamageRecord,
   DamageReview,
   DamageTrendsData,
@@ -140,6 +144,9 @@ class ApiClient {
     },
     getSegments: async (roadId: string): Promise<ResponseEnvelope<RoadSegment[]>> => {
       return this.request<ResponseEnvelope<RoadSegment[]>>(`/roads/${roadId}/segments`);
+    },
+    getIntelligence: async (roadId: string): Promise<ResponseEnvelope<RoadIntelligence>> => {
+      return this.request<ResponseEnvelope<RoadIntelligence>>(`/roads/${roadId}/intelligence`);
     },
   };
 
@@ -460,6 +467,15 @@ class ApiClient {
     },
     getInspections: async (): Promise<ResponseEnvelope<InspectionAnalyticsData>> => {
       return this.request<ResponseEnvelope<InspectionAnalyticsData>>("/analytics/inspections");
+    },
+    getContractors: async (): Promise<ResponseEnvelope<ContractorHistoryItem[]>> => {
+      return this.request<ResponseEnvelope<ContractorHistoryItem[]>>("/analytics/contractors");
+    },
+    getRepairVerifications: async (): Promise<ResponseEnvelope<VerificationOverviewItem[]>> => {
+      return this.request<ResponseEnvelope<VerificationOverviewItem[]>>("/analytics/repair-verifications");
+    },
+    getRecurrences: async (): Promise<ResponseEnvelope<RecurrenceOverviewItem[]>> => {
+      return this.request<ResponseEnvelope<RecurrenceOverviewItem[]>>("/analytics/recurrences");
     },
   };
 

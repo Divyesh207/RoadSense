@@ -156,6 +156,18 @@ export default function SpatialMap({ damages, segments, showDamages, showSegment
                   </div>
                 )}
                 {d.detected_at && <div>Detected: {new Date(d.detected_at).toLocaleString()}</div>}
+                {(d.observation_count ?? 1) > 1 && <div>Seen {d.observation_count} times (GPS-grouped)</div>}
+                <div>Maintenance: {d.maintenance_status ? d.maintenance_status.replace(/_/g, " ") : "no job"}</div>
+                {(d.active_recurrences ?? 0) > 0 && (
+                  <div>
+                    Recurrence: {d.active_recurrences} active
+                    {d.escalation_level && d.escalation_level !== "NONE" ? ` · escalation ${d.escalation_level}` : ""}
+                  </div>
+                )}
+                <div>
+                  Segment health:{" "}
+                  {d.segment_health_status ? `${d.segment_health_score ?? "—"} (${d.segment_health_status})` : "no snapshot"}
+                </div>
                 <div>
                   {d.latitude.toFixed(5)}, {d.longitude.toFixed(5)}
                 </div>

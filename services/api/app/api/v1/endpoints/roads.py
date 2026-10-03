@@ -1,7 +1,7 @@
 import math
 import uuid
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
@@ -29,6 +29,7 @@ from app.schemas.road import (
     RoadSegmentUpdateRequest,
     RoadUpdateRequest,
 )
+from app.services.road_intelligence import road_intelligence
 from app.services.road_lifecycle import refresh_road_health
 from app.services.spatial import (
     bbox_intersects_linestring,
@@ -239,6 +240,19 @@ async def get_road(
         data=build_road_response(road),
         meta=ResponseMeta(request_id=request_id),
     )
+
+
+@router.get(
+    "/{road_id}/intelligence",
+    response_model=ResponseEnvelope[dict[str, Any]],
+    summary="Historical road intelligence: health history, damage/maintenance/verification/recurrence timeline",
+)
+async def get_road_intelligence(
+    road_id: uuid.UUID,
+    org_ctx: Annotated[OrgContext, Depends(require_permission("roads:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return ResponseEnvelope(data=await road_intelligence(db, org_ctx.organization_id, road_id))
 
 
 @router.patch(

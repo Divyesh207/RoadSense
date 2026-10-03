@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,6 +16,11 @@ from app.schemas.analytics import (
 )
 from app.schemas.common import ResponseEnvelope, ResponseMeta
 from app.services.analytics_service import AnalyticsService
+from app.services.road_intelligence import (
+    contractor_history,
+    recurrence_overview,
+    verification_overview,
+)
 
 router = APIRouter()
 dashboard_router = APIRouter()
@@ -122,3 +127,41 @@ async def get_inspection_analytics(
         data=data,
         meta=ResponseMeta(request_id=getattr(request.state, "request_id", None)),
     )
+
+
+@router.get(
+    "/contractors",
+    response_model=ResponseEnvelope[list[dict[str, Any]]],
+    summary="Assignee (user / contractor organization) history: jobs, verification outcomes, recurrences after repair",
+)
+async def get_contractor_history(
+    org_ctx: Annotated[OrgContext, Depends(require_permission("maintenance:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return ResponseEnvelope(data=await contractor_history(db, org_ctx.organization_id))
+
+
+@router.get(
+    "/repair-verifications",
+    response_model=ResponseEnvelope[list[dict[str, Any]]],
+    summary="Automated repair image analyses with their latest human review",
+)
+async def get_repair_verification_overview(
+    org_ctx: Annotated[OrgContext, Depends(require_permission("maintenance:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    limit: Annotated[int, Query(ge=1, le=500)] = 100,
+):
+    return ResponseEnvelope(data=await verification_overview(db, org_ctx.organization_id, limit))
+
+
+@router.get(
+    "/recurrences",
+    response_model=ResponseEnvelope[list[dict[str, Any]]],
+    summary="Recurring damage locations with previous repair, verification result and escalation",
+)
+async def get_recurrence_overview(
+    org_ctx: Annotated[OrgContext, Depends(require_permission("roads:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    limit: Annotated[int, Query(ge=1, le=1000)] = 200,
+):
+    return ResponseEnvelope(data=await recurrence_overview(db, org_ctx.organization_id, limit))

@@ -16,6 +16,13 @@ class DashboardSummaryData(BaseModel):
     verified_repairs: int
     recurrence_count: int
     average_road_health: float | None = None
+    # Phase 3C additions (all counted from stored records)
+    pending_review_damages: int = 0
+    maintenance_by_status: dict[str, int] = Field(default_factory=dict)
+    escalated_recurrences: int = 0
+    roads_with_health: int = 0
+    road_health_status_counts: dict[str, int] = Field(default_factory=dict)
+    repair_verification_results: dict[str, int] = Field(default_factory=dict)
 
 
 class DamageTrendPoint(BaseModel):
@@ -46,6 +53,7 @@ class RoadHealthAnalyticsData(BaseModel):
     health_distribution: dict[str, int]  # GOOD, FAIR, POOR, CRITICAL
     critical_segments: list[CriticalSegmentSummary]
     total_segments_evaluated: int
+    segments_insufficient_data: int = 0
 
 
 class MaintenanceAnalyticsData(BaseModel):
@@ -57,6 +65,8 @@ class MaintenanceAnalyticsData(BaseModel):
     verification_rate: float
     avg_completion_time_days: float | None = None
     recurrence_after_repair_count: int
+    by_status: dict[str, int] = Field(default_factory=dict)
+    verification_pending_jobs: int = 0
 
 
 class InspectionAnalyticsData(BaseModel):

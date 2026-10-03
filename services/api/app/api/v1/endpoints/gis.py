@@ -2,7 +2,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -10,7 +10,9 @@ from app.core.auth import OrgContext, require_permission
 from app.core.database import get_db
 from app.models.ai import AIDetection, AIProcessingRun
 from app.models.damage import DamageRecord
+from app.models.history import RecurrenceRecord
 from app.models.intelligence import RoadHealthSnapshot
+from app.models.maintenance import MaintenanceDamageLink, MaintenanceJob
 from app.models.road import Road, RoadSegment
 from app.schemas.common import ResponseEnvelope, ResponseMeta
 from app.schemas.gis import (
@@ -27,6 +29,60 @@ from app.services.spatial import (
 
 router = APIRouter()
 
+
+
+async def damage_map_context(db: AsyncSession, org_id: uuid.UUID, records) -> dict[uuid.UUID, dict]:
+    """Maintenance state, active recurrences/escalation and latest segment health per damage."""
+    ids = [r.id for r in records]
+    if not ids:
+        return {}
+    out: dict[uuid.UUID, dict] = {i: {} for i in ids}
+    jobs = (
+        await db.execute(
+            select(MaintenanceDamageLink.damage_record_id, MaintenanceJob.status, MaintenanceJob.created_at)
+            .join(MaintenanceJob, MaintenanceJob.id == MaintenanceDamageLink.maintenance_job_id)
+            .where(MaintenanceDamageLink.damage_record_id.in_(ids))
+            .order_by(MaintenanceJob.created_at)
+        )
+    ).all()
+    for dmg_id, job_status, _ in jobs:
+        out[dmg_id]["maintenance_status"] = job_status  # latest wins
+    levels = ("NONE", "ELEVATED", "CRITICAL")
+    recs = (
+        await db.execute(
+            select(RecurrenceRecord.new_damage_id, RecurrenceRecord.historical_damage_id, RecurrenceRecord.escalation_level)
+            .where(
+                RecurrenceRecord.organization_id == org_id,
+                RecurrenceRecord.status.in_(["POTENTIAL", "CONFIRMED"]),
+                or_(RecurrenceRecord.new_damage_id.in_(ids), RecurrenceRecord.historical_damage_id.in_(ids)),
+            )
+        )
+    ).all()
+    for new_id, hist_id, level in recs:
+        for dmg_id in (new_id, hist_id):
+            if dmg_id in out:
+                ctx = out[dmg_id]
+                ctx["active_recurrences"] = ctx.get("active_recurrences", 0) + 1
+                if level and levels.index(level) >= levels.index(ctx.get("escalation_level") or "NONE"):
+                    ctx["escalation_level"] = level
+    seg_ids = {r.road_segment_id for r in records if r.road_segment_id}
+    if seg_ids:
+        snaps = (
+            await db.execute(
+                select(RoadHealthSnapshot)
+                .where(RoadHealthSnapshot.road_segment_id.in_(seg_ids))
+                .order_by(desc(RoadHealthSnapshot.calculated_at))
+            )
+        ).scalars().all()
+        latest: dict[uuid.UUID, RoadHealthSnapshot] = {}
+        for snap in snaps:
+            latest.setdefault(snap.road_segment_id, snap)
+        for r in records:
+            snap = latest.get(r.road_segment_id)
+            if snap is not None:
+                out[r.id]["segment_health_score"] = float(snap.health_score) if snap.health_score is not None else None
+                out[r.id]["segment_health_status"] = snap.health_status
+    return out
 
 @router.get(
     "/damages",
@@ -77,6 +133,7 @@ async def get_map_damages(
     records = result.scalars().all()
 
     features: list[MapDamageFeature] = []
+    context = await damage_map_context(db, org_context.organization_id, records)
     has_bbox = (
         min_lat is not None and min_lon is not None and max_lat is not None and max_lon is not None
     )
@@ -113,6 +170,8 @@ async def get_map_damages(
                 segment_number=record.road_segment.segment_number if record.road_segment else None,
                 segment_name=record.road_segment.name if record.road_segment else None,
                 detected_at=record.detected_at,
+                observation_count=record.observation_count or 1,
+                **context.get(record.id, {}),
             )
         )
 

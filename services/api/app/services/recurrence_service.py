@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.models.damage import DamageRecord
 from app.models.history import RecurrenceRecord
-from app.models.maintenance import MaintenanceDamageLink, MaintenanceJob
+from app.models.maintenance import MaintenanceJob
 from app.models.repair import RepairVerification
 from app.models.road import RoadSegment
 from app.schemas.recurrence import (
@@ -20,6 +20,7 @@ from app.schemas.recurrence import (
     SegmentHistoricalTimelineResponse,
     SegmentTimelineEvent,
 )
+from app.services.recurrence_engine import evaluate_recurrence
 
 
 def utc_now() -> datetime:
@@ -64,113 +65,23 @@ async def run_recurrence_detection_for_damage(
     organization_id: uuid.UUID,
     max_distance_meters: float = 30.0,
 ) -> list[RecurrenceRecord]:
-    """Evaluates whether a newly recorded damage is a recurrence of a previous repaired/maintained defect."""
+    """Manual evaluation (POST /recurrence/evaluate) using the same deterministic rules as the
+    automatic check (app.services.recurrence_engine), with a caller-chosen radius and
+    cross-type matches allowed (recorded with type similarity 0.5)."""
     new_dmg = await db.get(DamageRecord, new_damage_id)
     if not new_dmg or new_dmg.organization_id != organization_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "DAMAGE_NOT_FOUND", "message": "Damage record not found."},
         )
-
-    new_coords = get_coords_from_geom(new_dmg.location)
-    if not new_coords:
-        return []
-
-    new_lat, new_lon = new_coords
-    new_timestamp = new_dmg.detected_at or new_dmg.created_at
-
-    # Find historical candidates on the same segment or organization
-    query = (
-        select(DamageRecord)
-        .where(
-            DamageRecord.organization_id == organization_id,
-            DamageRecord.id != new_dmg.id,
-            DamageRecord.created_at < new_timestamp,
-        )
+    created = await evaluate_recurrence(
+        db, organization_id, new_dmg, radius_m=max_distance_meters, require_same_type=False
     )
-    if new_dmg.road_segment_id:
-        query = query.where(DamageRecord.road_segment_id == new_dmg.road_segment_id)
-
-    historical_damages = list((await db.execute(query)).scalars().all())
-
-    created_records: list[RecurrenceRecord] = []
-    now = utc_now()
-
-    for hist in historical_damages:
-        hist_coords = get_coords_from_geom(hist.location)
-        if not hist_coords:
-            continue
-
-        hist_lat, hist_lon = hist_coords
-        dist = haversine_distance_meters(new_lat, new_lon, hist_lat, hist_lon)
-
-        if dist <= max_distance_meters:
-            # Check if recurrence record already exists
-            existing_check = await db.execute(
-                select(RecurrenceRecord).where(
-                    RecurrenceRecord.historical_damage_id == hist.id,
-                    RecurrenceRecord.new_damage_id == new_dmg.id,
-                )
-            )
-            if existing_check.scalar_one_or_none():
-                continue
-
-            hist_timestamp = hist.detected_at or hist.created_at
-            temporal_days = max(1, (ensure_utc(new_timestamp) - ensure_utc(hist_timestamp)).days)
-
-            # Similarity: type match gives 1.0, otherwise 0.5
-            type_similarity = 1.0 if hist.damage_type_id == new_dmg.damage_type_id else 0.5
-            dist_score = max(0.0, 1.0 - (dist / max_distance_meters))
-            computed_recurrence_score = round((dist_score * 0.6) + (type_similarity * 0.4), 4)
-
-            # Check related maintenance job and verification
-            link_stmt = select(MaintenanceDamageLink).where(
-                MaintenanceDamageLink.damage_record_id == hist.id
-            )
-            link = (await db.execute(link_stmt)).scalar_one_or_none()
-            rel_job_id = link.maintenance_job_id if link else None
-
-            rel_verification_id = None
-            if rel_job_id:
-                ver_stmt = (
-                    select(RepairVerification)
-                    .where(
-                        RepairVerification.maintenance_job_id == rel_job_id,
-                        RepairVerification.verification_status == "VERIFIED",
-                    )
-                    .order_by(desc(RepairVerification.created_at))
-                )
-                ver = (await db.execute(ver_stmt)).scalars().first()
-                if ver:
-                    rel_verification_id = ver.id
-
-            rec_record = RecurrenceRecord(
-                id=uuid.uuid4(),
-                organization_id=organization_id,
-                historical_damage_id=hist.id,
-                new_damage_id=new_dmg.id,
-                related_maintenance_job_id=rel_job_id,
-                related_repair_verification_id=rel_verification_id,
-                road_segment_id=new_dmg.road_segment_id,
-                spatial_distance_meters=round(dist, 2),
-                temporal_distance_days=temporal_days,
-                similarity_score=type_similarity,
-                recurrence_score=computed_recurrence_score,
-                detection_method_version="recurrence-spatial-temporal-v1",
-                status="POTENTIAL",
-                evaluated_at=now,
-                created_at=now,
-                updated_at=now,
-            )
-            db.add(rec_record)
-            created_records.append(rec_record)
-
-    if created_records:
+    if created:
         await db.commit()
-        for rec in created_records:
+        for rec in created:
             await db.refresh(rec)
-
-    return created_records
+    return created
 
 
 async def batch_evaluate_segment_recurrences(
@@ -286,6 +197,10 @@ async def list_recurrences(
                 historical_damage=hist_summary,
                 new_damage=new_summary,
                 segment_name=r.road_segment.name if r.road_segment else None,
+                rule_factors=r.rule_factors,
+                escalation_level=r.escalation_level,
+                escalation_reasons=r.escalation_reasons,
+                escalated_at=r.escalated_at,
             )
         )
 
@@ -370,6 +285,10 @@ async def get_recurrence_record(
         historical_damage=hist_summary,
         new_damage=new_summary,
         segment_name=r.road_segment.name if r.road_segment else None,
+        rule_factors=r.rule_factors,
+        escalation_level=r.escalation_level,
+        escalation_reasons=r.escalation_reasons,
+        escalated_at=r.escalated_at,
     )
 
 

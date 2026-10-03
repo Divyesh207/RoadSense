@@ -45,6 +45,12 @@ class RecurrenceRecord(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=utc_now)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
 
+    # Phase 3C: explicit rule inputs and deterministic escalation (see app.services.recurrence_engine).
+    rule_factors = Column(JSONB, nullable=True)
+    escalation_level = Column(String(20), nullable=True)  # NONE | ELEVATED | CRITICAL
+    escalation_reasons = Column(JSONB, nullable=True)
+    escalated_at = Column(DateTime(timezone=True), nullable=True)
+
     organization = relationship("Organization")
     historical_damage = relationship("DamageRecord", foreign_keys=[historical_damage_id])
     new_damage = relationship("DamageRecord", foreign_keys=[new_damage_id])
@@ -57,6 +63,10 @@ class RecurrenceRecord(Base):
         CheckConstraint("spatial_distance_meters IS NULL OR spatial_distance_meters >= 0", name="chk_recurrence_distance_nonnegative"),
         CheckConstraint("similarity_score IS NULL OR (similarity_score >= 0 AND similarity_score <= 1)", name="chk_recurrence_similarity_range"),
         CheckConstraint("recurrence_score IS NULL OR (recurrence_score >= 0 AND recurrence_score <= 1)", name="chk_recurrence_score_range"),
+        CheckConstraint(
+            "escalation_level IS NULL OR escalation_level IN ('NONE', 'ELEVATED', 'CRITICAL')",
+            name="chk_recurrence_escalation_level",
+        ),
         Index("recurrence_records_org_idx", "organization_id"),
         Index("recurrence_records_segment_idx", "road_segment_id"),
     )

@@ -477,6 +477,119 @@ export interface DashboardSummaryData {
   verified_repairs: number;
   recurrence_count: number;
   average_road_health?: number | null;
+  pending_review_damages?: number;
+  maintenance_by_status?: Record<string, number>;
+  escalated_recurrences?: number;
+  roads_with_health?: number;
+  road_health_status_counts?: Record<string, number>;
+  repair_verification_results?: Record<string, number>;
+}
+
+export interface HealthPoint {
+  id: string;
+  road_segment_id: string | null;
+  health_score: number | null;
+  health_status: string;
+  calculation_version: string;
+  calculated_at: string;
+  score_deductions: Record<string, number>;
+  recurrence_count?: number | null;
+  total_damages?: number | null;
+  traffic?: { traffic_volume_class: string | null; traffic_known: boolean; traffic_multiplier: number } | null;
+}
+
+export interface TimelineEvent {
+  type: "INSPECTION" | "DAMAGE" | "DAMAGE_REVIEW" | "HEALTH" | "PRIORITY" | "MAINTENANCE" | "REPAIR_EVIDENCE" | "VERIFICATION" | "RECURRENCE";
+  at: string;
+  title: string;
+  entity_id: string;
+  data: Record<string, any>;
+}
+
+export interface RoadIntelligence {
+  road: {
+    id: string;
+    name: string;
+    road_code?: string | null;
+    road_type?: string | null;
+    traffic_volume_class?: string | null;
+    traffic_aadt?: number | null;
+    traffic_data_source?: string | null;
+  };
+  segments: { id: string; segment_number: number; name?: string | null; length_meters?: number | null; latest_health?: HealthPoint | null }[];
+  road_health_history: HealthPoint[];
+  segment_health_history: Record<string, HealthPoint[]>;
+  summary: {
+    active_damages: number;
+    pending_review_damages: number;
+    repaired_damages: number;
+    active_by_severity: Record<string, number>;
+    maintenance_by_status: Record<string, number>;
+    active_recurrences: number;
+    inspections: number;
+  };
+  timeline: TimelineEvent[];
+}
+
+export interface RecurrenceOverviewItem {
+  id: string;
+  status: string;
+  escalation_level: string | null;
+  escalation_reasons: { code: string; level: string; detail: string }[];
+  historical_damage_id: string;
+  new_damage_id: string;
+  damage_type: string | null;
+  new_severity: string | null;
+  location: { latitude: number; longitude: number } | null;
+  road_id: string | null;
+  road_name: string | null;
+  segment_number: number | null;
+  distance_meters: number | null;
+  days_since_repair: number | null;
+  recurrence_number_at_location: number | null;
+  previous_repair_job_id: string | null;
+  previous_repair_job_title: string | null;
+  previous_verification_result: string | null;
+  previous_verification_source: string | null;
+  detection_method_version: string | null;
+  evaluated_at: string;
+}
+
+export interface VerificationOverviewItem {
+  verification_id: string;
+  maintenance_job_id: string;
+  job_title: string | null;
+  job_status: string | null;
+  status: string;
+  automated_result: string | null;
+  reason_code: string | null;
+  before_detection_count: number | null;
+  after_detection_count: number | null;
+  residual_detection_count: number | null;
+  model_name: string | null;
+  model_version: string | null;
+  algorithm_version: string | null;
+  analysed_at: string | null;
+  requested_at: string;
+  review_decision: string | null;
+  final_result: string | null;
+  reviewed_at: string | null;
+  reviewer_user_id: string | null;
+  reviewer_notes: string | null;
+}
+
+export interface ContractorHistoryItem {
+  assignee_type: "USER" | "CONTRACTOR";
+  assignee_id: string;
+  name: string | null;
+  assigned_jobs: number;
+  completed_jobs: number;
+  verified_jobs: number;
+  rejected_jobs: number;
+  open_jobs: number;
+  verification_outcomes: Record<string, number>;
+  recurrences_after_repair: number;
+  jobs: { id: string; title: string; status: string; completed_at: string | null }[];
 }
 
 export interface DamageTrendPoint {
@@ -507,6 +620,7 @@ export interface RoadHealthAnalyticsData {
   health_distribution: Record<string, number>;
   critical_segments: CriticalSegmentSummary[];
   total_segments_evaluated: number;
+  segments_insufficient_data?: number;
 }
 
 export interface MaintenanceAnalyticsData {
@@ -585,6 +699,12 @@ export interface MapDamageFeature {
   segment_number?: number | null;
   segment_name?: string | null;
   detected_at?: string | null;
+  observation_count?: number;
+  maintenance_status?: string | null;
+  active_recurrences?: number;
+  escalation_level?: string | null;
+  segment_health_score?: number | null;
+  segment_health_status?: string | null;
 }
 
 export interface MapRoadFeature {

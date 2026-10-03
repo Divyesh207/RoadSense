@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { AppShell } from "@/components/shell";
 import { api } from "@/lib/api-client";
@@ -226,7 +227,9 @@ export default function RoadsPage() {
                         <tr key={road.id} className="hover:bg-slate-800/40 transition-colors">
                           <td className="py-3 px-4 font-medium text-white flex items-center gap-2">
                             <Route className="h-4 w-4 text-blue-400 shrink-0" />
-                            <span>{road.name}</span>
+                            <Link href={`/roads/${road.id}`} className="hover:text-blue-300" onClick={(e) => e.stopPropagation()}>
+                              {road.name}
+                            </Link>
                           </td>
                           <td className="py-3 px-4 font-mono text-[11px] text-slate-400">
                             {road.road_code || "—"}

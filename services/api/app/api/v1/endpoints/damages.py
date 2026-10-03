@@ -33,8 +33,18 @@ from app.schemas.inspection import LocationOutput
 from app.services.audit_service import AuditService
 from app.services.damage_grouping import manual_observation, promote_detection
 from app.services.provenance import detection_provenance
+from app.services.recurrence_engine import on_damage_confirmed, on_damage_rejected
 from app.services.road_lifecycle import refresh_after_damage_change
 from app.services.spatial import point_to_wkt, wkt_or_geom_to_point
+
+
+async def apply_recurrence_rules(db: AsyncSession, org_ctx: OrgContext, record: DamageRecord, request_id: str | None) -> None:
+    """Confirmed damage is checked for recurrence near repaired damage; rejected damage
+    dismisses its potential recurrences (see app.services.recurrence_engine)."""
+    if record.status == "CONFIRMED":
+        await on_damage_confirmed(db, org_ctx.organization_id, record, org_ctx.user_id, request_id)
+    elif record.status == "REJECTED":
+        await on_damage_rejected(db, org_ctx.organization_id, record, org_ctx.user_id, request_id)
 
 router = APIRouter()
 
@@ -336,6 +346,7 @@ async def create_damage_record(
     db.add(manual_observation(record))
     await db.commit()
     await db.refresh(record)
+    await apply_recurrence_rules(db, org_ctx, record, getattr(request.state, "request_id", None))
     await refresh_after_damage_change(db, org_ctx.organization_id, [record])
 
     # Reload relationships
@@ -514,6 +525,7 @@ async def update_damage_record(
     record.updated_at = utc_now()
     await db.commit()
     await db.refresh(record)
+    await apply_recurrence_rules(db, org_ctx, record, getattr(request.state, "request_id", None))
     await refresh_after_damage_change(db, org_ctx.organization_id, [record])
 
     return ResponseEnvelope(
@@ -616,6 +628,7 @@ async def review_damage_record(
 
     await db.commit()
     await db.refresh(record)
+    await apply_recurrence_rules(db, org_ctx, record, getattr(request.state, "request_id", None))
     await refresh_after_damage_change(db, org_ctx.organization_id, [record])
 
     # Reload relationships for response
