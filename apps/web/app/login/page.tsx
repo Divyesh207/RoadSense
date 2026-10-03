@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { Activity, Lock, Mail, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("authority@example.com");
-  const [password, setPassword] = useState("AuthoritySecret123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
