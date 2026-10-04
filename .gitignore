@@ -90,3 +90,8 @@ Thumbs.db
 *.crt
 id_rsa
 service-account*.json
+
+# Faculty demo: third-party photos and local demo credentials are not committed
+scripts/demo/photos/
+scripts/demo/faculty_demo.local.env
+scripts/demo/last_seed_summary.json
