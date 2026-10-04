@@ -6,8 +6,10 @@ import React, { useEffect, useMemo } from "react";
 import L from "leaflet";
 import { CircleMarker, GeoJSON, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
-import { MapDamageFeature, MapSegmentFeature } from "@/types/api";
-import { isHeuristic, scoreLabel } from "@/lib/provenance";
+import { Inspection, MapDamageFeature, MapSegmentFeature } from "@/types/api";
+import { detectionMethodLabel, isHeuristic } from "@/lib/provenance";
+
+export const INSPECTION_COLOR = "#38bdf8";
 
 export const SEVERITY_COLORS: Record<string, string> = {
   CRITICAL: "#ef4444",
@@ -33,14 +35,26 @@ interface SpatialMapProps {
   segments: MapSegmentFeature[];
   showDamages: boolean;
   showSegments: boolean;
+  /** Field inspections that have a recorded GPS position (capture points, not damage records). */
+  inspections?: Inspection[];
+  showInspections?: boolean;
 }
 
-function FitToData({ damages, segments }: { damages: MapDamageFeature[]; segments: MapSegmentFeature[] }) {
+function FitToData({
+  damages,
+  segments,
+  inspections,
+}: {
+  damages: MapDamageFeature[];
+  segments: MapSegmentFeature[];
+  inspections: Inspection[];
+}) {
   const map = useMap();
 
   useEffect(() => {
     const bounds = L.latLngBounds([]);
     damages.forEach((d) => bounds.extend([d.latitude, d.longitude]));
+    inspections.forEach((i) => i.location && bounds.extend([i.location.latitude, i.location.longitude]));
     segments.forEach((s) => {
       const layer = L.geoJSON(s.geometry as Geometry);
       const b = layer.getBounds();
@@ -49,16 +63,55 @@ function FitToData({ damages, segments }: { damages: MapDamageFeature[]; segment
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [32, 32], maxZoom: 16 });
     }
-  }, [map, damages, segments]);
+  }, [map, damages, segments, inspections]);
 
   return null;
+}
+
+// How the record was produced and what the score means, in the API's own terms.
+function scoreText(d: MapDamageFeature): string | null {
+  if (d.confidence === null || d.confidence === undefined) return null;
+  const value = d.confidence.toFixed(2);
+  if (isHeuristic(d.detection_method, d.score_type)) return `Heuristic score ${value} (rule-based, not a probability)`;
+  if (d.score_type === "MODEL_CONFIDENCE") return `Model confidence ${value}`;
+  return `Score ${value}`;
+}
+
+function reviewText(status: string): string {
+  switch (status) {
+    case "REJECTED":
+      return "rejected by a reviewer";
+    case "DETECTED":
+    case "PENDING_REVIEW":
+      return "awaiting human review";
+    default:
+      return "confirmed by a reviewer";
+  }
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <span style={{ color: "#64748b" }}>{label}: </span>
+      {children}
+    </div>
+  );
 }
 
 function formatScore(score?: number | null) {
   return score === null || score === undefined ? "n/a" : score.toFixed(1);
 }
 
-export default function SpatialMap({ damages, segments, showDamages, showSegments }: SpatialMapProps) {
+export default function SpatialMap({
+  damages,
+  segments,
+  showDamages,
+  showSegments,
+  inspections = [],
+  showInspections = false,
+}: SpatialMapProps) {
+  const locatedInspections = useMemo(() => inspections.filter((i) => i.location), [inspections]);
+
   const segmentCollection = useMemo<FeatureCollection>(
     () => ({
       type: "FeatureCollection",
@@ -88,7 +141,11 @@ export default function SpatialMap({ damages, segments, showDamages, showSegment
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <FitToData damages={showDamages ? damages : []} segments={showSegments ? segments : []} />
+      <FitToData
+        damages={showDamages ? damages : []}
+        segments={showSegments ? segments : []}
+        inspections={showInspections ? locatedInspections : []}
+      />
 
       {showSegments && segments.length > 0 && (
         <GeoJSON
@@ -138,39 +195,70 @@ export default function SpatialMap({ damages, segments, showDamages, showSegment
             }}
           >
             <Popup>
-              <div className="text-xs space-y-0.5">
-                <div className="font-semibold">{d.damage_type}</div>
-                <div>
-                  Severity: {d.severity} &middot; Status: {d.status}
-                </div>
-                {d.confidence !== null && d.confidence !== undefined && (
-                  <div>
-                    {scoreLabel(d.score_type)}: {(d.confidence * 100).toFixed(0)}%
-                    {isHeuristic(d.detection_method, d.score_type) ? " (OpenCV rules, not a trained model)" : ""}
-                  </div>
-                )}
-                {d.road_name && (
-                  <div>
-                    {d.road_name}
-                    {d.segment_number !== null && d.segment_number !== undefined ? ` - Segment ${d.segment_number}` : ""}
-                  </div>
-                )}
-                {d.detected_at && <div>Detected: {new Date(d.detected_at).toLocaleString()}</div>}
-                {(d.observation_count ?? 1) > 1 && <div>Seen {d.observation_count} times (GPS-grouped)</div>}
-                <div>Maintenance: {d.maintenance_status ? d.maintenance_status.replace(/_/g, " ") : "no job"}</div>
-                {(d.active_recurrences ?? 0) > 0 && (
-                  <div>
-                    Recurrence: {d.active_recurrences} active
-                    {d.escalation_level && d.escalation_level !== "NONE" ? ` · escalation ${d.escalation_level}` : ""}
-                  </div>
-                )}
-                <div>
-                  Segment health:{" "}
+              <div className="text-xs space-y-0.5" style={{ minWidth: 230 }}>
+                <div className="font-semibold">Road damage: {d.damage_type}</div>
+                <Row label="Severity">{d.severity} (rule-based assessment)</Row>
+                <Row label="Status">{d.status.replace(/_/g, " ")}</Row>
+                <Row label="Road">{d.road_name ?? "not assigned"}</Row>
+                <Row label="Segment">
+                  {d.segment_number !== null && d.segment_number !== undefined
+                    ? `#${d.segment_number}${d.segment_name ? ` · ${d.segment_name}` : ""}`
+                    : "not assigned"}
+                </Row>
+                <Row label="Latitude">{d.latitude.toFixed(6)}</Row>
+                <Row label="Longitude">{d.longitude.toFixed(6)}</Row>
+                <Row label="Detected">{d.detected_at ? new Date(d.detected_at).toLocaleString() : "not recorded"}</Row>
+                <Row label="Detection method">
+                  {isHeuristic(d.detection_method, d.score_type)
+                    ? "Heuristic fallback (OpenCV rules, unverified, not a trained model)"
+                    : detectionMethodLabel(d.detection_method)}
+                </Row>
+                {scoreText(d) && <div>{scoreText(d)}</div>}
+                <Row label="Human review">{reviewText(d.status)}</Row>
+                <Row label="Sightings">
+                  {(d.observation_count ?? 1) > 1 ? `${d.observation_count} (GPS-grouped)` : "1"}
+                </Row>
+                <Row label="Recurrence">
+                  {(d.active_recurrences ?? 0) > 0
+                    ? `${d.active_recurrences} active${
+                        d.escalation_level && d.escalation_level !== "NONE" ? ` · escalation ${d.escalation_level}` : ""
+                      }`
+                    : "none recorded"}
+                </Row>
+                <Row label="Maintenance">{d.maintenance_status ? d.maintenance_status.replace(/_/g, " ") : "no job"}</Row>
+                <Row label="Segment health">
                   {d.segment_health_status ? `${d.segment_health_score ?? "—"} (${d.segment_health_status})` : "no snapshot"}
-                </div>
-                <div>
-                  {d.latitude.toFixed(5)}, {d.longitude.toFixed(5)}
-                </div>
+                </Row>
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
+
+      {showInspections &&
+        locatedInspections.map((i) => (
+          <CircleMarker
+            key={`insp-${i.id}`}
+            center={[i.location!.latitude, i.location!.longitude]}
+            radius={5}
+            pathOptions={{ color: INSPECTION_COLOR, fillColor: "#0f172a", fillOpacity: 0.9, weight: 2 }}
+          >
+            <Popup>
+              <div className="text-xs space-y-0.5" style={{ minWidth: 220 }}>
+                <div className="font-semibold">Field inspection #{i.id.slice(0, 8)}</div>
+                <div style={{ color: "#64748b" }}>Capture point of an inspection, not a damage record.</div>
+                <Row label="Status">{i.status}</Row>
+                <Row label="Source">{i.source}</Row>
+                <Row label="Road">{i.road_name ?? "not assigned"}</Row>
+                <Row label="Segment">
+                  {i.segment_number !== null && i.segment_number !== undefined ? `#${i.segment_number}` : "not assigned"}
+                </Row>
+                <Row label="Latitude">{i.location!.latitude.toFixed(6)}</Row>
+                <Row label="Longitude">{i.location!.longitude.toFixed(6)}</Row>
+                {i.location!.accuracy_m !== undefined && i.location!.accuracy_m !== null && (
+                  <Row label="Reported accuracy">±{i.location!.accuracy_m} m</Row>
+                )}
+                <Row label="Captured">{new Date(i.captured_at).toLocaleString()}</Row>
+                <a href={`/inspections/${i.id}`}>Open inspection</a>
               </div>
             </Popup>
           </CircleMarker>

@@ -90,10 +90,36 @@ export interface Road {
   road_type?: string;
   administrative_area?: string;
   description?: string;
+  geometry?: GeoJSONLineGeometry | null;
+  traffic_volume_class?: string | null;
+  traffic_aadt?: number | null;
+  traffic_data_source?: string | null;
   is_active: boolean;
   segment_count?: number;
   created_at: string;
   updated_at: string;
+}
+
+// POST /roads (RoadCreateRequest). Only fields the API accepts.
+export interface RoadCreatePayload {
+  name: string;
+  road_code?: string;
+  road_type?: string;
+  administrative_area?: string;
+  description?: string;
+  traffic_volume_class?: "LOW" | "MEDIUM" | "HIGH" | "VERY_HIGH";
+  traffic_aadt?: number;
+  traffic_data_source?: string;
+}
+
+// POST /roads/{road_id}/segments (RoadSegmentCreateRequest). Chainage is in kilometres.
+export interface RoadSegmentCreatePayload {
+  segment_number: number;
+  name?: string;
+  start_chainage?: number;
+  end_chainage?: number;
+  length_meters?: number;
+  geometry?: GeoJSONLineGeometry;
 }
 
 export interface RoadSegment {
@@ -101,6 +127,11 @@ export interface RoadSegment {
   road_id: string;
   road_name?: string;
   segment_number: number;
+  name?: string | null;
+  start_chainage?: number | null;
+  end_chainage?: number | null;
+  geometry?: GeoJSONLineGeometry | null;
+  is_active?: boolean;
   start_chainage_meters?: number;
   end_chainage_meters?: number;
   length_meters?: number;

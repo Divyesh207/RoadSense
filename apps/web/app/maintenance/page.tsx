@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/shell";
+import { StatusBadge } from "@/components/status-badge";
+import { EmptyState } from "@/components/empty-state";
 import { api } from "@/lib/api-client";
 import {
   MaintenanceJob,
@@ -29,15 +31,16 @@ import {
   MapPin,
   TrendingUp,
   Check,
+  RefreshCw,
 } from "lucide-react";
 
 const STATUS_COLUMNS = [
-  { id: "OPEN", label: "Open", color: "border-amber-500/30 bg-amber-500/10 text-amber-400" },
-  { id: "ASSIGNED", label: "Assigned", color: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
-  { id: "IN_PROGRESS", label: "In Progress", color: "border-indigo-500/30 bg-indigo-500/10 text-indigo-400" },
-  { id: "COMPLETED", label: "Completed", color: "border-teal-500/30 bg-teal-500/10 text-teal-400" },
-  { id: "VERIFICATION_PENDING", label: "Verification Pending", color: "border-purple-500/30 bg-purple-500/10 text-purple-400" },
-  { id: "VERIFIED", label: "Verified", color: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" },
+  { id: "OPEN", label: "Open", color: "border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#F59E0B]" },
+  { id: "ASSIGNED", label: "Assigned", color: "border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#ADC6FF]" },
+  { id: "IN_PROGRESS", label: "In Progress", color: "border-[#06B6D4]/30 bg-[#06B6D4]/10 text-[#4CD7F6]" },
+  { id: "COMPLETED", label: "Completed", color: "border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981]" },
+  { id: "VERIFICATION_PENDING", label: "Verification Pending", color: "border-[#A78BFA]/30 bg-[#A78BFA]/10 text-[#A78BFA]" },
+  { id: "VERIFIED", label: "Verified", color: "border-[#10B981]/40 bg-[#10B981]/20 text-[#10B981]" },
 ];
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
@@ -183,40 +186,6 @@ export default function MaintenancePage() {
     }
   };
 
-  const getPriorityBadge = (lvl: string, score?: number) => {
-    const colors: Record<string, string> = {
-      CRITICAL: "bg-red-500/20 text-red-400 border-red-500/30",
-      HIGH: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      MEDIUM: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-      LOW: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    };
-    return (
-      <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${
-          colors[lvl] || colors.MEDIUM
-        }`}
-      >
-        <span>{lvl}</span>
-        {score !== undefined && score !== null && (
-          <span className="text-[10px] opacity-75">({score.toFixed(0)})</span>
-        )}
-      </span>
-    );
-  };
-
-  const getStatusBadge = (st: string) => {
-    const col = STATUS_COLUMNS.find((c) => c.id === st);
-    return (
-      <span
-        className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${
-          col?.color || "border-slate-700 bg-slate-800 text-slate-400"
-        }`}
-      >
-        {st.replace(/_/g, " ")}
-      </span>
-    );
-  };
-
   // KPIs
   const counts = {
     total: jobs.length,
@@ -232,22 +201,28 @@ export default function MaintenancePage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-white tracking-tight flex items-center gap-2.5">
-              <Wrench className="h-6 w-6 text-blue-500" />
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-code-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+                Maintenance jobs
+              </span>
+            </div>
+            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-[#F1F5F9] flex items-center gap-2.5">
               Maintenance Operations
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="font-body-sm text-xs text-[#94A3B8] mt-1">
               Operational maintenance workflow, contractor assignments, and repair tracking.
             </p>
           </div>
+
           <div className="flex items-center gap-3">
-            <div className="flex rounded-lg bg-slate-900 border border-slate-800 p-0.5">
+            {/* View Mode Toggle */}
+            <div className="flex rounded-xl bg-[#111A2E] border border-[#26344F] p-1">
               <button
                 onClick={() => setViewMode("kanban")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === "kanban"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-[#06B6D4] text-[#003640] shadow-sm shadow-[#06B6D4]/20"
+                    : "text-[#94A3B8] hover:text-[#F1F5F9]"
                 }`}
               >
                 <Kanban className="h-3.5 w-3.5" />
@@ -255,10 +230,10 @@ export default function MaintenancePage() {
               </button>
               <button
                 onClick={() => setViewMode("table")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === "table"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-white"
+                    ? "bg-[#06B6D4] text-[#003640] shadow-sm shadow-[#06B6D4]/20"
+                    : "text-[#94A3B8] hover:text-[#F1F5F9]"
                 }`}
               >
                 <List className="h-3.5 w-3.5" />
@@ -268,91 +243,117 @@ export default function MaintenancePage() {
 
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm shadow-blue-500/20"
+              className="flex items-center gap-2 bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-[#06B6D4]/20 active:scale-95"
             >
               <Plus className="h-4 w-4" />
-              Create Job
+              <span>Create Job</span>
             </button>
           </div>
         </div>
 
-        {/* KPI Cards */}
+        {/* 5-Column Bento KPI Strip */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Jobs</p>
-            <p className="text-xl font-bold text-white mt-1">{counts.total}</p>
+          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-[#94A3B8] uppercase tracking-wider">
+              Total Jobs
+            </span>
+            <p className="font-code-lg text-2xl font-bold text-[#F1F5F9] mt-2">{counts.total}</p>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <p className="text-[11px] font-medium text-amber-400 uppercase tracking-wider">Open / Assigned</p>
-            <p className="text-xl font-bold text-white mt-1">{counts.open}</p>
+          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-[#F59E0B] uppercase tracking-wider">
+              Open / Assigned
+            </span>
+            <p className="font-code-lg text-2xl font-bold text-[#F59E0B] mt-2">{counts.open}</p>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <p className="text-[11px] font-medium text-indigo-400 uppercase tracking-wider">In Progress</p>
-            <p className="text-xl font-bold text-white mt-1">{counts.inProgress}</p>
+          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-[#06B6D4] uppercase tracking-wider">
+              In Progress
+            </span>
+            <p className="font-code-lg text-2xl font-bold text-[#4CD7F6] mt-2">{counts.inProgress}</p>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <p className="text-[11px] font-medium text-purple-400 uppercase tracking-wider">Awaiting QA</p>
-            <p className="text-xl font-bold text-white mt-1">{counts.verification}</p>
+          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-[#ADC6FF] uppercase tracking-wider">
+              Awaiting Verification
+            </span>
+            <p className="font-code-lg text-2xl font-bold text-[#ADC6FF] mt-2">{counts.verification}</p>
           </div>
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5">
-            <p className="text-[11px] font-medium text-emerald-400 uppercase tracking-wider">Verified Repaired</p>
-            <p className="text-xl font-bold text-white mt-1">{counts.verified}</p>
+          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-[#10B981] uppercase tracking-wider">
+              Verified Repaired
+            </span>
+            <p className="font-code-lg text-2xl font-bold text-[#10B981] mt-2">{counts.verified}</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 bg-slate-900/40 p-3 rounded-xl border border-slate-800/80">
-          <div className="flex items-center gap-2 text-xs text-slate-400 mr-2">
-            <Filter className="h-3.5 w-3.5" />
-            <span>Filters:</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#111A2E] p-3 rounded-2xl border border-[#26344F]">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="font-label-sm text-xs text-[#94A3B8]">Priority:</span>
+              <select
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value)}
+                className="bg-[#151B2A] border border-[#26344F] text-[#F1F5F9] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#06B6D4]"
+              >
+                <option value="">All Priorities</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="LOW">Low</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-label-sm text-xs text-[#94A3B8]">Status:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-[#151B2A] border border-[#26344F] text-[#F1F5F9] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#06B6D4]"
+              >
+                <option value="">All Statuses</option>
+                <option value="OPEN">Open</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="VERIFICATION_PENDING">Verification Pending</option>
+                <option value="VERIFIED">Verified</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
           </div>
 
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500"
+          <button
+            onClick={() => {
+              setPriorityFilter("");
+              setStatusFilter("");
+            }}
+            disabled={!priorityFilter && !statusFilter}
+            className="px-3 py-1.5 rounded-xl bg-[#17223A] border border-[#26344F] text-xs text-[#94A3B8] hover:text-[#F1F5F9] disabled:opacity-40 ml-auto"
           >
-            <option value="">All Priorities</option>
-            <option value="CRITICAL">Critical</option>
-            <option value="HIGH">High</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="LOW">Low</option>
-          </select>
+            Reset Filters
+          </button>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-500"
+          <button
+            onClick={() => loadData()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#17223A] border border-[#26344F] text-xs text-[#94A3B8] hover:text-[#F1F5F9] transition-colors"
           >
-            <option value="">All Statuses</option>
-            <option value="OPEN">Open</option>
-            <option value="ASSIGNED">Assigned</option>
-            <option value="IN_PROGRESS">In Progress</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="VERIFICATION_PENDING">Verification Pending</option>
-            <option value="VERIFIED">Verified</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-
-          {(priorityFilter || statusFilter) && (
-            <button
-              onClick={() => {
-                setPriorityFilter("");
-                setStatusFilter("");
-              }}
-              className="text-xs text-blue-400 hover:text-blue-300 ml-auto"
-            >
-              Reset Filters
-            </button>
-          )}
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-[#06B6D4]" : ""}`} />
+            <span>Refresh</span>
+          </button>
         </div>
 
         {/* Content Body */}
         {loading ? (
-          <div className="h-64 flex items-center justify-center border border-slate-800/60 rounded-xl bg-slate-900/20">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+          <div className="h-64 flex items-center justify-center border border-[#26344F] rounded-2xl bg-[#111A2E]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#06B6D4]" />
           </div>
+        ) : jobs.length === 0 ? (
+          <EmptyState
+            icon={Wrench}
+            title="No jobs"
+            description="No maintenance jobs match the current filters."
+          />
         ) : viewMode === "kanban" ? (
           /* Kanban Board View */
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 min-h-[500px]">
@@ -361,45 +362,46 @@ export default function MaintenancePage() {
               return (
                 <div
                   key={col.id}
-                  className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-3 flex flex-col min-h-[400px]"
+                  className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-3 flex flex-col min-h-[400px]"
                 >
-                  <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-800">
-                    <span className="text-xs font-semibold text-white truncate">{col.label}</span>
-                    <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-400 font-medium">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#26344F]">
+                    <span className="font-label-sm text-xs font-bold text-[#F1F5F9] truncate">
+                      {col.label}
+                    </span>
+                    <span className="font-code-sm text-[10px] px-2 py-0.5 rounded-full bg-[#17223A] text-[#94A3B8] border border-[#26344F]">
                       {colJobs.length}
                     </span>
                   </div>
 
                   <div className="flex-1 space-y-2.5 overflow-y-auto">
                     {colJobs.length === 0 ? (
-                      <p className="text-[11px] text-slate-500 text-center py-6">No jobs</p>
+                      <p className="font-code-sm text-[11px] text-[#64748B] text-center py-8">
+                        Empty
+                      </p>
                     ) : (
                       colJobs.map((job) => (
                         <div
                           key={job.id}
                           onClick={() => openJobDetail(job)}
-                          className="bg-slate-950/90 border border-slate-800 hover:border-blue-500/50 rounded-lg p-3 cursor-pointer transition-all hover:shadow-md hover:shadow-blue-500/5 space-y-2"
+                          className="bg-[#151B2A] border border-[#26344F] hover:border-[#06B6D4]/50 rounded-xl p-3 cursor-pointer transition-all shadow-sm hover:shadow-md space-y-2"
                         >
-                          <div className="flex items-start justify-between gap-1.5">
-                            <h4 className="text-xs font-medium text-white line-clamp-2 leading-snug">
-                              {job.title}
-                            </h4>
-                          </div>
+                          <h4 className="font-headline-sm text-xs font-semibold text-[#F1F5F9] line-clamp-2 leading-snug">
+                            {job.title}
+                          </h4>
 
-                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-900">
-                            {getPriorityBadge(job.priority_level, job.priority_score)}
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#26344F]/60">
+                            <StatusBadge status={job.priority_level} size="sm" />
                             {job.damage_count !== undefined && job.damage_count > 0 && (
-                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3 text-amber-400" />
+                              <span className="font-code-sm text-[10px] text-[#94A3B8] flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3 text-[#F59E0B]" />
                                 {job.damage_count} dmg
                               </span>
                             )}
                           </div>
 
                           {job.due_at && (
-                            <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                              <Calendar className="h-3 w-3 text-slate-400" />
-                              Due {new Date(job.due_at).toLocaleDateString()}
+                            <p className="font-code-sm text-[10px] text-[#64748B]">
+                              Due: {new Date(job.due_at).toLocaleDateString()}
                             </p>
                           )}
                         </div>
@@ -412,219 +414,113 @@ export default function MaintenancePage() {
           </div>
         ) : (
           /* Table View */
-          <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/40">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4 font-medium">Job Title</th>
-                  <th className="py-3 px-4 font-medium">Priority</th>
-                  <th className="py-3 px-4 font-medium">Status</th>
-                  <th className="py-3 px-4 font-medium">Linked Damages</th>
-                  <th className="py-3 px-4 font-medium">Due Date</th>
-                  <th className="py-3 px-4 font-medium">Created</th>
-                  <th className="py-3 px-4 font-medium text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {jobs.length === 0 ? (
+          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-slate-500">
-                      No maintenance jobs found matching the selected criteria.
-                    </td>
+                    <th className="py-3 px-4 font-semibold">Title</th>
+                    <th className="py-3 px-4 font-semibold">Linked Road</th>
+                    <th className="py-3 px-4 font-semibold">Priority</th>
+                    <th className="py-3 px-4 font-semibold">Status</th>
+                    <th className="py-3 px-4 font-semibold">Damages</th>
+                    <th className="py-3 px-4 font-semibold">Due Date</th>
+                    <th className="py-3 px-4 text-right font-semibold">Action</th>
                   </tr>
-                ) : (
-                  jobs.map((job) => (
+                </thead>
+                <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+                  {jobs.map((job) => (
                     <tr
                       key={job.id}
                       onClick={() => openJobDetail(job)}
-                      className="hover:bg-slate-800/40 cursor-pointer transition-colors"
+                      className="hover:bg-[#17223A]/50 cursor-pointer transition-colors"
                     >
-                      <td className="py-3 px-4 font-medium text-white max-w-xs truncate">
-                        {job.title}
+                      <td className="py-3 px-4 font-bold text-white">{job.title}</td>
+                      <td className="py-3 px-4 text-[#DCE2F6]">
+                        {job.road_id
+                          ? roads.find((r) => r.id === job.road_id)?.name || "Linked Road"
+                          : "Unassigned"}
                       </td>
                       <td className="py-3 px-4">
-                        {getPriorityBadge(job.priority_level, job.priority_score)}
+                        <StatusBadge status={job.priority_level} size="sm" />
                       </td>
-                      <td className="py-3 px-4">{getStatusBadge(job.status)}</td>
-                      <td className="py-3 px-4 text-slate-300">
-                        {job.damage_count ? `${job.damage_count} damage(s)` : "None"}
+                      <td className="py-3 px-4">
+                        <StatusBadge status={job.status} size="sm" />
                       </td>
-                      <td className="py-3 px-4 text-slate-400">
+                      <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                        {job.damage_count || 0}
+                      </td>
+                      <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
                         {job.due_at ? new Date(job.due_at).toLocaleDateString() : "—"}
                       </td>
-                      <td className="py-3 px-4 text-slate-400">
-                        {new Date(job.created_at).toLocaleDateString()}
-                      </td>
                       <td className="py-3 px-4 text-right">
-                        <span className="text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 font-medium">
-                          Details <ChevronRight className="h-3 w-3" />
-                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openJobDetail(job);
+                          }}
+                          className="h-8 px-3 rounded-lg bg-[#17223A] border border-[#26344F] text-[#4CD7F6] font-label-md text-xs font-semibold hover:bg-[#232A39]"
+                        >
+                          View Details
+                        </button>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Create Job Modal */}
-        {isCreateOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 w-full max-w-md shadow-xl space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                  <Plus className="h-4 w-4 text-blue-500" />
-                  Create Maintenance Job
-                </h3>
-                <button
-                  onClick={() => setIsCreateOpen(false)}
-                  className="text-slate-400 hover:text-white"
-                >
-                  <XCircle className="h-4 w-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateSubmit} className="space-y-3.5">
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Job Title *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={createForm.title}
-                    onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
-                    placeholder="e.g. Patch potholes on SH-42 KM 0-2"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={createForm.description}
-                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-                    placeholder="Describe maintenance scope and specifications..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
-                      Priority Level
-                    </label>
-                    <select
-                      value={createForm.priority}
-                      onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="LOW">Low</option>
-                      <option value="MEDIUM">Medium</option>
-                      <option value="HIGH">High</option>
-                      <option value="CRITICAL">Critical</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      value={createForm.due_at}
-                      onChange={(e) => setCreateForm({ ...createForm, due_at: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Associated Road (Optional)
-                  </label>
-                  <select
-                    value={createForm.road_id}
-                    onChange={(e) => setCreateForm({ ...createForm, road_id: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="">None / General Maintenance</option>
-                    {roads.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name} ({r.road_code || "No Code"})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateOpen(false)}
-                    className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creating}
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm"
-                  >
-                    {creating ? "Creating..." : "Create Job"}
-                  </button>
-                </div>
-              </form>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* Selected Job Detail Drawer */}
+        {/* Selected Job Drawer */}
         {selectedJob && (
-          <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-950/70 backdrop-blur-sm">
-            <div className="w-full max-w-xl h-full bg-slate-900 border-l border-slate-800 flex flex-col p-6 overflow-y-auto space-y-6 shadow-2xl">
-              {/* Header */}
-              <div className="flex items-start justify-between border-b border-slate-800 pb-4">
-                <div className="space-y-1">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                    Job ID: {selectedJob.id.slice(0, 8)}...
-                  </span>
-                  <h2 className="text-base font-bold text-white">{selectedJob.title}</h2>
-                  <div className="flex items-center gap-2 pt-1">
-                    {getStatusBadge(selectedJob.status)}
-                    {getPriorityBadge(selectedJob.priority_level, selectedJob.priority_score)}
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-end z-50">
+            <div className="bg-[#111A2E] border-l border-[#26344F] w-full max-w-xl h-full p-6 overflow-y-auto space-y-6 shadow-2xl">
+              <div className="flex items-start justify-between border-b border-[#26344F] pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={selectedJob.status} />
+                    <StatusBadge
+                      status={selectedJob.priority_level}
+                      label={`${selectedJob.priority_level}${
+                        selectedJob.priority_score != null ? ` ${selectedJob.priority_score}` : ""
+                      }`}
+                      showDot={false}
+                    />
                   </div>
+                  <h3 className="font-headline-sm text-lg font-bold text-[#F1F5F9] mt-2">
+                    {selectedJob.title}
+                  </h3>
+                  <p className="font-code-sm text-xs text-[#94A3B8] mt-0.5">
+                    Job ID: {selectedJob.id}
+                  </p>
                 </div>
                 <button
                   onClick={() => setSelectedJob(null)}
-                  className="text-slate-400 hover:text-white p-1 rounded-md hover:bg-slate-800"
+                  className="text-[#94A3B8] hover:text-[#F1F5F9] p-1.5 rounded-lg hover:bg-[#17223A]"
                 >
-                  <XCircle className="h-5 w-5" />
+                  <XCircle className="h-6 w-6" />
                 </button>
               </div>
 
-              {/* Description */}
               {selectedJob.description && (
-                <div className="space-y-1">
-                  <h4 className="text-xs font-semibold text-slate-300">Description</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed bg-slate-950/60 p-3 rounded-lg border border-slate-800/80">
+                <div className="space-y-1.5">
+                  <h4 className="font-label-md text-xs font-bold text-[#94A3B8]">Description</h4>
+                  <p className="font-body-sm text-xs text-[#DCE2F6] leading-relaxed bg-[#151B2A] p-3 rounded-xl border border-[#26344F]">
                     {selectedJob.description}
                   </p>
                 </div>
               )}
 
               {/* Status Action Controls */}
-              <div className="space-y-2 bg-slate-950/80 p-4 rounded-xl border border-slate-800">
-                <h4 className="text-xs font-semibold text-slate-200 flex items-center gap-2">
-                  <ArrowRight className="h-3.5 w-3.5 text-blue-400" />
-                  Available State Transitions
+              <div className="space-y-3 bg-[#151B2A] p-4 rounded-xl border border-[#26344F]">
+                <h4 className="font-label-md text-xs font-bold text-[#F1F5F9] flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-[#06B6D4]" />
+                  <span>Available State Transitions</span>
                 </h4>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {(ALLOWED_TRANSITIONS[selectedJob.status] || []).length === 0 ? (
-                    <p className="text-xs text-slate-500 italic">No further transitions allowed.</p>
+                    <p className="font-code-sm text-xs text-[#64748B]">No further transitions allowed.</p>
                   ) : (
                     ALLOWED_TRANSITIONS[selectedJob.status].map((targetStatus) => (
                       <button
@@ -633,7 +529,7 @@ export default function MaintenancePage() {
                           setTransitionTarget(targetStatus);
                           setTransitionNotes("");
                         }}
-                        className="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        className="bg-[#06B6D4]/15 hover:bg-[#06B6D4]/25 text-[#4CD7F6] border border-[#06B6D4]/30 px-3 py-1.5 rounded-xl font-label-md text-xs font-bold transition-all"
                       >
                         Transition to {targetStatus.replace(/_/g, " ")}
                       </button>
@@ -642,10 +538,10 @@ export default function MaintenancePage() {
                 </div>
               </div>
 
-              {/* Transition Notes Modal */}
+              {/* Transition Form Modal */}
               {transitionTarget && (
-                <div className="p-4 bg-slate-950 border border-blue-500/30 rounded-xl space-y-3">
-                  <h4 className="text-xs font-semibold text-white">
+                <div className="p-4 bg-[#151B2A] border border-[#06B6D4]/40 rounded-xl space-y-3">
+                  <h4 className="font-headline-sm text-xs font-bold text-[#F1F5F9]">
                     Transition to {transitionTarget.replace(/_/g, " ")}
                   </h4>
                   <textarea
@@ -653,13 +549,13 @@ export default function MaintenancePage() {
                     value={transitionNotes}
                     onChange={(e) => setTransitionNotes(e.target.value)}
                     placeholder="Enter completion notes or transition justification..."
-                    className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-[#111A2E] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
                   />
                   <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setTransitionTarget(null)}
-                      className="px-3 py-1 text-xs text-slate-400 hover:text-white"
+                      className="px-3 py-1.5 text-xs text-[#94A3B8] hover:text-[#F1F5F9]"
                     >
                       Cancel
                     </button>
@@ -667,7 +563,7 @@ export default function MaintenancePage() {
                       type="button"
                       disabled={transitioning}
                       onClick={handleTransitionSubmit}
-                      className="bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium"
+                      className="bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] px-4 py-1.5 rounded-xl font-label-md text-xs font-bold disabled:opacity-50"
                     >
                       {transitioning ? "Updating..." : "Confirm Transition"}
                     </button>
@@ -677,12 +573,12 @@ export default function MaintenancePage() {
 
               {/* Linked Damages */}
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                <h4 className="font-label-md text-xs font-bold text-[#94A3B8] flex items-center justify-between">
                   <span>Linked Damage Records</span>
-                  <span className="text-slate-500 font-normal">({jobDamages.length})</span>
+                  <span className="font-code-sm text-[#64748B] font-normal">({jobDamages.length})</span>
                 </h4>
                 {jobDamages.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic bg-slate-950/40 p-3 rounded-lg border border-slate-800/60">
+                  <p className="text-xs text-[#64748B] bg-[#151B2A] p-3 rounded-xl border border-[#26344F]">
                     No individual damage records are linked to this maintenance work order.
                   </p>
                 ) : (
@@ -690,17 +586,15 @@ export default function MaintenancePage() {
                     {jobDamages.map((dmg) => (
                       <div
                         key={dmg.damage_record_id}
-                        className="bg-slate-950/80 border border-slate-800 p-3 rounded-lg flex items-center justify-between text-xs"
+                        className="bg-[#151B2A] border border-[#26344F] p-3 rounded-xl flex items-center justify-between text-xs"
                       >
                         <div className="space-y-0.5">
-                          <p className="font-medium text-white">
-                            Damage #{dmg.damage_record_id.slice(0, 8)}
+                          <p className="font-medium text-[#F1F5F9]">
+                            Damage <span className="font-code-sm">#{dmg.damage_record_id.slice(0, 8)}</span>
                           </p>
-                          <p className="text-[11px] text-slate-400">
-                            Role: {dmg.relationship_type}
-                          </p>
+                          <p className="text-[11px] text-[#94A3B8]">Role: {dmg.relationship_type}</p>
                         </div>
-                        {dmg.severity && getPriorityBadge(dmg.severity)}
+                        {dmg.severity && <StatusBadge status={dmg.severity} size="sm" showDot={false} />}
                       </div>
                     ))}
                   </div>
@@ -710,7 +604,7 @@ export default function MaintenancePage() {
               {/* Evidence upload, image verification and review live in the job workspace. */}
               <Link
                 href={`/maintenance/${selectedJob.id}`}
-                className="block bg-slate-950/60 p-4 rounded-xl border border-blue-800/50 hover:border-blue-500 text-xs text-blue-300"
+                className="block bg-[#151B2A] p-4 rounded-xl border border-[#06B6D4]/40 hover:border-[#06B6D4] text-xs text-[#4CD7F6] transition-all font-semibold"
               >
                 Open job workspace: assignment, before/after evidence upload, automated image verification and review
                 ({jobEvidence.length} evidence item(s), {jobVerifications.length} verification record(s)) →
@@ -718,24 +612,22 @@ export default function MaintenancePage() {
 
               {/* Status History Timeline */}
               <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-slate-300">Audit Status History</h4>
+                <h4 className="font-label-md text-xs font-bold text-[#94A3B8]">Audit Status History</h4>
                 {jobHistory.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic">No history available.</p>
+                  <p className="text-xs text-[#64748B]">No history available.</p>
                 ) : (
-                  <div className="space-y-3 relative pl-4 border-l border-slate-800 ml-2">
+                  <div className="space-y-3 relative pl-4 border-l border-[#26344F] ml-2">
                     {jobHistory.map((item) => (
                       <div key={item.id} className="relative space-y-1">
-                        <div className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-blue-500 border border-slate-900" />
+                        <div className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-[#06B6D4] border border-[#111A2E]" />
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-white">
-                            {item.new_status.replace(/_/g, " ")}
-                          </span>
-                          <span className="text-slate-500">
+                          <span className="font-semibold text-[#F1F5F9]">{item.new_status.replace(/_/g, " ")}</span>
+                          <span className="font-code-sm text-[#64748B]">
                             {new Date(item.changed_at).toLocaleString()}
                           </span>
                         </div>
                         {item.reason && (
-                          <p className="text-xs text-slate-400 bg-slate-950/60 p-2 rounded border border-slate-800/80">
+                          <p className="text-xs text-[#94A3B8] bg-[#151B2A] p-2 rounded-lg border border-[#26344F]">
                             {item.reason}
                           </p>
                         )}
@@ -744,6 +636,120 @@ export default function MaintenancePage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Job Modal */}
+        {isCreateOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-[#26344F] pb-3">
+                <div className="flex items-center gap-2">
+                  <Wrench className="h-5 w-5 text-[#06B6D4]" />
+                  <h3 className="font-headline-sm text-base font-bold text-[#F1F5F9]">
+                    Create Maintenance Job
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setIsCreateOpen(false)}
+                  className="text-[#94A3B8] hover:text-[#F1F5F9] text-sm p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                    Job Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={createForm.title}
+                    onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                    placeholder="e.g. Patch potholes on SH-42 KM 0-2"
+                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                    Associated Road (Optional)
+                  </label>
+                  <select
+                    value={createForm.road_id}
+                    onChange={(e) => setCreateForm({ ...createForm, road_id: e.target.value })}
+                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                  >
+                    <option value="">None / General Maintenance</option>
+                    {roads.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} ({r.road_code || "No code"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                    Priority Level
+                  </label>
+                  <select
+                    value={createForm.priority}
+                    onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
+                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                  >
+                    <option value="CRITICAL">Critical</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={createForm.due_at}
+                    onChange={(e) => setCreateForm({ ...createForm, due_at: e.target.value })}
+                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                    Description
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                    placeholder="Describe maintenance scope and specifications..."
+                    className="w-full bg-[#151B2A] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateOpen(false)}
+                    className="h-10 px-4 rounded-xl bg-[#17223A] border border-[#26344F] text-xs font-semibold text-[#94A3B8]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="h-10 px-5 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold transition-all shadow-md shadow-[#06B6D4]/20 disabled:opacity-50"
+                  >
+                    {creating ? "Creating..." : "Create Job"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
