@@ -89,6 +89,25 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class RateLimitStore:
+    """Request timestamps per rate-limit key (in memory, one process).
+
+    The store lives at module level, not on the middleware instance, so its state can be
+    cleared explicitly. The test suite does that before every test (tests/conftest.py):
+    all tests run in one process and share one client address, so without it each test
+    would be counted against the requests of the tests before it.
+    """
+
+    def __init__(self) -> None:
+        self.request_history: dict[str, list[float]] = defaultdict(list)
+
+    def reset(self) -> None:
+        self.request_history.clear()
+
+
+rate_limit_store = RateLimitStore()
+
+
 class RateLimiterMiddleware(BaseHTTPMiddleware):
     """
     Sliding window in-memory rate limiter per client IP.
@@ -97,11 +116,10 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app):
         super().__init__(app)
-        # Dictionary mapping key -> list of timestamps
-        self.request_history: dict[str, list[float]] = defaultdict(list)
+        self.request_history = rate_limit_store.request_history
 
     async def dispatch(self, request: Request, call_next) -> Response:
-        if not settings.RATE_LIMIT_ENABLED or request.headers.get("X-Bypass-Rate-Limit") == "test-bypass":
+        if not settings.RATE_LIMIT_ENABLED:
             return await call_next(request)
 
         # Identify client (Forwarded IP or client host)
