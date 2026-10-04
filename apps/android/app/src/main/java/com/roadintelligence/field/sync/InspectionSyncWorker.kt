@@ -121,7 +121,7 @@ class InspectionSyncWorker(
                     // Upload binary to the signed storage URL
                     val requestBody = file.asRequestBody(media.mimeType.toMediaTypeOrNull())
                     val binaryUploadResponse = apiService.uploadToSignedUrl(
-                        uploadUrl = uploadData.uploadUrl,
+                        uploadUrl = NetworkClient.resolveUploadUrl(uploadData.uploadUrl),
                         contentType = media.mimeType,
                         fileBytes = requestBody
                     )
