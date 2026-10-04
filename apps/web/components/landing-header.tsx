@@ -38,29 +38,31 @@ export function ApiStatusBadge() {
   }, []);
 
   const styles = {
-    checking: "bg-slate-800/60 border-slate-700 text-slate-400",
-    online: "bg-emerald-950/60 border-emerald-800/80 text-emerald-400",
-    degraded: "bg-amber-950/60 border-amber-800/80 text-amber-400",
-    offline: "bg-red-950/60 border-red-800/80 text-red-400",
+    checking: "bg-[#111A2E] border-[#26344F] text-slate-400",
+    online: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
+    degraded: "bg-amber-500/10 border-amber-500/30 text-amber-400",
+    offline: "bg-red-500/10 border-red-500/30 text-red-400",
   }[state.kind];
+
   const dot = {
     checking: "bg-slate-500",
-    online: "bg-emerald-500 animate-pulse",
-    degraded: "bg-amber-500",
-    offline: "bg-red-500",
+    online: "bg-emerald-400 animate-pulse",
+    degraded: "bg-amber-400",
+    offline: "bg-red-400",
   }[state.kind];
+
   const label =
     state.kind === "checking"
       ? "Checking API..."
       : state.kind === "online"
-      ? `API Online: v${state.version}`
+      ? `API ONLINE · v${state.version}`
       : state.kind === "degraded"
-      ? "API Degraded"
-      : "API Unreachable";
+      ? "API DEGRADED"
+      : "API OFFLINE";
 
   return (
     <span
-      className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-xs ${styles}`}
+      className={`hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-mono font-medium ${styles}`}
       title="Live check of the platform API health endpoints"
     >
       <span className={`h-2 w-2 rounded-full ${dot}`} />
@@ -77,7 +79,7 @@ export function AuthNavButton() {
   return (
     <Link
       href={signedIn ? "/dashboard" : "/login"}
-      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium shadow-lg shadow-blue-500/20 transition"
+      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#06B6D4] to-[#2563EB] hover:from-[#4CD7F6] hover:to-[#3B82F6] text-[#0C1321] text-xs font-bold shadow-lg shadow-[#06B6D4]/20 transition-all"
     >
       {signedIn ? (
         <>

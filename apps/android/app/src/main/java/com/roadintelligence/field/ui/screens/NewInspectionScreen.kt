@@ -6,9 +6,10 @@ import android.location.Location
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,11 +18,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -29,7 +32,7 @@ import com.roadintelligence.field.domain.model.*
 import com.roadintelligence.field.domain.repository.InspectionRepository
 import com.roadintelligence.field.domain.repository.RoadRepository
 import com.roadintelligence.field.domain.repository.SyncRepository
-import com.roadintelligence.field.ui.components.CommonTopBar
+import com.roadintelligence.field.ui.components.*
 import com.roadintelligence.field.ui.permissions.PermissionResult
 import com.roadintelligence.field.ui.permissions.openAppSettings
 import com.roadintelligence.field.ui.permissions.rememberPermissionRequest
@@ -162,11 +165,35 @@ fun NewInspectionScreen(
                 onNavigateToCamera(localId)
             }
             PermissionResult.DENIED ->
-                cameraPermissionMessage = "Camera permission is required to capture photo evidence. Tap the card again to allow it."
+                cameraPermissionMessage = "Camera permission is required to capture photo evidence. Tap Capture Photo Evidence again to allow it."
             PermissionResult.PERMANENTLY_DENIED ->
                 cameraPermissionMessage = "Camera permission is blocked. Enable it in App Settings to capture photo evidence."
         }
     }
+
+    // Same data and persistence as before; only the status passed in differs.
+    fun buildInspection(status: SyncStatus) = Inspection(
+        localId = localId,
+        clientId = clientId,
+        roadId = selectedRoad?.id,
+        roadName = selectedRoad?.name,
+        segmentId = selectedSegment?.id,
+        segmentNumber = selectedSegment?.segmentNumber,
+        inspectorId = "",
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = accuracyMeters,
+        notes = notes.ifBlank { null },
+        syncStatus = status
+    )
+
+    val road = selectedRoad
+    val segment = selectedSegment
+    val lat = latitude
+    val lon = longitude
+    val accuracy = accuracyMeters
+    val hasGps = lat != null && lon != null
+    val stepsDone = listOf(road != null, hasGps, mediaList.isNotEmpty(), notes.isNotBlank()).count { it }
 
     Column(
         modifier = Modifier
@@ -174,340 +201,465 @@ fun NewInspectionScreen(
             .background(BackgroundDark)
     ) {
         CommonTopBar(
-            title = "New Road Inspection",
+            title = "New Inspection",
             canNavigateBack = true,
             onNavigateBack = onNavigateBack
         )
 
+        // Progress across the four parts of the form
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(16.dp)
+                .fillMaxWidth()
+                .background(SurfaceDark)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
-            if (errorMessage != null) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = ErrorRose.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = errorMessage ?: "",
-                        color = ErrorRose,
-                        fontSize = 13.sp,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            // 1. Road Selection
-            Text("1. Select Road & Segment", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            ExposedDropdownMenuBox(
-                expanded = roadDropdownExpanded,
-                onExpandedChange = { roadDropdownExpanded = !roadDropdownExpanded }
-            ) {
-                OutlinedTextField(
-                    value = selectedRoad?.name ?: "Select a road...",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Road") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roadDropdownExpanded) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryCyan,
-                        unfocusedBorderColor = BorderDark,
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "$stepsDone of 4 steps filled",
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f)
                 )
-                ExposedDropdownMenu(
-                    expanded = roadDropdownExpanded,
-                    onDismissRequest = { roadDropdownExpanded = false },
-                    modifier = Modifier.background(SurfaceDark)
-                ) {
-                    roads.forEach { road ->
-                        DropdownMenuItem(
-                            text = { Text(road.name, color = TextPrimary) },
-                            onClick = {
-                                selectedRoad = road
-                                selectedSegment = null
-                                roadDropdownExpanded = false
-                                coroutineScope.launch {
-                                    roadRepository.syncSegmentsFromServer(road.id)
-                                }
-                            }
-                        )
-                    }
-                }
+                Text("${stepsDone * 25}%", color = PrimaryCyanBright, style = CodeSm)
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Segment Dropdown
-            ExposedDropdownMenuBox(
-                expanded = segmentDropdownExpanded,
-                onExpandedChange = { if (selectedRoad != null) segmentDropdownExpanded = !segmentDropdownExpanded }
-            ) {
-                OutlinedTextField(
-                    value = if (selectedSegment != null) "Segment #${selectedSegment!!.segmentNumber}" else "Select road segment (optional)...",
-                    onValueChange = {},
-                    readOnly = true,
-                    enabled = selectedRoad != null,
-                    label = { Text("Segment") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = segmentDropdownExpanded) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryCyan,
-                        unfocusedBorderColor = BorderDark,
-                        focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-                ExposedDropdownMenu(
-                    expanded = segmentDropdownExpanded,
-                    onDismissRequest = { segmentDropdownExpanded = false },
-                    modifier = Modifier.background(SurfaceDark)
-                ) {
-                    segments.forEach { seg ->
-                        DropdownMenuItem(
-                            text = { Text("Segment #${seg.segmentNumber} (${seg.surfaceType ?: "ASPHALT"})", color = TextPrimary) },
-                            onClick = {
-                                selectedSegment = seg
-                                segmentDropdownExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 2. GPS Location
-            Text("2. GPS Coordinates", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = SurfaceDark,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
-                            if (latitude != null && longitude != null) {
-                                Text(
-                                    text = "%.6f, %.6f".format(latitude, longitude),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = PrimaryCyan
-                                )
-                                Text(
-                                    text = gpsStatusMessage,
-                                    fontSize = 12.sp,
-                                    color = if ((accuracyMeters ?: 100f) < 15f) SuccessEmerald else WarningAmber
-                                )
-                            } else {
-                                Text("No GPS Fixed", fontSize = 15.sp, color = TextSecondary)
-                                Text(gpsStatusMessage, fontSize = 12.sp, color = TextMuted)
-                            }
-                        }
-
-                        Button(
-                            onClick = { requestLocationPermission() },
-                            enabled = !isAcquiringGps,
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            if (isAcquiringGps) {
-                                CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                            } else {
-                                Icon(Icons.Default.MyLocation, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Acquire", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            }
-                        }
-                    }
-
-                    if (locationPermanentlyDenied) {
-                        TextButton(onClick = { context.openAppSettings() }) {
-                            Text("Open App Settings", color = PrimaryCyan, fontSize = 13.sp)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // 3. Camera Evidence
-            Text("3. Visual Evidence (CameraX)", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
+            Spacer(modifier = Modifier.height(6.dp))
+            LinearProgressIndicator(
+                progress = { stepsDone / 4f },
+                color = PrimaryCyan,
+                trackColor = SurfaceLowest,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        // Requests CAMERA if needed, then opens the CameraX capture screen
-                        requestCameraPermission()
-                    },
-                color = SurfaceDark,
-                shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderDark)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .background(PrimaryCyan.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = PrimaryCyan)
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Capture Photo Evidence", color = TextPrimary, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            text = if (mediaList.isEmpty()) "No photos captured yet" else "${mediaList.size} photo(s) captured",
-                            color = if (mediaList.isEmpty()) TextMuted else SuccessEmerald,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted)
-                }
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            if (errorMessage != null) {
+                MessageCard(kind = MessageKind.ERROR, title = null, message = errorMessage ?: "")
             }
 
-            cameraPermissionMessage?.let { message ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = WarningAmber.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(8.dp)
+            // ---- Step 1: road and segment --------------------------------------------------
+            StepCard(number = 1, title = "Select Road & Segment", done = road != null) {
+                if (roads.isEmpty()) {
+                    MessageCard(
+                        kind = MessageKind.WARNING,
+                        title = "No roads available",
+                        message = "Roads are downloaded from the server. Connect and tap retry.",
+                        actionLabel = "Retry",
+                        onAction = { coroutineScope.launch { roadRepository.syncRoadsFromServer() } }
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
+
+                ExposedDropdownMenuBox(
+                    expanded = roadDropdownExpanded,
+                    onExpandedChange = { roadDropdownExpanded = !roadDropdownExpanded }
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(message, color = WarningAmber, fontSize = 13.sp)
-                        if (cameraPermanentlyDenied) {
-                            TextButton(onClick = { context.openAppSettings() }) {
-                                Text("Open App Settings", color = PrimaryCyan, fontSize = 13.sp)
-                            }
+                    OutlinedTextField(
+                        value = road?.let { r -> if (r.roadCode.isNullOrBlank()) r.name else "${r.name} (${r.roadCode})" }
+                            ?: "Select a road...",
+                        onValueChange = {},
+                        readOnly = true,
+                        singleLine = true,
+                        label = { Text("Road") },
+                        leadingIcon = { Icon(Icons.Default.Route, contentDescription = null) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = roadDropdownExpanded) },
+                        colors = fieldTextFieldColors(),
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = roadDropdownExpanded,
+                        onDismissRequest = { roadDropdownExpanded = false },
+                        modifier = Modifier.background(SurfaceCard)
+                    ) {
+                        roads.forEach { item ->
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(item.name, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+                                        if (!item.roadCode.isNullOrBlank()) {
+                                            Text(item.roadCode, color = TextSecondary, style = CodeSm)
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    selectedRoad = item
+                                    selectedSegment = null
+                                    roadDropdownExpanded = false
+                                    coroutineScope.launch {
+                                        roadRepository.syncSegmentsFromServer(item.id)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ExposedDropdownMenuBox(
+                    expanded = segmentDropdownExpanded,
+                    onExpandedChange = { if (selectedRoad != null) segmentDropdownExpanded = !segmentDropdownExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = if (segment != null) "Segment #${segment.segmentNumber}" else "Select segment (optional)",
+                        onValueChange = {},
+                        readOnly = true,
+                        singleLine = true,
+                        enabled = road != null,
+                        label = { Text("Segment") },
+                        leadingIcon = { Icon(Icons.Default.Timeline, contentDescription = null) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = segmentDropdownExpanded) },
+                        colors = fieldTextFieldColors(),
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = segmentDropdownExpanded,
+                        onDismissRequest = { segmentDropdownExpanded = false },
+                        modifier = Modifier.background(SurfaceCard)
+                    ) {
+                        if (segments.isEmpty()) {
+                            DropdownMenuItem(
+                                text = { Text("No segments for this road", color = TextSecondary) },
+                                onClick = { segmentDropdownExpanded = false }
+                            )
+                        }
+                        segments.forEach { seg ->
+                            DropdownMenuItem(
+                                text = { Text("Segment #${seg.segmentNumber} (${seg.surfaceType ?: "ASPHALT"})", color = TextPrimary) },
+                                onClick = {
+                                    selectedSegment = seg
+                                    segmentDropdownExpanded = false
+                                }
+                            )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // ---- Step 2: GPS ---------------------------------------------------------------
+            StepCard(
+                number = 2,
+                title = "Capture GPS",
+                done = hasGps,
+                trailing = {
+                    when {
+                        isAcquiringGps -> StatusPill("ACQUIRING", WarningAmber, Icons.Default.GpsNotFixed)
+                        hasGps -> StatusPill(
+                            label = if (accuracy != null) "FIX ±%.1f m".format(accuracy) else "FIX",
+                            color = accuracyColor(accuracy),
+                            icon = Icons.Default.GpsFixed
+                        )
+                        else -> StatusPill("NO FIX", TextSecondary, Icons.Default.GpsOff)
+                    }
+                }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SurfaceLowest, RoundedCornerShape(12.dp))
+                        .border(1.dp, BorderDark.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            FieldLabel("Latitude")
+                            Text(
+                                text = if (lat != null) "%.6f".format(lat) else "—",
+                                color = if (hasGps) PrimaryCyanBright else TextMuted,
+                                style = CodeLg
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            FieldLabel("Longitude")
+                            Text(
+                                text = if (lon != null) "%.6f".format(lon) else "—",
+                                color = if (hasGps) PrimaryCyanBright else TextMuted,
+                                style = CodeLg
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        FieldLabel("Accuracy")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (accuracy != null) "±%.1f m (%s)".format(accuracy, accuracyLabel(accuracy)) else "—",
+                            color = accuracyColor(accuracy),
+                            style = CodeMd
+                        )
+                    }
+                    if (isAcquiringGps) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LinearProgressIndicator(
+                            color = WarningAmber,
+                            trackColor = SurfaceCard,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                        )
+                    }
+                }
 
-            // 4. Notes
-            Text("4. Inspector Notes", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = gpsStatusMessage,
+                    color = when {
+                        isAcquiringGps -> WarningAmber
+                        hasGps -> accuracyColor(accuracy)
+                        else -> TextSecondary
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
 
-            OutlinedTextField(
-                value = notes,
-                onValueChange = { notes = it },
-                label = { Text("Field observations, weather, traffic notes...") },
-                minLines = 3,
-                maxLines = 5,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryCyan,
-                    unfocusedBorderColor = BorderDark,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
+                Spacer(modifier = Modifier.height(10.dp))
+                SecondaryButton(
+                    text = if (isAcquiringGps) "Acquiring..." else if (hasGps) "Re-acquire GPS" else "Acquire GPS",
+                    icon = Icons.Default.MyLocation,
+                    onClick = { requestLocationPermission() },
+                    enabled = !isAcquiringGps,
+                    contentColor = PrimaryCyanBright,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            Spacer(modifier = Modifier.height(28.dp))
+                if (locationPermanentlyDenied) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TextButton(onClick = { context.openAppSettings() }) {
+                        Icon(Icons.Default.Settings, contentDescription = null, tint = PrimaryCyanBright, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Open App Settings", color = PrimaryCyanBright, style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            }
 
-            // Actions
+            // ---- Step 3: photos ------------------------------------------------------------
+            StepCard(
+                number = 3,
+                title = "Capture Photos",
+                done = mediaList.isNotEmpty(),
+                trailing = {
+                    Text(
+                        text = if (mediaList.size == 1) "1 photo" else "${mediaList.size} photos",
+                        color = if (mediaList.isEmpty()) TextSecondary else SuccessEmerald,
+                        style = CodeSm
+                    )
+                }
+            ) {
+                SecondaryButton(
+                    text = if (mediaList.isEmpty()) "Capture Photo Evidence" else "Capture More Photos",
+                    icon = Icons.Default.PhotoCamera,
+                    // Requests CAMERA if needed, then opens the CameraX capture screen
+                    onClick = { requestCameraPermission() },
+                    contentColor = PrimaryCyanBright,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+                if (mediaList.isEmpty()) {
+                    Text(
+                        "No photos captured yet. Frame the damage with some surrounding road visible.",
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                } else {
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        mediaList.forEach { media ->
+                            Column(modifier = Modifier.width(112.dp)) {
+                                LocalThumbnail(
+                                    path = media.localFilePath,
+                                    contentDescription = "Captured photo",
+                                    modifier = Modifier
+                                        .size(width = 112.dp, height = 84.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .border(1.dp, BorderDark, RoundedCornerShape(10.dp))
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = java.io.File(media.localFilePath).name,
+                                    color = TextOnSurface,
+                                    style = CodeSm,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(formatFileSize(media.fileSizeBytes), color = TextSecondary, style = CodeSm)
+                            }
+                        }
+                    }
+                }
+
+                cameraPermissionMessage?.let { message ->
+                    Spacer(modifier = Modifier.height(10.dp))
+                    MessageCard(
+                        kind = MessageKind.WARNING,
+                        title = "Camera permission",
+                        message = message,
+                        actionLabel = if (cameraPermanentlyDenied) "Open App Settings" else null,
+                        onAction = if (cameraPermanentlyDenied) ({ context.openAppSettings() }) else null
+                    )
+                }
+            }
+
+            // ---- Step 4: notes -------------------------------------------------------------
+            StepCard(number = 4, title = "Inspection Details", done = notes.isNotBlank()) {
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Inspector notes (optional)") },
+                    placeholder = { Text("Field observations, weather, traffic notes...", color = TextMuted) },
+                    minLines = 3,
+                    maxLines = 6,
+                    colors = fieldTextFieldColors(),
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("${notes.length} characters", color = TextMuted, style = CodeSm)
+            }
+
+            // ---- Review --------------------------------------------------------------------
+            FieldCard {
+                SectionTitle("Review", icon = Icons.Default.FactCheck)
+                Spacer(modifier = Modifier.height(10.dp))
+                ReviewRow("Road", road?.name ?: "Not selected", road != null)
+                ReviewRow("Segment", segment?.let { "Segment #${it.segmentNumber}" } ?: "Not selected (optional)", segment != null, optional = true)
+                ReviewRow(
+                    "GPS",
+                    if (lat != null && lon != null) {
+                        "%.6f, %.6f".format(lat, lon) + (accuracy?.let { "  ±%.1f m".format(it) } ?: "")
+                    } else "Not captured",
+                    hasGps
+                )
+                ReviewRow("Photos", if (mediaList.isEmpty()) "None captured" else "${mediaList.size} captured", mediaList.isNotEmpty())
+                ReviewRow("Notes", if (notes.isBlank()) "None (optional)" else "${notes.length} characters", notes.isNotBlank(), optional = true)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "After upload the inspection is submitted to the server. AI analysis is started from the operations console and its result appears in the inspection's detail screen.",
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+
+        // Sticky actions
+        Column(modifier = Modifier.background(SurfaceDark)) {
+            HorizontalDivider(color = BorderDark)
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Save Draft Button
-                OutlinedButton(
+                SecondaryButton(
+                    text = "Save Draft",
+                    enabled = !isSaving,
                     onClick = {
                         isSaving = true
                         coroutineScope.launch {
-                            val draft = Inspection(
-                                localId = localId,
-                                clientId = clientId,
-                                roadId = selectedRoad?.id,
-                                roadName = selectedRoad?.name,
-                                segmentId = selectedSegment?.id,
-                                segmentNumber = selectedSegment?.segmentNumber,
-                                inspectorId = "",
-                                latitude = latitude,
-                                longitude = longitude,
-                                accuracyMeters = accuracyMeters,
-                                notes = notes.ifBlank { null },
-                                syncStatus = SyncStatus.LOCAL_DRAFT
-                            )
-                            inspectionRepository.createLocalDraft(draft)
+                            inspectionRepository.createLocalDraft(buildInspection(SyncStatus.LOCAL_DRAFT))
                             isSaving = false
                             onNavigateBack()
                         }
                     },
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                ) {
-                    Text("Save Draft")
-                }
-
-                // Queue Sync Button
-                Button(
+                    modifier = Modifier.weight(1f)
+                )
+                PrimaryButton(
+                    text = "Queue & Sync",
+                    icon = Icons.Default.CloudUpload,
+                    loading = isSaving,
                     onClick = {
                         isSaving = true
                         coroutineScope.launch {
-                            val draft = Inspection(
-                                localId = localId,
-                                clientId = clientId,
-                                roadId = selectedRoad?.id,
-                                roadName = selectedRoad?.name,
-                                segmentId = selectedSegment?.id,
-                                segmentNumber = selectedSegment?.segmentNumber,
-                                inspectorId = "",
-                                latitude = latitude,
-                                longitude = longitude,
-                                accuracyMeters = accuracyMeters,
-                                notes = notes.ifBlank { null },
-                                syncStatus = SyncStatus.QUEUED
-                            )
-                            inspectionRepository.createLocalDraft(draft)
+                            inspectionRepository.createLocalDraft(buildInspection(SyncStatus.QUEUED))
                             inspectionRepository.queueForUpload(localId)
                             syncRepository.triggerManualSync()
                             isSaving = false
                             onNavigateBack()
                         }
                     },
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                ) {
-                    Icon(Icons.Default.CloudUpload, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Queue & Sync", color = Color.Black, fontWeight = FontWeight.Bold)
+                    modifier = Modifier.weight(1.25f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StepCard(
+    number: Int,
+    title: String,
+    done: Boolean,
+    trailing: @Composable (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    FieldCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(if (done) SuccessEmerald else SurfaceCard),
+                contentAlignment = Alignment.Center
+            ) {
+                if (done) {
+                    Icon(Icons.Default.Check, contentDescription = "Step filled", tint = Color(0xFF003824), modifier = Modifier.size(16.dp))
+                } else {
+                    Text(number.toString(), color = TextSecondary, style = CodeSm, fontWeight = FontWeight.Bold)
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "STEP $number · ${title.uppercase()}",
+                color = TextPrimary,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f)
+            )
+            if (trailing != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                trailing()
+            }
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        content()
+    }
+}
+
+@Composable
+private fun ReviewRow(label: String, value: String, filled: Boolean, optional: Boolean = false) {
+    val icon: ImageVector
+    val tint: Color
+    when {
+        filled -> { icon = Icons.Default.CheckCircle; tint = SuccessEmerald }
+        optional -> { icon = Icons.Default.RemoveCircleOutline; tint = TextMuted }
+        else -> { icon = Icons.Default.WarningAmber; tint = WarningAmber }
+    }
+    Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(label, color = TextSecondary, style = MaterialTheme.typography.bodySmall, modifier = Modifier.width(72.dp))
+        Text(
+            text = value,
+            color = if (filled) TextPrimary else TextSecondary,
+            style = if (label == "GPS") CodeSm else MaterialTheme.typography.bodySmall,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

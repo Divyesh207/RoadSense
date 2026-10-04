@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 13%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 20%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 224 76% 48%;
-    --radius: 0.5rem;
+    --background: 221 47% 9%; /* #0c1321 */
+    --foreground: 220 54% 91%; /* #dce2f6 */
+    --card: 221 43% 16%; /* #17223a */
+    --card-foreground: 220 54% 91%;
+    --popover: 221 47% 12%; /* #151b2a */
+    --popover-foreground: 220 54% 91%;
+    --primary: 191 88% 63%; /* #4cd7f6 */
+    --primary-foreground: 189 100% 12%; /* #003640 */
+    --secondary: 222 100% 84%; /* #adc6ff */
+    --secondary-foreground: 215 100% 21%; /* #002e6a */
+    --muted: 221 29% 14%; /* #19202e */
+    --muted-foreground: 216 23% 65%; /* #94a3b8 */
+    --accent: 220 23% 18%; /* #232a39 */
+    --accent-foreground: 220 54% 91%;
+    --destructive: 0 84% 60%; /* #ef4444 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 219 35% 23%; /* #26344f */
+    --input: 219 35% 23%; /* #26344f */
+    --ring: 189 95% 43%; /* #06b6d4 */
+    --radius: 0.625rem;
   }
 }
 
@@ -34,5 +34,100 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background-color: #0c1321;
+    color: #dce2f6;
+  }
+
+  /* Custom scrollbar for operations tables and sidebars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0c1321;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #232a39;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #323949;
+  }
+}
+
+/* Component layer: an explicit Tailwind text-* / font-* utility on the same element wins. */
+@layer components {
+  .font-code-sm {
+    font-family: var(--font-mono), monospace;
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .font-code-md {
+    font-family: var(--font-mono), monospace;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .font-code-lg {
+    font-family: var(--font-mono), monospace;
+    font-size: 15px;
+    line-height: 22px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .font-headline-sm {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 600;
+  }
+  .font-headline-md {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+  }
+  .font-headline-lg {
+    font-size: 30px;
+    line-height: 38px;
+    font-weight: 700;
+  }
+  .font-label-sm {
+    font-size: 11px;
+    line-height: 14px;
+    font-weight: 500;
+  }
+  .font-label-md {
+    font-size: 12px;
+    line-height: 16px;
+    font-weight: 600;
+  }
+  .font-label-lg {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+  /* Body text: sizes come from the accompanying text-* utilities. */
+  .font-body-sm,
+  .font-body-md {
+    font-family: var(--font-sans), sans-serif;
+  }
+}
+
+/* Users who ask for reduced motion get no transitions, transforms-in-motion or smooth scrolling. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

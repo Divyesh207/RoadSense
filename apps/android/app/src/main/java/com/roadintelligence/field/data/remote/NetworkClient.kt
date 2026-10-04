@@ -71,6 +71,7 @@ object NetworkClient {
                 .writeTimeout(60, TimeUnit.SECONDS)
                 .addInterceptor(AuthInterceptor(sessionManager) { baseUrl.toHttpUrlOrNull() })
                 .addInterceptor(loggingInterceptor)
+                .authenticator(TokenRefreshAuthenticator(sessionManager) { baseUrl.toHttpUrlOrNull() })
                 .build()
 
             val retrofit = Retrofit.Builder()

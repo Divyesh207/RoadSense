@@ -63,6 +63,16 @@ class SecureSessionManager(context: Context) {
 
     fun getOrganizationId(): String? = prefs.getString(KEY_ORG_ID, null)
 
+    fun getRefreshToken(): String? = prefs.getString(KEY_REFRESH_TOKEN, null)?.takeIf { it.isNotEmpty() }
+
+    /** Stores a rotated token pair. commit() so a concurrent request never reads the old pair. */
+    fun updateTokens(accessToken: String, refreshToken: String) {
+        prefs.edit()
+            .putString(KEY_ACCESS_TOKEN, accessToken)
+            .putString(KEY_REFRESH_TOKEN, refreshToken)
+            .commit()
+    }
+
     fun clearSession() {
         prefs.edit().clear().apply()
     }

@@ -33,6 +33,8 @@ import {
   ReportDownloadUrlResponse,
   ResponseEnvelope,
   Road,
+  RoadCreatePayload,
+  RoadSegmentCreatePayload,
   RoadHealthAnalyticsData,
   RoadSegment,
   SegmentHistoricalTimelineResponse,
@@ -149,6 +151,18 @@ class ApiClient {
     },
     getIntelligence: async (roadId: string): Promise<ResponseEnvelope<RoadIntelligence>> => {
       return this.request<ResponseEnvelope<RoadIntelligence>>(`/roads/${roadId}/intelligence`);
+    },
+    // Requires roads:create (administrators have it implicitly).
+    create: async (payload: RoadCreatePayload): Promise<ResponseEnvelope<Road>> => {
+      return this.request<ResponseEnvelope<Road>>(`/roads`, { method: "POST", body: JSON.stringify(payload) });
+    },
+    // Requires road_segments:create. The segment is immediately returned by GET /roads/{id}/segments,
+    // which is what the Android inspection form reads.
+    createSegment: async (roadId: string, payload: RoadSegmentCreatePayload): Promise<ResponseEnvelope<RoadSegment>> => {
+      return this.request<ResponseEnvelope<RoadSegment>>(`/roads/${roadId}/segments`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
     },
   };
 
