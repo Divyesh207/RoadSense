@@ -73,7 +73,8 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = Screen.Home
                                 selectedNavTab = NavItem.HOME
                             },
-                            onCreateAccount = { currentScreen = Screen.Register }
+                            onCreateAccount = { currentScreen = Screen.Register },
+                            inspectionRemote = inspectionRemote
                         )
                     }
 

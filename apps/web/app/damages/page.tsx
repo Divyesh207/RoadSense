@@ -102,14 +102,14 @@ export default function DamagesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-code-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+              <span className="font-code-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
                 AI Detection & Human Review
               </span>
             </div>
-            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-[#F1F5F9]">
+            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-ri-text">
               Damage Intelligence & Review Queue
             </h1>
-            <p className="font-body-sm text-xs text-[#94A3B8] mt-1">
+            <p className="font-body-sm text-xs text-ri-muted mt-1">
               Candidate AI detections, human validation workflow, and canonical damage records
             </p>
           </div>
@@ -117,76 +117,76 @@ export default function DamagesPage() {
 
         {/* Operational Overview Bento Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-2xl bg-[#111A2E] border border-[#26344F] flex flex-col justify-between">
-            <span className="font-label-sm text-[11px] text-[#94A3B8] uppercase tracking-wider">
+          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+            <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider">
               Total Records
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#F1F5F9] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-text mt-2">
               {damages.length}
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-[#111A2E] border border-[#26344F] flex flex-col justify-between">
-            <span className="font-label-sm text-[11px] text-[#F59E0B] uppercase tracking-wider">
+          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+            <span className="font-label-sm text-[11px] text-ri-warning uppercase tracking-wider">
               Pending Human Review
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#F59E0B] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-warning mt-2">
               {pendingCount}
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-[#111A2E] border border-[#26344F] flex flex-col justify-between">
-            <span className="font-label-sm text-[11px] text-[#10B981] uppercase tracking-wider">
+          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+            <span className="font-label-sm text-[11px] text-ri-success uppercase tracking-wider">
               Confirmed
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#10B981] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-success mt-2">
               {confirmedCount}
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-[#111A2E] border border-[#26344F] flex flex-col justify-between">
-            <span className="font-label-sm text-[11px] text-[#EF4444] uppercase tracking-wider">
+          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+            <span className="font-label-sm text-[11px] text-ri-danger uppercase tracking-wider">
               Critical Severity
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#EF4444] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-danger mt-2">
               {criticalCount}
             </div>
           </div>
         </div>
 
         {/* AI & Human Review Provenance Callout */}
-        <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-ri-surface border border-ri-line rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#06B6D4]/15 border border-[#06B6D4]/30 flex items-center justify-center text-[#4CD7F6] shrink-0 mt-0.5">
+            <div className="w-9 h-9 rounded-xl bg-ri-primary/15 border border-ri-primary/30 flex items-center justify-center text-ri-primary-bright shrink-0 mt-0.5">
               <Cpu className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-label-md text-xs font-bold text-[#F1F5F9]">
+                <span className="font-label-md text-xs font-bold text-ri-text">
                   Detection provenance
                 </span>
               </div>
-              <p className="text-xs text-[#94A3B8] mt-0.5 leading-relaxed">
+              <p className="text-xs text-ri-muted mt-0.5 leading-relaxed">
                 Each record shows how it was produced: trained model, heuristic fallback (OpenCV rules, not a trained
                 model) or manual entry. Trained-model classes:{" "}
-                <span className="text-[#4CD7F6]">D40 → POTHOLE</span>,{" "}
-                <span className="text-[#ADC6FF]">D00/D10/D20 → CRACK</span>. Heuristic scores are not probabilities.
+                <span className="text-ri-primary-bright">D40 → POTHOLE</span>,{" "}
+                <span className="text-ri-info-soft">D00/D10/D20 → CRACK</span>. Heuristic scores are not probabilities.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 font-code-sm text-[11px] text-[#94A3B8] shrink-0 bg-[#151B2A] border border-[#26344F] px-3 py-1.5 rounded-xl">
-            <ShieldCheck className="h-4 w-4 text-[#10B981]" />
+          <div className="flex items-center gap-2 font-code-sm text-[11px] text-ri-muted shrink-0 bg-ri-input border border-ri-line px-3 py-1.5 rounded-xl">
+            <ShieldCheck className="h-4 w-4 text-ri-success" />
             <span>Human review decides every record</span>
           </div>
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#111A2E] p-3 rounded-2xl border border-[#26344F]">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="font-label-sm text-xs text-[#94A3B8] font-medium">Status:</span>
+              <span className="font-label-sm text-xs text-ri-muted font-medium">Status:</span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-[#151B2A] border border-[#26344F] text-xs text-[#F1F5F9] rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#06B6D4]"
+                className="bg-ri-input border border-ri-line text-xs text-ri-text rounded-xl px-3 py-1.5 focus:outline-none focus:border-ri-primary"
               >
                 <option value="">All Statuses</option>
                 <option value="PENDING_REVIEW">Pending Review</option>
@@ -197,11 +197,11 @@ export default function DamagesPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-label-sm text-xs text-[#94A3B8] font-medium">Severity:</span>
+              <span className="font-label-sm text-xs text-ri-muted font-medium">Severity:</span>
               <select
                 value={severityFilter}
                 onChange={(e) => setSeverityFilter(e.target.value)}
-                className="bg-[#151B2A] border border-[#26344F] text-xs text-[#F1F5F9] rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#06B6D4]"
+                className="bg-ri-input border border-ri-line text-xs text-ri-text rounded-xl px-3 py-1.5 focus:outline-none focus:border-ri-primary"
               >
                 <option value="">All Severities</option>
                 <option value="CRITICAL">Critical</option>
@@ -214,18 +214,18 @@ export default function DamagesPage() {
 
           <button
             onClick={() => loadData()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#17223A] border border-[#26344F] text-xs text-[#94A3B8] hover:text-[#F1F5F9] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ri-raised border border-ri-line text-xs text-ri-muted hover:text-ri-text transition-colors"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-[#06B6D4]" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-ri-primary" : ""}`} />
             <span>Refresh</span>
           </button>
         </div>
 
         {/* Damage Records Table */}
-        <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+              <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
                 <tr>
                   <th className="py-3 px-4 font-semibold">Damage Type</th>
                   <th className="py-3 px-4 font-semibold">Severity</th>
@@ -237,19 +237,19 @@ export default function DamagesPage() {
                   <th className="py-3 px-4 text-right font-semibold">Review Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+              <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-[#94A3B8]">
+                    <td colSpan={8} className="py-12 text-center text-ri-muted">
                       <div className="flex items-center justify-center gap-2">
-                        <RefreshCw className="h-4 w-4 animate-spin text-[#06B6D4]" />
+                        <RefreshCw className="h-4 w-4 animate-spin text-ri-primary" />
                         <span>Loading road damage intelligence records...</span>
                       </div>
                     </td>
                   </tr>
                 ) : damages.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-[#94A3B8]">
+                    <td colSpan={8} className="py-12 text-center text-ri-muted">
                       No active damage records matching criteria.
                     </td>
                   </tr>
@@ -257,7 +257,7 @@ export default function DamagesPage() {
                   damages.map((dmg) => {
                     const heuristic = isHeuristic(dmg.detection_method, dmg.score_type);
                     return (
-                      <tr key={dmg.id} className="hover:bg-[#17223A]/50 transition-colors">
+                      <tr key={dmg.id} className="hover:bg-ri-raised/50 transition-colors">
                         <td className="py-3 px-4 font-bold text-white">
                           <div className="flex items-center gap-2">
                             <span>{dmg.damage_type_name || dmg.damage_type_code}</span>
@@ -269,38 +269,38 @@ export default function DamagesPage() {
                         <td className="py-3 px-4">
                           <StatusBadge status={dmg.status} size="sm" />
                         </td>
-                        <td className="py-3 px-4 text-[#DCE2F6]">
+                        <td className="py-3 px-4 text-ri-text-soft">
                           {dmg.road_name || "Unassigned Road"}
                         </td>
                         <td className="py-3 px-4 font-code-sm" title={detectionMethodLabel(dmg.detection_method)}>
-                          <span className="text-[#94A3B8] mr-1.5">{dmg.source_type}</span>
+                          <span className="text-ri-muted mr-1.5">{dmg.source_type}</span>
                           {heuristic ? (
-                            <span className="px-2 py-0.5 rounded bg-[#F59E0B]/15 border border-[#F59E0B]/30 text-[#F59E0B] text-[10px]">
+                            <span className="px-2 py-0.5 rounded bg-ri-warning/15 border border-ri-warning/30 text-ri-warning text-[10px]">
                               Heuristic fallback
                             </span>
                           ) : dmg.detection_method === "TRAINED_MODEL" ? (
-                            <span className="px-2 py-0.5 rounded bg-[#06B6D4]/15 border border-[#06B6D4]/30 text-[#4CD7F6] text-[10px]">
+                            <span className="px-2 py-0.5 rounded bg-ri-primary/15 border border-ri-primary/30 text-ri-primary-bright text-[10px]">
                               Trained model
                             </span>
                           ) : dmg.detection_method === "MANUAL" ? (
-                            <span className="px-2 py-0.5 rounded bg-[#232A39] border border-[#3D494C] text-[#BCC9CD] text-[10px]">
+                            <span className="px-2 py-0.5 rounded bg-ri-raised border border-ri-line-strong text-ri-text-soft text-[10px]">
                               Manual entry
                             </span>
                           ) : null}
                         </td>
-                        <td className="py-3 px-4 font-code-sm text-[#F1F5F9]">
+                        <td className="py-3 px-4 font-code-sm text-ri-text">
                           {dmg.confidence ? `${(dmg.confidence * 100).toFixed(1)}%` : "—"}
                           {dmg.confidence && heuristic ? (
-                            <span className="block text-[10px] text-[#F59E0B] font-sans">heuristic, not a probability</span>
+                            <span className="block text-[10px] text-ri-warning font-sans">heuristic, not a probability</span>
                           ) : null}
                         </td>
-                        <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                        <td className="py-3 px-4 font-code-sm text-ri-muted">
                           {dmg.estimated_area_m2 ? `${dmg.estimated_area_m2.toFixed(2)} m²` : "—"}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <button
                             onClick={() => openReviewModal(dmg)}
-                            className="h-8 px-3 rounded-lg bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold transition-all active:scale-95"
+                            className="h-8 px-3 rounded-lg bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold transition-all active:scale-95"
                           >
                             {dmg.status === "PENDING_REVIEW" ? "Review" : "Edit / Audit"}
                           </button>
@@ -317,42 +317,42 @@ export default function DamagesPage() {
         {/* Human Review Modal (Matching Stitch tactile dialog) */}
         {selectedDamage && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#26344F] pb-3">
+            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert className="h-5 w-5 text-[#06B6D4]" />
-                  <h3 className="font-headline-sm text-base font-bold text-[#F1F5F9]">
+                  <ShieldAlert className="h-5 w-5 text-ri-primary" />
+                  <h3 className="font-headline-sm text-base font-bold text-ri-text">
                     Human Review: {selectedDamage.damage_type_name}
                   </h3>
                 </div>
                 <button
                   onClick={() => setSelectedDamage(null)}
-                  className="text-[#94A3B8] hover:text-[#F1F5F9] text-sm p-1"
+                  className="text-ri-muted hover:text-ri-text text-sm p-1"
                 >
                   ✕
                 </button>
               </div>
 
               <form onSubmit={handleReviewSubmit} className="space-y-4">
-                <div className="bg-[#151B2A] border border-[#26344F] p-3 rounded-xl space-y-1">
+                <div className="bg-ri-input border border-ri-line p-3 rounded-xl space-y-1">
                   <div className="flex justify-between text-xs">
-                    <span className="text-[#94A3B8]">Damage ID:</span>
-                    <span className="font-code-sm text-[#F1F5F9]">{selectedDamage.id}</span>
+                    <span className="text-ri-muted">Damage ID:</span>
+                    <span className="font-code-sm text-ri-text">{selectedDamage.id}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-[#94A3B8]">Road:</span>
-                    <span className="text-[#F1F5F9] font-medium">{selectedDamage.road_name || "Unassigned"}</span>
+                    <span className="text-ri-muted">Road:</span>
+                    <span className="text-ri-text font-medium">{selectedDamage.road_name || "Unassigned"}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-[#94A3B8]">Detection method:</span>
-                    <span className="font-code-sm text-[#06B6D4]">
+                    <span className="text-ri-muted">Detection method:</span>
+                    <span className="font-code-sm text-ri-primary">
                       {detectionMethodLabel(selectedDamage.detection_method)}
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Review Decision
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -361,8 +361,8 @@ export default function DamagesPage() {
                       onClick={() => setReviewDecision("CONFIRMED")}
                       className={`h-11 rounded-xl font-label-md text-xs font-bold flex items-center justify-center gap-2 border transition-all ${
                         reviewDecision === "CONFIRMED"
-                          ? "bg-[#10B981] text-[#003824] border-[#10B981]"
-                          : "bg-[#17223A] text-[#94A3B8] border-[#26344F]"
+                          ? "bg-ri-success text-ri-on-primary border-ri-success"
+                          : "bg-ri-raised text-ri-muted border-ri-line"
                       }`}
                     >
                       <CheckCircle className="h-4 w-4" />
@@ -373,8 +373,8 @@ export default function DamagesPage() {
                       onClick={() => setReviewDecision("REJECTED")}
                       className={`h-11 rounded-xl font-label-md text-xs font-bold flex items-center justify-center gap-2 border transition-all ${
                         reviewDecision === "REJECTED"
-                          ? "bg-[#EF4444] text-white border-[#EF4444]"
-                          : "bg-[#17223A] text-[#94A3B8] border-[#26344F]"
+                          ? "bg-ri-danger text-white border-ri-danger"
+                          : "bg-ri-raised text-ri-muted border-ri-line"
                       }`}
                     >
                       <XCircle className="h-4 w-4" />
@@ -384,13 +384,13 @@ export default function DamagesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Adjust Severity Level
                   </label>
                   <select
                     value={reviewSeverity}
                     onChange={(e) => setReviewSeverity(e.target.value)}
-                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full h-11 bg-ri-input border border-ri-line rounded-xl px-3 text-xs text-ri-text focus:outline-none focus:border-ri-primary"
                   >
                     <option value="CRITICAL">CRITICAL — Immediate Safety Hazard</option>
                     <option value="HIGH">HIGH — Severe Pothole / Rapid Deterioration</option>
@@ -400,7 +400,7 @@ export default function DamagesPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Auditable Review Notes
                   </label>
                   <textarea
@@ -408,7 +408,7 @@ export default function DamagesPage() {
                     value={reviewNotes}
                     onChange={(e) => setReviewNotes(e.target.value)}
                     placeholder="Provide justification for review decision or field verification notes..."
-                    className="w-full bg-[#151B2A] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full bg-ri-input border border-ri-line rounded-xl p-3 text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
                   />
                 </div>
 
@@ -416,14 +416,14 @@ export default function DamagesPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedDamage(null)}
-                    className="h-10 px-4 rounded-xl bg-[#17223A] border border-[#26344F] text-xs font-semibold text-[#94A3B8] hover:text-[#F1F5F9]"
+                    className="h-10 px-4 rounded-xl bg-ri-raised border border-ri-line text-xs font-semibold text-ri-muted hover:text-ri-text"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submittingReview}
-                    className="h-10 px-5 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold shadow-md shadow-[#06B6D4]/20 transition-all active:scale-95 disabled:opacity-50"
+                    className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold shadow-md shadow-ri-primary/20 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {submittingReview ? "Saving Review..." : "Commit Review"}
                   </button>

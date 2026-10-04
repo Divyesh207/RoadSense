@@ -86,7 +86,7 @@ fun InspectionDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(BackgroundDark)
+                .glassBackground()
         ) {
             CommonTopBar(
                 title = "Inspection Detail",
@@ -283,7 +283,7 @@ private fun HeaderCard(insp: Inspection, state: ServerInspectionState?, authRepo
         }
 
         Spacer(modifier = Modifier.height(12.dp))
-        HorizontalDivider(color = BorderDark.copy(alpha = 0.6f))
+        HorizontalDivider(color = BorderDark)
         Spacer(modifier = Modifier.height(12.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -510,7 +510,7 @@ private fun DetectionRow(det: ServerDetection, photoIndex: Int, onOpenPhoto: (In
             .background(SurfaceLowest, RoundedCornerShape(12.dp))
             .border(
                 1.dp,
-                if (det.isHeuristic) WarningAmber.copy(alpha = 0.4f) else BorderDark.copy(alpha = 0.6f),
+                if (det.isHeuristic) WarningAmber.copy(alpha = 0.4f) else BorderDark,
                 RoundedCornerShape(12.dp)
             )
             .padding(12.dp)

@@ -1,5 +1,6 @@
 "use client";
 
+import { BeforeAfterViewer } from "@/components/repairs/before-after-viewer";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -44,8 +45,8 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const card = "rounded-2xl border border-[#26344F] bg-[#111A2E] p-5 shadow-sm";
-const label = "font-label-sm text-[11px] uppercase tracking-wide text-[#94A3B8] font-semibold";
+const card = "rounded-2xl border border-ri-line bg-ri-surface p-5 shadow-sm";
+const label = "font-label-sm text-[11px] uppercase tracking-wide text-ri-muted font-semibold";
 
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
 
@@ -61,22 +62,22 @@ function EvidenceThumb({ jobId, ev }: { jobId: string; ev: RepairEvidence }) {
   }, [jobId, ev.id]);
 
   return (
-    <div className="rounded-xl border border-[#26344F] bg-[#151B2A] p-2.5 space-y-2">
-      <div className="aspect-video bg-[#0C1321] rounded-lg flex items-center justify-center overflow-hidden border border-[#26344F]/50">
+    <div className="rounded-xl border border-ri-line bg-ri-input p-2.5 space-y-2">
+      <div className="aspect-video bg-ri-bg rounded-lg flex items-center justify-center overflow-hidden border border-ri-line/50">
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={ev.evidence_type} className="object-contain w-full h-full" />
         ) : (
-          <span className="font-code-sm text-[11px] text-[#869397]">
+          <span className="font-code-sm text-[11px] text-ri-muted">
             {err ? `Preview unavailable: ${err}` : "Loading media…"}
           </span>
         )}
       </div>
       <div className="flex items-center justify-between text-[11px]">
-        <span className="font-headline-sm font-semibold text-[#F1F5F9]">
+        <span className="font-headline-sm font-semibold text-ri-text">
           {ev.evidence_type.replace(/_/g, " ")}
         </span>
-        <span className="font-code-sm text-[#869397]">{when(ev.created_at)}</span>
+        <span className="font-code-sm text-ri-muted">{when(ev.created_at)}</span>
       </div>
     </div>
   );
@@ -140,21 +141,21 @@ function AnalysisCard({
   };
 
   return (
-    <div className="rounded-2xl border border-[#26344F] bg-[#151B2A] p-5 space-y-4">
+    <div className="rounded-2xl border border-ri-line bg-ri-input p-5 space-y-4">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <Cpu className="h-4 w-4 text-[#06B6D4]" />
+          <Cpu className="h-4 w-4 text-ri-primary" />
           <span className="font-headline-sm text-sm font-bold text-white">
             Automated image analysis
           </span>
-          <span className="font-code-sm text-[11px] text-[#869397]">{when(automated.created_at)}</span>
+          <span className="font-code-sm text-[11px] text-ri-muted">{when(automated.created_at)}</span>
         </div>
         {isPending(automated) ? (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#06B6D4]/15 border border-[#06B6D4]/30 text-[#4CD7F6] animate-pulse">
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-ri-primary/15 border border-ri-primary/30 text-ri-primary-bright animate-pulse">
             {automated.verification_status}
           </span>
         ) : automated.verification_status === "FAILED" ? (
-          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444]">
+          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-ri-danger/15 border border-ri-danger/30 text-ri-danger">
             FAILED
           </span>
         ) : (
@@ -167,45 +168,28 @@ function AnalysisCard({
       </div>
 
       {automated.verification_status === "FAILED" && (
-        <p className="font-body-sm text-xs text-[#FFB4AB]">
+        <p className="font-body-sm text-xs text-ri-danger-soft">
           {automated.error_code}: {automated.error_message}. No result was produced; re-run once the cause is fixed.
         </p>
       )}
 
-      {/* Before / After Images */}
-      <div className="grid grid-cols-2 gap-3">
-        {(["before_url", "after_url"] as const).map((k) => (
-          <div key={k}>
-            <p className={label}>
-              {k === "before_url"
-                ? `Before (${
-                    images?.before_source === "INSPECTION_MEDIA"
-                      ? "original inspection photo"
-                      : "before-repair evidence"
-                  })`
-                : "After Repair"}
-            </p>
-            <div className="mt-1 aspect-video rounded-xl bg-[#0C1321] overflow-hidden flex items-center justify-center border border-[#26344F]">
-              {images?.[k] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={images[k]!} alt={k} className="object-contain w-full h-full" />
-              ) : (
-                <span className="font-code-sm text-[11px] text-[#64748B]">No image</span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Before / After comparison (shared zoom and pan) */}
+      <BeforeAfterViewer
+        beforeUrl={images?.before_url ?? null}
+        afterUrl={images?.after_url ?? null}
+        beforeCaption={images?.before_source === "INSPECTION_MEDIA" ? "original inspection photo" : "before-repair evidence"}
+        afterCaption="after-repair evidence"
+      />
 
       {automated.verification_status === "COMPLETED" && (
         <>
-          <div className="text-xs text-[#DCE2F6] space-y-1 bg-[#111A2E] p-3 rounded-xl border border-[#26344F]">
+          <div className="text-xs text-ri-text-soft space-y-1 bg-ri-surface p-3 rounded-xl border border-ri-line">
             <p>
-              <span className="text-[#94A3B8]">Reason:</span>{" "}
-              <span className="font-code-sm font-semibold text-[#06B6D4]">{f.reason_code}</span>
+              <span className="text-ri-muted">Reason:</span>{" "}
+              <span className="font-code-sm font-semibold text-ri-primary">{f.reason_code}</span>
             </p>
             {Array.isArray(f.reasons) &&
-              f.reasons.map((r: string, i: number) => <p key={i} className="text-[#94A3B8]">{r}</p>)}
+              f.reasons.map((r: string, i: number) => <p key={i} className="text-ri-muted">{r}</p>)}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
@@ -230,7 +214,7 @@ function AnalysisCard({
           </div>
 
           {Array.isArray(f.residual_detections) && f.residual_detections.length > 0 && (
-            <div className="text-xs text-[#FFB4AB]">
+            <div className="text-xs text-ri-danger-soft">
               Residual damage:{" "}
               {f.residual_detections.map((d: any, i: number) => (
                 <span key={i} className="mr-2">
@@ -240,7 +224,7 @@ function AnalysisCard({
             </div>
           )}
 
-          <p className="text-[11px] text-[#64748B]">
+          <p className="text-[11px] text-ri-faint">
             Algorithm {automated.algorithm_version} · detector threshold {fmtNumber(f.model?.confidence_threshold, 3)}. The outcome
             follows fixed rules on these measurements; it is not a probability. A reviewer makes the final decision.
           </p>
@@ -252,17 +236,17 @@ function AnalysisCard({
         <div className="space-y-2">
           <p className={label}>Human review</p>
           {reviews.map((r) => (
-            <div key={r.id} className="text-xs rounded-xl border border-[#26344F] p-3 bg-[#111A2E] space-y-1">
+            <div key={r.id} className="text-xs rounded-xl border border-ri-line p-3 bg-ri-surface space-y-1">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[#F1F5F9]">{r.review_decision}</span>
-                <span className="font-code-sm text-[#869397]">
+                <span className="font-bold text-ri-text">{r.review_decision}</span>
+                <span className="font-code-sm text-ri-muted">
                   {when(r.verified_at)} · reviewer {r.verified_by_user_id?.slice(0, 8)}
                 </span>
               </div>
-              <p className="font-code-sm text-[#06B6D4]">
+              <p className="font-code-sm text-ri-primary">
                 Outcome: {r.previous_result} → <span className="font-bold text-white">{r.result}</span>
               </p>
-              {r.reviewer_notes && <p className="text-[#94A3B8] text-xs">{r.reviewer_notes}</p>}
+              {r.reviewer_notes && <p className="text-ri-muted text-xs">{r.reviewer_notes}</p>}
             </div>
           ))}
         </div>
@@ -270,7 +254,7 @@ function AnalysisCard({
 
       {/* Authority Review Input */}
       {canReview && automated.verification_status === "COMPLETED" && (
-        <div className="space-y-3 border-t border-[#26344F] pt-4">
+        <div className="space-y-3 border-t border-ri-line pt-4">
           <p className={label}>Reviewer decision</p>
           <div className="flex flex-wrap gap-2">
             {(["CONFIRMED", "REJECTED", "UNRESOLVED"] as const).map((d) => (
@@ -279,8 +263,8 @@ function AnalysisCard({
                 onClick={() => setDecision(d)}
                 className={`px-3 py-1.5 rounded-xl font-label-md text-xs font-bold border transition-all ${
                   decision === d
-                    ? "border-[#06B6D4] bg-[#06B6D4] text-[#003640]"
-                    : "border-[#26344F] bg-[#17223A] text-[#94A3B8] hover:text-white"
+                    ? "border-ri-primary bg-ri-primary text-ri-on-primary"
+                    : "border-ri-line bg-ri-raised text-ri-muted hover:text-white"
                 }`}
               >
                 {d === "CONFIRMED" ? "Confirm result" : d === "REJECTED" ? "Reject result" : "Mark unresolved"}
@@ -292,7 +276,7 @@ function AnalysisCard({
             <select
               value={finalResult}
               onChange={(e) => setFinalResult(e.target.value)}
-              className="bg-[#111A2E] border border-[#26344F] rounded-xl px-3 py-2 text-xs text-[#F1F5F9] w-full"
+              className="bg-ri-surface border border-ri-line rounded-xl px-3 py-2 text-xs text-ri-text w-full"
             >
               <option value="">Correct outcome…</option>
               {VERIFICATION_RESULTS.filter((r) => r !== automated.result).map((r) => (
@@ -307,16 +291,16 @@ function AnalysisCard({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Reviewer notes"
-            className="w-full bg-[#111A2E] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+            className="w-full bg-ri-surface border border-ri-line rounded-xl p-3 text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
             rows={2}
           />
 
-          {error && <p className="text-xs text-[#EF4444]">{error}</p>}
+          {error && <p className="text-xs text-ri-danger">{error}</p>}
 
           <button
             onClick={submit}
             disabled={busy}
-            className="h-10 px-4 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold transition-all disabled:opacity-50"
+            className="h-10 px-4 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold transition-all disabled:opacity-50"
           >
             {busy ? "Saving…" : "Submit review"}
           </button>
@@ -328,9 +312,9 @@ function AnalysisCard({
 
 function Metric({ k, v }: { k: string; v: string }) {
   return (
-    <div className="rounded-xl border border-[#26344F] bg-[#111A2E] p-2.5">
+    <div className="rounded-xl border border-ri-line bg-ri-surface p-2.5">
       <p className={label}>{k}</p>
-      <p className="text-[#F1F5F9] font-code-sm text-xs font-bold mt-0.5 break-all">{v}</p>
+      <p className="text-ri-text font-code-sm text-xs font-bold mt-0.5 break-all">{v}</p>
     </div>
   );
 }
@@ -431,7 +415,7 @@ export default function MaintenanceJobPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-20 text-xs text-[#94A3B8]">
+        <div className="flex items-center justify-center py-20 text-xs text-ri-muted">
           Loading maintenance job workspace...
         </div>
       </AppShell>
@@ -443,11 +427,11 @@ export default function MaintenanceJobPage() {
       <AppShell>
         <Link
           href="/maintenance"
-          className="font-code-sm text-xs text-[#06B6D4] flex items-center gap-1 hover:underline"
+          className="font-code-sm text-xs text-ri-primary flex items-center gap-1 hover:underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Maintenance
         </Link>
-        <p className="mt-4 text-xs text-[#EF4444]">{error || "Maintenance job not found."}</p>
+        <p className="mt-4 text-xs text-ri-danger">{error || "Maintenance job not found."}</p>
       </AppShell>
     );
   }
@@ -463,19 +447,19 @@ export default function MaintenanceJobPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 max-w-6xl">
+      <div className="space-y-5">
         {/* Back link & Header */}
         <div>
           <Link
             href="/maintenance"
-            className="inline-flex items-center gap-1.5 font-code-sm text-xs text-[#06B6D4] hover:underline mb-1"
+            className="inline-flex items-center gap-1.5 font-code-sm text-xs text-ri-primary hover:underline mb-1"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Maintenance
           </Link>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="font-headline-sm text-2xl font-bold text-[#F1F5F9]">{job.title}</h1>
-              <p className="font-code-sm text-xs text-[#94A3B8] mt-1">
+              <h1 className="font-headline-sm text-2xl font-bold text-ri-text">{job.title}</h1>
+              <p className="font-code-sm text-xs text-ri-muted mt-1">
                 Job ID: {job.id} · Created {when(job.created_at)} · started {when(job.started_at)} · completed{" "}
                 {when(job.completed_at)} · verified {when(job.verified_at)}
               </p>
@@ -488,7 +472,7 @@ export default function MaintenanceJobPage() {
               />
               <button
                 onClick={load}
-                className="p-2 rounded-xl bg-[#17223A] border border-[#26344F] text-[#94A3B8] hover:text-white"
+                className="p-2 rounded-xl bg-ri-raised border border-ri-line text-ri-muted hover:text-white"
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -500,8 +484,8 @@ export default function MaintenanceJobPage() {
           <div
             className={`p-3.5 rounded-xl border text-xs ${
               notice.startsWith("Error")
-                ? "bg-[#EF4444]/15 border-[#EF4444]/30 text-[#FFB4AB]"
-                : "bg-[#10B981]/15 border-[#10B981]/30 text-[#10B981]"
+                ? "bg-ri-danger/15 border-ri-danger/30 text-ri-danger-soft"
+                : "bg-ri-success/15 border-ri-success/30 text-ri-success"
             }`}
           >
             {notice}
@@ -513,15 +497,15 @@ export default function MaintenanceJobPage() {
           <div className={card}>
             <p className={label}>Location</p>
             <p className="font-headline-sm text-sm font-bold text-white mt-1 flex items-center gap-1.5">
-              <MapPin className="h-4 w-4 text-[#06B6D4]" />
+              <MapPin className="h-4 w-4 text-ri-primary" />
               {ctx?.road?.name ?? "No road linked"}
             </p>
-            <p className="font-code-sm text-xs text-[#ADC6FF] mt-1">
+            <p className="font-code-sm text-xs text-ri-info-soft mt-1">
               {ctx?.segment
                 ? `Segment #${ctx.segment.segment_number}${ctx.segment.name ? ` · ${ctx.segment.name}` : ""}`
                 : "No segment"}
             </p>
-            <p className="text-xs text-[#64748B] mt-1">Traffic class: {ctx?.road?.traffic_volume_class ?? "unknown"}</p>
+            <p className="text-xs text-ri-faint mt-1">Traffic class: {ctx?.road?.traffic_volume_class ?? "unknown"}</p>
           </div>
 
           <div className={card}>
@@ -529,21 +513,21 @@ export default function MaintenanceJobPage() {
             {ctx?.segment_health || ctx?.road_health ? (
               <div className="mt-1 space-y-1">
                 {ctx?.segment_health && (
-                  <p className="font-headline-sm text-sm font-bold text-[#F1F5F9]">
+                  <p className="font-headline-sm text-sm font-bold text-ri-text">
                     Segment: {ctx.segment_health.health_score ?? "—"} ({ctx.segment_health.health_status})
                   </p>
                 )}
                 {ctx?.road_health && (
-                  <p className="font-code-sm text-xs text-[#94A3B8]">
+                  <p className="font-code-sm text-xs text-ri-muted">
                     Road: {ctx.road_health.health_score ?? "—"} ({ctx.road_health.health_status})
                   </p>
                 )}
-                <p className="font-code-sm text-[11px] text-[#64748B]">
+                <p className="font-code-sm text-[11px] text-ri-faint">
                   {ctx?.segment_health?.calculation_version ?? ctx?.road_health?.calculation_version} · rule-based score
                 </p>
               </div>
             ) : (
-              <p className="font-body-sm text-xs text-[#94A3B8] mt-1">No health snapshot yet.</p>
+              <p className="font-body-sm text-xs text-ri-muted mt-1">No health snapshot yet.</p>
             )}
           </div>
 
@@ -552,25 +536,25 @@ export default function MaintenanceJobPage() {
               Priority breakdown {job.priority_factors?.mode ? `(${job.priority_factors.mode})` : ""}
             </p>
             {comps ? (
-              <ul className="text-xs text-[#DCE2F6] mt-1 space-y-1">
+              <ul className="text-xs text-ri-text-soft mt-1 space-y-1">
                 {Object.entries(comps).map(([k, v]) => (
                   <li key={k} className="flex justify-between font-code-sm">
-                    <span className="text-[#94A3B8]">{k.replace(/_/g, " ")}:</span>
-                    <span className="text-[#06B6D4] font-bold">{v}</span>
+                    <span className="text-ri-muted">{k.replace(/_/g, " ")}:</span>
+                    <span className="text-ri-primary font-bold">{v}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-[#94A3B8] mt-1">Set manually or created without linked damage.</p>
+              <p className="text-xs text-ri-muted mt-1">Set manually or created without linked damage.</p>
             )}
           </div>
         </div>
 
         {/* Linked Damage Table */}
-        <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-[#26344F] flex items-center justify-between">
+        <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-ri-line flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
+              <AlertTriangle className="h-4 w-4 text-ri-warning" />
               <h3 className="font-headline-sm text-sm font-bold text-white">
                 Linked damage
               </h3>
@@ -579,7 +563,7 @@ export default function MaintenanceJobPage() {
           {ctx && ctx.damages.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+                <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
                   <tr>
                     <th className="py-3 px-4">Type</th>
                     <th className="py-3 px-4">Severity</th>
@@ -589,9 +573,9 @@ export default function MaintenanceJobPage() {
                     <th className="py-3 px-4">Inspection</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+                <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
                   {ctx.damages.map((d) => (
-                    <tr key={d.id} className="hover:bg-[#17223A]/50">
+                    <tr key={d.id} className="hover:bg-ri-raised/50">
                       <td className="py-3 px-4 font-bold text-white">{d.damage_type ?? "—"}</td>
                       <td className="py-3 px-4">
                         <StatusBadge status={d.severity} size="sm" />
@@ -599,11 +583,11 @@ export default function MaintenanceJobPage() {
                       <td className="py-3 px-4">
                         <StatusBadge status={d.status} size="sm" />
                       </td>
-                      <td className="py-3 px-4 font-code-sm text-[#94A3B8]">{d.observation_count}</td>
-                      <td className="py-3 px-4 font-code-sm text-[#94A3B8]">{when(d.detected_at)}</td>
+                      <td className="py-3 px-4 font-code-sm text-ri-muted">{d.observation_count}</td>
+                      <td className="py-3 px-4 font-code-sm text-ri-muted">{when(d.detected_at)}</td>
                       <td className="py-3 px-4 font-code-sm">
                         {d.inspection_id ? (
-                          <Link className="text-[#06B6D4] hover:underline" href={`/inspections/${d.inspection_id}`}>
+                          <Link className="text-ri-primary hover:underline" href={`/inspections/${d.inspection_id}`}>
                             {d.inspection_id.slice(0, 8)}
                           </Link>
                         ) : (
@@ -616,7 +600,7 @@ export default function MaintenanceJobPage() {
               </table>
             </div>
           ) : (
-            <p className="p-8 text-center text-xs text-[#94A3B8]">No damage linked to this job.</p>
+            <p className="p-8 text-center text-xs text-ri-muted">No damage linked to this job.</p>
           )}
         </div>
 
@@ -624,26 +608,26 @@ export default function MaintenanceJobPage() {
         <div className="grid md:grid-cols-2 gap-4">
           <div className={card}>
             <p className="font-headline-sm text-sm font-bold text-white mb-2 flex items-center gap-2">
-              <User className="h-4 w-4 text-[#06B6D4]" /> Assignment
+              <User className="h-4 w-4 text-ri-primary" /> Assignment
             </p>
-            <p className="font-body-sm text-xs text-[#DCE2F6]">
+            <p className="font-body-sm text-xs text-ri-text-soft">
               {ctx?.assigned_user
                 ? `${ctx.assigned_user.full_name} (${ctx.assigned_user.email})`
                 : "No user assigned"}
               {ctx?.assigned_organization ? ` · contractor ${ctx.assigned_organization.name}` : ""}
             </p>
             {!assignees && (
-              <p className="text-[11px] text-[#64748B] mt-2">You do not have permission to assign this job.</p>
+              <p className="text-[11px] text-ri-faint mt-2">You do not have permission to assign this job.</p>
             )}
             {assignees && assignees.contractor_organizations.length === 0 && (
-              <p className="text-[11px] text-[#64748B] mt-2">No contractor organizations are registered.</p>
+              <p className="text-[11px] text-ri-faint mt-2">No contractor organizations are registered.</p>
             )}
             {assignees && (
               <div className="mt-3 flex gap-2">
                 <select
                   value={assignee}
                   onChange={(e) => setAssignee(e.target.value)}
-                  className="flex-1 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 py-2 text-xs text-[#F1F5F9]"
+                  className="flex-1 bg-ri-input border border-ri-line rounded-xl px-3 py-2 text-xs text-ri-text"
                 >
                   <option value="">Choose assignee…</option>
                   {assignees.users.map((u) => (
@@ -672,7 +656,7 @@ export default function MaintenanceJobPage() {
                       "Assignment saved."
                     );
                   }}
-                  className="px-4 py-2 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold disabled:opacity-40"
+                  className="px-4 py-2 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold disabled:opacity-40"
                 >
                   Assign
                 </button>
@@ -682,7 +666,7 @@ export default function MaintenanceJobPage() {
 
           <div className={card}>
             <p className="font-headline-sm text-sm font-bold text-white mb-2 flex items-center gap-2">
-              <History className="h-4 w-4 text-[#06B6D4]" /> Status
+              <History className="h-4 w-4 text-ri-primary" /> Status
             </p>
             {ctx && ctx.allowed_transitions.length > 0 ? (
               <div className="space-y-3">
@@ -690,7 +674,7 @@ export default function MaintenanceJobPage() {
                   value={transitionNotes}
                   onChange={(e) => setTransitionNotes(e.target.value)}
                   placeholder="Notes (optional)"
-                  className="w-full bg-[#151B2A] border border-[#26344F] rounded-xl px-3 py-2 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                  className="w-full bg-ri-input border border-ri-line rounded-xl px-3 py-2 text-xs text-ri-text focus:outline-none focus:border-ri-primary"
                 />
                 <div className="flex flex-wrap gap-2">
                   {ctx.allowed_transitions.map((t) => (
@@ -706,22 +690,22 @@ export default function MaintenanceJobPage() {
                           `Moved to ${t}.`
                         )
                       }
-                      className="px-3 py-1.5 rounded-xl border border-[#06B6D4]/30 bg-[#06B6D4]/15 hover:bg-[#06B6D4]/25 text-[#4CD7F6] font-label-md text-xs font-bold transition-all"
+                      className="px-3 py-1.5 rounded-xl border border-ri-primary/30 bg-ri-primary/15 hover:bg-ri-primary/25 text-ri-primary-bright font-label-md text-xs font-bold transition-all"
                     >
                       → {t.replace(/_/g, " ")}
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] text-[#64748B]">VERIFIED / REJECTED are set by repair verification review.</p>
+                <p className="text-[11px] text-ri-faint">VERIFIED / REJECTED are set by repair verification review.</p>
               </div>
             ) : (
-              <p className="font-code-sm text-xs text-[#64748B]">No further transitions from {job.status}.</p>
+              <p className="font-code-sm text-xs text-ri-faint">No further transitions from {job.status}.</p>
             )}
-            <ul className="mt-3 space-y-1 max-h-40 overflow-y-auto text-[11px] text-[#94A3B8]">
+            <ul className="mt-3 space-y-1 max-h-40 overflow-y-auto text-[11px] text-ri-muted">
               {history.map((h) => (
                 <li key={h.id}>
                   <span className="font-code-sm">{when(h.changed_at)}</span> · {h.previous_status ?? "—"} →{" "}
-                  <span className="text-[#F1F5F9]">{h.new_status}</span>
+                  <span className="text-ri-text">{h.new_status}</span>
                   {h.reason ? ` · ${h.reason}` : ""}
                 </li>
               ))}
@@ -732,13 +716,13 @@ export default function MaintenanceJobPage() {
         {/* Evidence Upload */}
         <div className={card}>
           <p className="font-headline-sm text-sm font-bold text-white mb-3 flex items-center gap-2">
-            <Camera className="h-4 w-4 text-[#06B6D4]" /> Repair evidence
+            <Camera className="h-4 w-4 text-ri-primary" /> Repair evidence
           </p>
-          <div className="flex flex-wrap items-center gap-3 mb-4 bg-[#151B2A] p-3 rounded-xl border border-[#26344F]">
+          <div className="flex flex-wrap items-center gap-3 mb-4 bg-ri-input p-3 rounded-xl border border-ri-line">
             <select
               value={uploadType}
               onChange={(e) => setUploadType(e.target.value as any)}
-              className="bg-[#111A2E] border border-[#26344F] rounded-xl px-3 py-1.5 text-xs text-[#F1F5F9]"
+              className="bg-ri-surface border border-ri-line rounded-xl px-3 py-1.5 text-xs text-ri-text"
             >
               <option value="BEFORE_REPAIR">Before repair</option>
               <option value="AFTER_REPAIR">After repair</option>
@@ -747,21 +731,21 @@ export default function MaintenanceJobPage() {
               ref={fileRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              className="text-xs text-[#94A3B8]"
+              className="text-xs text-ri-muted"
             />
-            <label className="text-xs text-[#94A3B8] flex items-center gap-1.5 cursor-pointer">
+            <label className="text-xs text-ri-muted flex items-center gap-1.5 cursor-pointer">
               <input
                 type="checkbox"
                 checked={attachGps}
                 onChange={(e) => setAttachGps(e.target.checked)}
-                className="rounded border-[#26344F]"
+                className="rounded border-ri-line"
               />
               <span>attach my GPS position</span>
             </label>
             <button
               onClick={upload}
               disabled={uploading}
-              className="px-4 py-2 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold flex items-center gap-1.5 ml-auto disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold flex items-center gap-1.5 ml-auto disabled:opacity-50"
             >
               <Upload className="h-3.5 w-3.5" />
               <span>{uploading ? "Uploading…" : "Upload"}</span>
@@ -769,7 +753,7 @@ export default function MaintenanceJobPage() {
           </div>
 
           {evidence.length === 0 ? (
-            <p className="text-xs text-[#94A3B8] py-8 text-center">
+            <p className="text-xs text-ri-muted py-8 text-center">
               No evidence uploaded yet. Without a before-repair image, the original inspection photo of the damage is used
               as the BEFORE image.
             </p>
@@ -786,37 +770,37 @@ export default function MaintenanceJobPage() {
         <div className={card}>
           <div className="flex items-center justify-between mb-3">
             <p className="font-headline-sm text-sm font-bold text-white flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-[#10B981]" /> Repair verification
+              <ShieldCheck className="h-4 w-4 text-ri-success" /> Repair verification
             </p>
             <button
               disabled={!canVerify || pending}
               onClick={() => act(() => api.repair.queueImageVerification(id), "Image verification queued.")}
-              className="px-4 py-2 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold disabled:opacity-40 shadow-sm"
+              className="px-4 py-2 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold disabled:opacity-40 shadow-sm"
             >
               {pending ? "Analysis running…" : "Run image verification"}
             </button>
           </div>
 
           {!canVerify && (
-            <p className="font-code-sm text-[11px] text-[#64748B] mb-2">
+            <p className="font-code-sm text-[11px] text-ri-faint mb-2">
               Available once the job is COMPLETED or VERIFICATION PENDING.
             </p>
           )}
-          <p className="text-[11px] text-[#64748B] mb-3">
+          <p className="text-[11px] text-ri-faint mb-3">
             Compares the BEFORE and AFTER images with OpenCV (feature alignment, SSIM, difference and edge measures) and
             runs the deployed road-damage detector on both. Outcomes: SUCCESSFUL, SUBSTANDARD or UNRESOLVED (insufficient
             or ambiguous evidence). Not yet validated on real before/after repair photographs.
           </p>
 
           {analyses.length === 0 ? (
-            <p className="text-xs text-[#94A3B8] py-8 text-center">
+            <p className="text-xs text-ri-muted py-8 text-center">
               No image analysis has been run for this job.
             </p>
           ) : (
             <div className="space-y-4">
               {analyses.map((a) => (
                 <div key={a.id}>
-                  <p className="text-[11px] text-[#94A3B8] mb-1.5 flex items-center gap-1.5">
+                  <p className="text-[11px] text-ri-muted mb-1.5 flex items-center gap-1.5">
                     Final outcome:
                     <StatusBadge
                       status={effectiveResult(verifications, a) ?? "PENDING"}
@@ -839,7 +823,7 @@ export default function MaintenanceJobPage() {
             <div className="mt-4">
               <p className={label}>Earlier records</p>
               {others.map((v) => (
-                <p key={v.id} className="text-[11px] text-[#94A3B8]">
+                <p key={v.id} className="text-[11px] text-ri-muted">
                   {when(v.created_at)} ·{" "}
                   {v.verification_type === "HUMAN_SIGNOFF"
                     ? `Human sign-off: ${v.verification_status}`

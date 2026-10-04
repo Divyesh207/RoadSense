@@ -24,7 +24,6 @@ def admin_headers():
     return {
         "Authorization": f"Bearer {token}",
         "X-Organization-ID": str(ORG_1_ID),
-        "X-Bypass-Rate-Limit": "test-bypass",
     }
 
 
@@ -34,7 +33,6 @@ def authority_headers():
     return {
         "Authorization": f"Bearer {token}",
         "X-Organization-ID": str(ORG_1_ID),
-        "X-Bypass-Rate-Limit": "test-bypass",
     }
 
 
@@ -44,7 +42,6 @@ def inspector_headers():
     return {
         "Authorization": f"Bearer {token}",
         "X-Organization-ID": str(ORG_1_ID),
-        "X-Bypass-Rate-Limit": "test-bypass",
     }
 
 
@@ -54,7 +51,6 @@ def other_org_headers():
     return {
         "Authorization": f"Bearer {token}",
         "X-Organization-ID": str(ORG_2_ID),
-        "X-Bypass-Rate-Limit": "test-bypass",
     }
 
 
@@ -104,7 +100,6 @@ async def test_rate_limiter_triggers_429(async_client: AsyncClient):
     settings.RATE_LIMIT_AUTH_PER_MINUTE = 3
 
     try:
-        # Send requests without bypass header
         for _ in range(3):
             resp = await async_client.post(
                 "/api/v1/auth/login",
@@ -206,7 +201,6 @@ async def test_audit_service_and_api(
     org2_admin_headers = {
         "Authorization": f"Bearer {token2}",
         "X-Organization-ID": str(ORG_2_ID),
-        "X-Bypass-Rate-Limit": "test-bypass",
     }
     res_org2 = await async_client.get("/api/v1/audit-logs", headers=org2_admin_headers)
     assert res_org2.status_code == 200

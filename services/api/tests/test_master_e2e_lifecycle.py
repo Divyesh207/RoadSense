@@ -25,7 +25,6 @@ def auth_headers():
         return {
             "Authorization": f"Bearer {token}",
             "X-Organization-ID": str(org_id),
-            "X-Bypass-Rate-Limit": "test-bypass",
         }
 
     return _get

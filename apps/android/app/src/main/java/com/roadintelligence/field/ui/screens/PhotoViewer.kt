@@ -174,7 +174,7 @@ fun PhotoViewer(
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onClose, modifier = Modifier.background(SurfaceDark.copy(alpha = 0.85f), CircleShape)) {
+            IconButton(onClick = onClose, modifier = Modifier.background(GlassBar, CircleShape)) {
                 Icon(Icons.Default.Close, contentDescription = "Close photo viewer", tint = Color.White)
             }
             Spacer(modifier = Modifier.width(10.dp))
@@ -185,7 +185,7 @@ fun PhotoViewer(
             if (detections.isNotEmpty()) {
                 IconButton(
                     onClick = { showBoxes = !showBoxes },
-                    modifier = Modifier.background(SurfaceDark.copy(alpha = 0.85f), CircleShape)
+                    modifier = Modifier.background(GlassBar, CircleShape)
                 ) {
                     Icon(
                         imageVector = if (showBoxes) Icons.Default.Visibility else Icons.Default.VisibilityOff,
@@ -205,7 +205,7 @@ fun PhotoViewer(
                         .align(Alignment.CenterStart)
                         .padding(8.dp)
                         .size(48.dp)
-                        .background(SurfaceDark.copy(alpha = 0.8f), CircleShape)
+                        .background(GlassBar, CircleShape)
                 ) {
                     Icon(Icons.Default.ChevronLeft, contentDescription = "Previous photo", tint = Color.White)
                 }
@@ -217,7 +217,7 @@ fun PhotoViewer(
                         .align(Alignment.CenterEnd)
                         .padding(8.dp)
                         .size(48.dp)
-                        .background(SurfaceDark.copy(alpha = 0.8f), CircleShape)
+                        .background(GlassBar, CircleShape)
                 ) {
                     Icon(Icons.Default.ChevronRight, contentDescription = "Next photo", tint = Color.White)
                 }

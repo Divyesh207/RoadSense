@@ -27,24 +27,27 @@ import { BrandLogo } from "@/components/brand-logo";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { PlatformPreview } from "@/components/landing/platform-preview";
 import { RequestDemoForm } from "@/components/landing/request-demo-form";
+import { HeroItem, HeroParallax, HeroStagger, HeroVisual, RevealObserver } from "@/components/landing/motion";
 
 // Everything on this page describes behaviour that exists in the platform. It carries no
 // metrics: live figures for an organization are on the authenticated dashboard.
 
 const focusRing =
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4CD7F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0C1321]";
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright focus-visible:ring-offset-2 focus-visible:ring-offset-ri-bg";
 const card =
-  "rounded-2xl border border-[#26344F] bg-[#111A2E] p-5 transition-all duration-200 hover:border-[#06B6D4]/50 hover:bg-[#17223A]/70 motion-safe:hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30";
-const eyebrow = "font-code-sm text-[#4CD7F6] uppercase tracking-widest";
-const sectionTitle = "text-2xl sm:text-3xl font-bold tracking-tight text-[#F1F5F9]";
-const sectionLead = "text-sm sm:text-base text-[#94A3B8] leading-relaxed max-w-3xl";
+  "group rounded-2xl border border-ri-line bg-ri-surface p-5 transition-all duration-200 hover:border-ri-primary/60 hover:bg-ri-raised/70 motion-safe:hover:-translate-y-1 motion-safe:hover:scale-[1.01] hover:shadow-[0_22px_44px_-26px_rgb(var(--ri-primary)/0.7)]";
+// Icons inside a card shift a little when the card is hovered.
+const cardIcon = "transition-transform duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:-rotate-6";
+const eyebrow = "font-code-sm text-ri-primary-bright uppercase tracking-widest";
+const sectionTitle = "text-2xl sm:text-3xl font-bold tracking-tight text-ri-text";
+const sectionLead = "text-sm sm:text-base text-ri-muted leading-relaxed max-w-3xl";
 
 type Basis = "TRAINED AI" | "RULE-BASED" | "HUMAN REVIEW";
 
 const BASIS_STYLE: Record<Basis, string> = {
-  "TRAINED AI": "text-[#4CD7F6] border-[#06B6D4]/40 bg-[#06B6D4]/10",
-  "RULE-BASED": "text-[#F59E0B] border-[#F59E0B]/40 bg-[#F59E0B]/10",
-  "HUMAN REVIEW": "text-[#A78BFA] border-[#A78BFA]/40 bg-[#A78BFA]/10",
+  "TRAINED AI": "text-ri-primary-bright border-ri-primary/40 bg-ri-primary/10",
+  "RULE-BASED": "text-ri-warning border-ri-warning/40 bg-ri-warning/10",
+  "HUMAN REVIEW": "text-ri-review border-ri-review/40 bg-ri-review/10",
 };
 
 function BasisTag({ basis }: { basis: Basis }) {
@@ -124,7 +127,7 @@ function Section({
 }) {
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-20 space-y-8">
-      <div className="space-y-3">
+      <div data-reveal className="space-y-3">
         <p className={eyebrow}>{label}</p>
         <h2 id={`${id}-title`} className={sectionTitle}>
           {title}
@@ -138,59 +141,69 @@ function Section({
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#0C1321] text-[#DCE2F6] selection:bg-[#06B6D4]/30 selection:text-white overflow-x-hidden">
+    <div className="ri-ambient min-h-screen text-ri-text-soft selection:bg-ri-primary/30 selection:text-white overflow-x-hidden">
       <a
         href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-[#06B6D4] focus:text-[#003640] focus:text-sm focus:font-bold"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-ri-primary focus:text-ri-on-primary focus:text-sm focus:font-bold"
       >
         Skip to content
       </a>
       <LandingNav />
+      <RevealObserver />
 
       <main id="main">
-        {/* Hero */}
-        <section className="relative border-b border-[#26344F]">
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(6,182,212,0.14),transparent_55%)] pointer-events-none"
-          />
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10 lg:gap-14 items-center">
-            <div className="space-y-6">
-              <BrandLogo variant="full" size="md" />
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                Turn Road Inspections Into Actionable Infrastructure Intelligence.
-              </h1>
-              <p className="text-sm sm:text-base text-[#94A3B8] leading-relaxed max-w-2xl">
-                Road Intelligence connects field inspections, AI-assisted damage detection, GPS and GIS mapping,
-                road health assessment, maintenance prioritisation, repair verification and recurrence monitoring
-                in one platform.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 pt-1">
+        {/* Hero: staggered entrance, then subtle scroll parallax */}
+        <HeroParallax
+          content={
+            <HeroStagger className="space-y-6">
+              <HeroItem>
+                <BrandLogo variant="full" size="md" />
+              </HeroItem>
+              <HeroItem>
+                <p className={eyebrow}>AI-assisted road infrastructure operations</p>
+              </HeroItem>
+              <HeroItem>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                  Turn Road Inspections Into Actionable Infrastructure Intelligence.
+                </h1>
+              </HeroItem>
+              <HeroItem>
+                <p className="text-sm sm:text-base text-ri-muted leading-relaxed max-w-2xl">
+                  Road Intelligence connects field inspections, AI-assisted damage detection, GPS and GIS mapping,
+                  road health assessment, maintenance prioritisation, repair verification and recurrence monitoring
+                  in one platform.
+                </p>
+              </HeroItem>
+              <HeroItem className="flex flex-col sm:flex-row gap-3 pt-1">
                 <Link
                   href="/login"
-                  className={`inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-sm font-bold shadow-lg shadow-[#06B6D4]/20 transition-all motion-safe:hover:-translate-y-0.5 ${focusRing}`}
+                  className={`group inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-sm font-bold shadow-lg shadow-ri-primary/20 transition-all duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-[0_14px_34px_-12px_rgb(var(--ri-primary)/0.8)] ${focusRing}`}
                 >
-                  <LogIn className="h-4 w-4" />
+                  <LogIn className="h-4 w-4 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5" />
                   Login
                 </Link>
                 <a
                   href="#request-demo"
-                  className={`inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl border border-[#26344F] bg-[#111A2E] hover:border-[#06B6D4]/60 hover:bg-[#17223A] text-[#F1F5F9] text-sm font-bold transition-all motion-safe:hover:-translate-y-0.5 ${focusRing}`}
+                  className={`group inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl border border-ri-line bg-ri-surface hover:border-ri-primary/60 hover:bg-ri-raised text-ri-text text-sm font-bold transition-all duration-200 motion-safe:hover:-translate-y-0.5 ${focusRing}`}
                 >
                   Request Demo
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 motion-safe:group-hover:translate-x-1" />
                 </a>
-              </div>
-              <div className="flex flex-wrap gap-2 pt-2">
+              </HeroItem>
+              <HeroItem className="flex flex-wrap gap-2 pt-2">
                 <BasisTag basis="TRAINED AI" />
                 <BasisTag basis="RULE-BASED" />
                 <BasisTag basis="HUMAN REVIEW" />
-                <span className="text-xs text-[#64748B]">Every result is labelled with how it was produced.</span>
-              </div>
-            </div>
-            <PlatformPreview />
-          </div>
-        </section>
+                <span className="text-xs text-ri-faint">Every result is labelled with how it was produced.</span>
+              </HeroItem>
+            </HeroStagger>
+          }
+          visual={
+            <HeroVisual>
+              <PlatformPreview />
+            </HeroVisual>
+          }
+        />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-20 sm:space-y-24">
           {/* Platform overview */}
@@ -200,14 +213,14 @@ export default function HomePage() {
             title="One record from the roadside to the verified repair"
             lead="An Android field app, an AI worker and a web operations console share one set of roads, segments, inspections and damage records. Each step keeps the evidence and the decision that led to the next."
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div data-reveal="stagger" className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {OVERVIEW.map(({ icon: Icon, title, text }) => (
                 <div key={title} className={card}>
-                  <div className="inline-flex p-2.5 rounded-xl bg-[#0C1321] border border-[#26344F] text-[#06B6D4] mb-4">
+                  <div className="inline-flex p-2.5 rounded-xl bg-ri-bg border border-ri-line text-ri-primary mb-4">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-base font-bold text-[#F1F5F9]">{title}</h3>
-                  <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">{text}</p>
+                  <h3 className="text-base font-bold text-ri-text">{title}</h3>
+                  <p className="text-sm text-ri-muted mt-2 leading-relaxed">{text}</p>
                 </div>
               ))}
             </div>
@@ -220,15 +233,15 @@ export default function HomePage() {
             title="Eight steps, each with its source stated"
             lead="Steps that depend on a trained model, on fixed rules or on a person's decision are marked."
           >
-            <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <ol data-reveal="stagger" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {STEPS.map((s, i) => (
                 <li key={s.name} className={card}>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-code-md text-[#4CD7F6]">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="font-code-md text-ri-primary-bright">{String(i + 1).padStart(2, "0")}</span>
                     {s.basis && <BasisTag basis={s.basis} />}
                   </div>
-                  <h3 className="text-sm font-bold text-[#F1F5F9] mt-3">{s.name}</h3>
-                  <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">{s.text}</p>
+                  <h3 className="text-sm font-bold text-ri-text mt-3">{s.name}</h3>
+                  <p className="text-xs text-ri-muted mt-1.5 leading-relaxed">{s.text}</p>
                 </li>
               ))}
             </ol>
@@ -236,12 +249,12 @@ export default function HomePage() {
 
           {/* Core capabilities */}
           <Section id="capabilities" label="Core capabilities" title="What the platform does today">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div data-reveal="stagger" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {CAPABILITIES.map(({ icon: Icon, title, text }) => (
                 <div key={title} className={card}>
-                  <Icon className="h-5 w-5 text-[#06B6D4]" />
-                  <h3 className="text-sm font-bold text-[#F1F5F9] mt-3">{title}</h3>
-                  <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">{text}</p>
+                  <Icon className={`h-5 w-5 text-ri-primary ${cardIcon}`} />
+                  <h3 className="text-sm font-bold text-ri-text mt-3">{title}</h3>
+                  <p className="text-xs text-ri-muted mt-1.5 leading-relaxed">{text}</p>
                 </div>
               ))}
             </div>
@@ -254,40 +267,40 @@ export default function HomePage() {
             title="Clear about what is a model, what is a rule and what is a decision"
             lead="The console never presents a rule-based score as a model prediction, and never treats an unreviewed detection as confirmed damage."
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className={`${card} border-t-2 border-t-[#06B6D4]`}>
+            <div data-reveal="stagger" className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className={`${card} border-t-2 border-t-ri-primary`}>
                 <BasisTag basis="TRAINED AI" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Damage detection</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-ri-text mt-3">Damage detection</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   A YOLO11s model trained on the RDD2022 India road-damage dataset proposes crack and pothole
                   candidates with a model confidence. Candidates below the configured threshold are not reported.
                 </p>
               </div>
-              <div className={`${card} border-t-2 border-t-[#F59E0B]`}>
+              <div className={`${card} border-t-2 border-t-ri-warning`}>
                 <BasisTag basis="RULE-BASED" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Severity, health, priority, deterioration</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-ri-text mt-3">Severity, health, priority, deterioration</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   These are calculated from fixed, documented rules, not from a trained model. Where the
                   heuristic image fallback is configured, its results are labelled as heuristic scores, not
                   probabilities.
                 </p>
               </div>
-              <div className={`${card} border-t-2 border-t-[#A78BFA]`}>
+              <div className={`${card} border-t-2 border-t-ri-review`}>
                 <BasisTag basis="HUMAN REVIEW" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Confirmation and sign-off</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <h3 className="text-base font-bold text-ri-text mt-3">Confirmation and sign-off</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   A reviewer decides whether a detection becomes a damage record, and a person signs off each
                   repair verification. The original detection is kept alongside the decision.
                 </p>
               </div>
             </div>
             <div className={`${card} flex flex-col sm:flex-row gap-4 sm:items-center`}>
-              <div className="inline-flex p-3 rounded-xl bg-[#0C1321] border border-[#26344F] text-[#06B6D4] self-start">
+              <div className="inline-flex p-3 rounded-xl bg-ri-bg border border-ri-line text-ri-primary self-start">
                 <MapIcon className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#F1F5F9]">GIS on PostGIS</h3>
-                <p className="text-sm text-[#94A3B8] mt-1.5 leading-relaxed">
+                <h3 className="text-base font-bold text-ri-text">GIS on PostGIS</h3>
+                <p className="text-sm text-ri-muted mt-1.5 leading-relaxed">
                   Roads, segment geometry, inspections and damage are stored with coordinates and drawn on the
                   Spatial Map at exactly the stored position. Positions come from the phone&apos;s GPS, so their
                   accuracy is whatever the device reports.
@@ -303,12 +316,12 @@ export default function HomePage() {
             title="Built for inspectors on the road"
             lead="The Android field app keeps working without a connection and uploads when it can."
           >
-            <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <ol data-reveal="stagger" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {FIELD_FLOW.map(({ icon: Icon, title, text }) => (
                 <li key={title} className={card}>
-                  <Icon className="h-5 w-5 text-[#06B6D4]" />
-                  <h3 className="text-sm font-bold text-[#F1F5F9] mt-3">{title}</h3>
-                  <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">{text}</p>
+                  <Icon className={`h-5 w-5 text-ri-primary ${cardIcon}`} />
+                  <h3 className="text-sm font-bold text-ri-text mt-3">{title}</h3>
+                  <p className="text-xs text-ri-muted mt-1.5 leading-relaxed">{text}</p>
                 </li>
               ))}
             </ol>
@@ -320,11 +333,11 @@ export default function HomePage() {
             label="Road health and maintenance"
             title="From condition to a ranked work list"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div data-reveal="stagger" className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className={card}>
-                <Ruler className="h-5 w-5 text-[#06B6D4]" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Road health</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <Ruler className="h-5 w-5 text-ri-primary" />
+                <h3 className="text-base font-bold text-ri-text mt-3">Road health</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   Each segment gets a health score with the deductions that produced it, and a trend from
                   earlier snapshots.
                 </p>
@@ -333,9 +346,9 @@ export default function HomePage() {
                 </div>
               </div>
               <div className={card}>
-                <ListOrdered className="h-5 w-5 text-[#06B6D4]" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Prioritisation</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <ListOrdered className="h-5 w-5 text-ri-primary" />
+                <h3 className="text-base font-bold text-ri-text mt-3">Prioritisation</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   Damage is ranked for repair with the contributing factors listed. Traffic is used only where a
                   documented figure has been entered.
                 </p>
@@ -344,9 +357,9 @@ export default function HomePage() {
                 </div>
               </div>
               <div className={card}>
-                <Wrench className="h-5 w-5 text-[#06B6D4]" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Maintenance operations</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <Wrench className="h-5 w-5 text-ri-primary" />
+                <h3 className="text-base font-bold text-ri-text mt-3">Maintenance operations</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   Jobs follow a fixed set of states from creation to completion, with each change recorded in
                   the audit history.
                 </p>
@@ -360,11 +373,11 @@ export default function HomePage() {
             label="Repair verification and recurrence"
             title="A repair is closed with evidence, and watched afterwards"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div data-reveal="stagger" className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className={card}>
-                <ShieldCheck className="h-5 w-5 text-[#06B6D4]" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Repair verification</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <ShieldCheck className="h-5 w-5 text-ri-primary" />
+                <h3 className="text-base font-bold text-ri-text mt-3">Repair verification</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   After-repair photos and their location are checked against the original damage, then a person
                   approves or rejects the repair.
                 </p>
@@ -373,9 +386,9 @@ export default function HomePage() {
                 </div>
               </div>
               <div className={card}>
-                <RotateCcw className="h-5 w-5 text-[#06B6D4]" />
-                <h3 className="text-base font-bold text-[#F1F5F9] mt-3">Recurrence monitoring</h3>
-                <p className="text-sm text-[#94A3B8] mt-2 leading-relaxed">
+                <RotateCcw className="h-5 w-5 text-ri-primary" />
+                <h3 className="text-base font-bold text-ri-text mt-3">Recurrence monitoring</h3>
+                <p className="text-sm text-ri-muted mt-2 leading-relaxed">
                   New damage near a previously repaired location is matched to it, counted as a recurrence and
                   escalated when it keeps returning.
                 </p>
@@ -400,19 +413,19 @@ export default function HomePage() {
           <section
             id="request-demo"
             aria-labelledby="request-demo-title"
-            className="scroll-mt-20 rounded-3xl border border-[#26344F] bg-[#111A2E] p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-8 lg:gap-12"
+            className="scroll-mt-20 rounded-3xl border border-ri-line bg-ri-surface p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-8 lg:gap-12"
           >
             <div className="space-y-4">
               <p className={eyebrow}>Request demo</p>
               <h2 id="request-demo-title" className={sectionTitle}>
                 See it with your own roads
               </h2>
-              <p className="text-sm text-[#94A3B8] leading-relaxed">
+              <p className="text-sm text-ri-muted leading-relaxed">
                 Tell us about your road network and how you inspect it today. Already have an account?
               </p>
               <Link
                 href="/login"
-                className={`inline-flex items-center gap-2 text-sm font-bold text-[#4CD7F6] hover:text-white transition-colors rounded ${focusRing}`}
+                className={`inline-flex items-center gap-2 text-sm font-bold text-ri-primary-bright hover:text-white transition-colors rounded ${focusRing}`}
               >
                 Go to login <ArrowRight className="h-4 w-4" />
               </Link>
@@ -422,16 +435,16 @@ export default function HomePage() {
         </div>
       </main>
 
-      <footer className="border-t border-[#26344F] bg-[#070E1C]">
+      <footer className="border-t border-ri-line bg-ri-sunken">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <BrandLogo variant="horizontal" size="sm" />
-          <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[#94A3B8]">
-            <a href="#overview" className={`hover:text-[#F1F5F9] transition-colors rounded ${focusRing}`}>Platform</a>
-            <a href="#capabilities" className={`hover:text-[#F1F5F9] transition-colors rounded ${focusRing}`}>Capabilities</a>
-            <a href="#request-demo" className={`hover:text-[#F1F5F9] transition-colors rounded ${focusRing}`}>Request Demo</a>
-            <Link href="/login" className={`hover:text-[#F1F5F9] transition-colors rounded ${focusRing}`}>Login</Link>
+          <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-ri-muted">
+            <a href="#overview" className={`hover:text-ri-text transition-colors rounded ${focusRing}`}>Platform</a>
+            <a href="#capabilities" className={`hover:text-ri-text transition-colors rounded ${focusRing}`}>Capabilities</a>
+            <a href="#request-demo" className={`hover:text-ri-text transition-colors rounded ${focusRing}`}>Request Demo</a>
+            <Link href="/login" className={`hover:text-ri-text transition-colors rounded ${focusRing}`}>Login</Link>
           </nav>
-          <p className="text-xs text-[#64748B] max-w-sm">
+          <p className="text-xs text-ri-faint max-w-sm">
             AI detections are candidates until reviewed. Health, priority and deterioration figures are
             rule-based estimates.
           </p>

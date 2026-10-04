@@ -50,19 +50,19 @@ const EVENT_TYPES: TimelineEvent["type"][] = [
 ];
 
 const EVENT_COLOR: Record<string, string> = {
-  INSPECTION: "bg-[#06B6D4]",
-  DAMAGE: "bg-[#EF4444]",
-  DAMAGE_REVIEW: "bg-[#F59E0B]",
-  HEALTH: "bg-[#4CD7F6]",
-  PRIORITY: "bg-[#3B82F6]",
-  MAINTENANCE: "bg-[#ADC6FF]",
-  REPAIR_EVIDENCE: "bg-[#10B981]",
-  VERIFICATION: "bg-[#10B981]",
-  RECURRENCE: "bg-[#EF4444]",
+  INSPECTION: "bg-ri-primary",
+  DAMAGE: "bg-ri-danger",
+  DAMAGE_REVIEW: "bg-ri-warning",
+  HEALTH: "bg-ri-primary-bright",
+  PRIORITY: "bg-ri-info",
+  MAINTENANCE: "bg-ri-info-soft",
+  REPAIR_EVIDENCE: "bg-ri-success",
+  VERIFICATION: "bg-ri-success",
+  RECURRENCE: "bg-ri-danger",
 };
 
 const LINE_COLORS = ["#06B6D4", "#4CD7F6", "#10B981", "#F59E0B", "#ADC6FF", "#3B82F6"];
-const cardClass = "rounded-2xl border border-[#26344F] bg-[#111A2E] p-5 shadow-sm";
+const cardClass = "rounded-2xl border border-ri-line bg-ri-surface p-5 shadow-sm";
 
 const eventLink = (e: TimelineEvent): string | null => {
   if (e.type === "INSPECTION") return `/inspections/${e.entity_id}`;
@@ -105,32 +105,32 @@ function EstimatePanel({
   const f = est?.features || {};
 
   return (
-    <div className="rounded-xl border border-[#26344F] bg-[#151B2A] p-4 text-xs">
+    <div className="rounded-xl border border-ri-line bg-ri-input p-4 text-xs">
       <div className="flex items-center justify-between">
-        <span className="font-headline-sm text-xs font-bold text-[#F1F5F9]">
+        <span className="font-headline-sm text-xs font-bold text-ri-text">
           Segment {segmentNumber}: deterioration estimate
         </span>
         <button
           onClick={generate}
           disabled={busy}
-          className="h-8 px-3 rounded-lg bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold transition-all disabled:opacity-50"
+          className="h-8 px-3 rounded-lg bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold transition-all disabled:opacity-50"
         >
           {busy ? "Calculating…" : "Recalculate (90 days)"}
         </button>
       </div>
 
-      {error && <p className="text-[#EF4444] mt-2 font-body-sm">{error}</p>}
+      {error && <p className="text-ri-danger mt-2 font-body-sm">{error}</p>}
 
       {!est ? (
-        <p className="text-[#94A3B8] mt-2">No estimate generated yet.</p>
+        <p className="text-ri-muted mt-2">No estimate generated yet.</p>
       ) : est.status !== "GENERATED" ? (
-        <p className="text-[#94A3B8] mt-2 font-body-sm">
+        <p className="text-ri-muted mt-2 font-body-sm">
           {est.status}: {f.reason ?? "insufficient inspection/health history"}.
         </p>
       ) : (
-        <div className="mt-3 space-y-2 text-[#DCE2F6]">
+        <div className="mt-3 space-y-2 text-ri-text-soft">
           <p>
-            Risk <b className="font-code-sm text-[#F59E0B]">{est.predicted_risk}</b> ({f.risk_band}) over{" "}
+            Risk <b className="font-code-sm text-ri-warning">{est.predicted_risk}</b> ({f.risk_band}) over{" "}
             {est.prediction_horizon_days} days ·{" "}
             {est.predicted_value != null
               ? `health ${est.predicted_value} by linear extrapolation of the observed trend (${f.health_trend_points_per_day}/day)`
@@ -141,7 +141,7 @@ function EstimatePanel({
             {Object.entries(f.contributions || {}).map(([k, v]) => (
               <span
                 key={k}
-                className="px-2 py-0.5 rounded-lg bg-[#19202E] border border-[#26344F] font-code-sm text-[10px] text-[#4CD7F6]"
+                className="px-2 py-0.5 rounded-lg bg-ri-surface border border-ri-line font-code-sm text-[10px] text-ri-primary-bright"
               >
                 {k.replace(/_/g, " ")}: {String(v)}
               </span>
@@ -150,11 +150,11 @@ function EstimatePanel({
 
           {Array.isArray(f.notes) &&
             f.notes.map((n: string, i: number) => (
-              <p key={i} className="text-[10px] text-[#64748B]">
+              <p key={i} className="text-[10px] text-ri-faint">
                 {n}
               </p>
             ))}
-          <p className="font-code-sm text-[10px] text-[#64748B] pt-1">
+          <p className="font-code-sm text-[10px] text-ri-faint pt-1">
             {est.model_name} {est.model_version} · {est.estimation_method} · no confidence value (none is statistically
             justified) · training data: {f.ml_training_readiness?.segments_with_outcome_history ?? 0}/
             {f.ml_training_readiness?.required_segments ?? "—"} segments with outcome history (
@@ -216,7 +216,7 @@ export default function RoadDetailPage() {
   if (error) {
     return (
       <AppShell>
-        <p className="text-sm text-[#EF4444]">{error}</p>
+        <p className="text-sm text-ri-danger">{error}</p>
       </AppShell>
     );
   }
@@ -224,7 +224,7 @@ export default function RoadDetailPage() {
   if (!data) {
     return (
       <AppShell>
-        <div className="flex items-center justify-center py-20 text-xs text-[#94A3B8]">
+        <div className="flex items-center justify-center py-20 text-xs text-ri-muted">
           Loading road intelligence…
         </div>
       </AppShell>
@@ -254,12 +254,12 @@ export default function RoadDetailPage() {
         <div>
           <Link
             href="/roads"
-            className="inline-flex items-center gap-1.5 font-code-sm text-xs text-[#06B6D4] hover:underline mb-1"
+            className="inline-flex items-center gap-1.5 font-code-sm text-xs text-ri-primary hover:underline mb-1"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Roads
           </Link>
-          <h1 className="font-headline-sm text-2xl font-bold text-[#F1F5F9]">{data.road.name}</h1>
-          <p className="font-code-sm text-xs text-[#94A3B8] mt-0.5">
+          <h1 className="font-headline-sm text-2xl font-bold text-ri-text">{data.road.name}</h1>
+          <p className="font-code-sm text-xs text-ri-muted mt-0.5">
             {data.road.road_code ?? "No code"} · {data.road.road_type ?? "type not set"} · traffic{" "}
             {data.road.traffic_volume_class
               ? `${data.road.traffic_volume_class}${
@@ -272,10 +272,10 @@ export default function RoadDetailPage() {
         {/* 5-Column Bento Overview Strip */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className={cardClass}>
-            <span className="font-label-sm text-[11px] text-[#94A3B8] uppercase tracking-wider">
+            <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider">
               Current health
             </span>
-            <div className={`font-code-lg text-2xl font-bold mt-2 ${latestRoad?.health_status ? healthClass(latestRoad.health_status) : "text-[#F1F5F9]"}`}>
+            <div className={`font-code-lg text-2xl font-bold mt-2 ${latestRoad?.health_status ? healthClass(latestRoad.health_status) : "text-ri-text"}`}>
               {latestRoad ? (latestRoad.health_score ?? "—") : "No data"}
             </div>
             {latestRoad?.health_status && (
@@ -286,37 +286,37 @@ export default function RoadDetailPage() {
           </div>
 
           <div className={cardClass}>
-            <span className="font-label-sm text-[11px] text-[#EF4444] uppercase tracking-wider">
+            <span className="font-label-sm text-[11px] text-ri-danger uppercase tracking-wider">
               Active Damage
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#EF4444] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-danger mt-2">
               {data.summary.active_damages}
             </div>
           </div>
 
           <div className={cardClass}>
-            <span className="font-label-sm text-[11px] text-[#F59E0B] uppercase tracking-wider">
+            <span className="font-label-sm text-[11px] text-ri-warning uppercase tracking-wider">
               Awaiting Review
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#F59E0B] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-warning mt-2">
               {data.summary.pending_review_damages}
             </div>
           </div>
 
           <div className={cardClass}>
-            <span className="font-label-sm text-[11px] text-[#10B981] uppercase tracking-wider">
+            <span className="font-label-sm text-[11px] text-ri-success uppercase tracking-wider">
               Repaired
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#10B981] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-success mt-2">
               {data.summary.repaired_damages}
             </div>
           </div>
 
           <div className={cardClass}>
-            <span className="font-label-sm text-[11px] text-[#3B82F6] uppercase tracking-wider">
+            <span className="font-label-sm text-[11px] text-ri-info uppercase tracking-wider">
               Active Recurrences
             </span>
-            <div className="font-code-lg text-2xl font-bold text-[#ADC6FF] mt-2">
+            <div className="font-code-lg text-2xl font-bold text-ri-info-soft mt-2">
               {data.summary.active_recurrences}
             </div>
           </div>
@@ -324,16 +324,16 @@ export default function RoadDetailPage() {
 
         {/* Road-level activity recorded so far */}
         <div className={`${cardClass} flex flex-wrap items-center gap-x-6 gap-y-2 text-xs`}>
-          <span className="text-[#94A3B8]">
-            Segments: <span className="font-code-sm text-[#F1F5F9]">{data.segments.length}</span>
+          <span className="text-ri-muted">
+            Segments: <span className="font-code-sm text-ri-text">{data.segments.length}</span>
           </span>
-          <span className="text-[#94A3B8]">
-            Inspections: <span className="font-code-sm text-[#F1F5F9]">{data.summary.inspections}</span>
+          <span className="text-ri-muted">
+            Inspections: <span className="font-code-sm text-ri-text">{data.summary.inspections}</span>
           </span>
-          <span className="text-[#94A3B8] flex flex-wrap items-center gap-1.5">
+          <span className="text-ri-muted flex flex-wrap items-center gap-1.5">
             Maintenance:
             {Object.keys(data.summary.maintenance_by_status).length === 0 ? (
-              <span className="text-[#64748B]">no jobs</span>
+              <span className="text-ri-faint">no jobs</span>
             ) : (
               Object.entries(data.summary.maintenance_by_status).map(([status, count]) => (
                 <StatusBadge key={status} status={status} label={`${status.replace(/_/g, " ")} ${count}`} size="sm" showDot={false} />
@@ -343,20 +343,20 @@ export default function RoadDetailPage() {
         </div>
 
         {notice && (
-          <p className="text-xs px-3 py-2 rounded-xl border border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981]">{notice}</p>
+          <p className="text-xs px-3 py-2 rounded-xl border border-ri-success/30 bg-ri-success/10 text-ri-success">{notice}</p>
         )}
 
         {/* Charts Grid */}
         <div className="grid lg:grid-cols-3 gap-4">
           <div className={`${cardClass} lg:col-span-2`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-headline-sm text-sm font-semibold text-[#F1F5F9]">
+              <h3 className="font-headline-sm text-sm font-semibold text-ri-text">
                 Health trend (snapshots)
               </h3>
-              <span className="font-code-sm text-[10px] text-[#64748B]">rule-based score</span>
+              <span className="font-code-sm text-[10px] text-ri-faint">rule-based score</span>
             </div>
             {trend.rows.length === 0 ? (
-              <p className="text-xs text-[#94A3B8] py-16 text-center">
+              <p className="text-xs text-ri-muted py-16 text-center">
                 No scored health snapshots for this road yet.
               </p>
             ) : (
@@ -394,10 +394,10 @@ export default function RoadDetailPage() {
           </div>
 
           <div className={cardClass}>
-            <h3 className="font-headline-sm text-sm font-semibold text-[#F1F5F9] mb-1">
+            <h3 className="font-headline-sm text-sm font-semibold text-ri-text mb-1">
               What lowers the score now
             </h3>
-            <p className="font-body-sm text-[11px] text-[#94A3B8] mb-3">
+            <p className="font-body-sm text-[11px] text-ri-muted mb-3">
               {worstSegment
                 ? "Deductions in the latest snapshot of the lowest-scoring segment (the road score is the length-weighted average of its segments)"
                 : "Deductions in the latest road snapshot"}
@@ -407,7 +407,7 @@ export default function RoadDetailPage() {
               .
             </p>
             {contribution.length === 0 ? (
-              <p className="text-xs text-[#94A3B8] py-16 text-center">
+              <p className="text-xs text-ri-muted py-16 text-center">
                 {latestRoad ? "No deductions: no active damage or recurrence." : "No snapshot yet."}
               </p>
             ) : (
@@ -440,21 +440,21 @@ export default function RoadDetailPage() {
 
         {/* Segments Table & Predictions */}
         <div className="space-y-4">
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-[#26344F] flex items-center justify-between">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-ri-line flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-[#06B6D4]" />
-                <h3 className="font-headline-sm text-sm font-bold text-[#F1F5F9]">
+                <Layers className="h-4 w-4 text-ri-primary" />
+                <h3 className="font-headline-sm text-sm font-bold text-ri-text">
                   Segments
                 </h3>
-                <span className="font-code-sm text-xs text-[#94A3B8]">
+                <span className="font-code-sm text-xs text-ri-muted">
                   ({data.segments.length})
                 </span>
               </div>
               {canAddSegment && (
                 <button
                   onClick={() => setShowAddSegment(true)}
-                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold"
+                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold"
                 >
                   <Plus className="h-3.5 w-3.5" /> Add Segment
                 </button>
@@ -462,11 +462,11 @@ export default function RoadDetailPage() {
             </div>
 
             {data.segments.length === 0 ? (
-              <p className="py-8 text-center text-xs text-[#94A3B8]">This road has no segments.</p>
+              <p className="py-8 text-center text-xs text-ri-muted">This road has no segments.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+                  <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
                     <tr>
                       <th className="py-3 px-4 font-semibold">#</th>
                       <th className="py-3 px-4 font-semibold">Name</th>
@@ -477,14 +477,14 @@ export default function RoadDetailPage() {
                       <th className="py-3 px-4 text-right font-semibold">Snapshot</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+                  <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
                     {data.segments.map((s) => (
-                      <tr key={s.id} className="hover:bg-[#17223A]/50 transition-colors">
+                      <tr key={s.id} className="hover:bg-ri-raised/50 transition-colors">
                         <td className="py-3 px-4 font-bold text-white font-code-sm">
                           Seg #{s.segment_number}
                         </td>
-                        <td className="py-3 px-4 text-[#F1F5F9]">{s.name ?? "—"}</td>
-                        <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                        <td className="py-3 px-4 text-ri-text">{s.name ?? "—"}</td>
+                        <td className="py-3 px-4 font-code-sm text-ri-muted">
                           {s.length_meters != null ? `${s.length_meters} m` : "—"}
                         </td>
                         <td className="py-3 px-4">
@@ -495,19 +495,19 @@ export default function RoadDetailPage() {
                               size="sm"
                             />
                           ) : (
-                            <span className="text-[#64748B]">No data</span>
+                            <span className="text-ri-faint">No data</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                        <td className="py-3 px-4 font-code-sm text-ri-muted">
                           {(() => {
                             const m = mapSegments.find((x) => x.id === s.id);
                             return m ? `${m.damage_count}${m.critical_damage_count ? ` (${m.critical_damage_count} critical)` : ""}` : "—";
                           })()}
                         </td>
-                        <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                        <td className="py-3 px-4 font-code-sm text-ri-muted">
                           {s.latest_health?.recurrence_count ?? "—"}
                         </td>
-                        <td className="py-3 px-4 font-code-sm text-right text-[#94A3B8]">
+                        <td className="py-3 px-4 font-code-sm text-right text-ri-muted">
                           {s.latest_health ? new Date(s.latest_health.calculated_at).toLocaleString() : "—"}
                         </td>
                       </tr>
@@ -521,10 +521,10 @@ export default function RoadDetailPage() {
           {/* Deterioration estimates: every segment */}
           {data.segments.length > 0 && (
             <div className={cardClass}>
-              <h3 className="font-headline-sm text-sm font-semibold text-[#F1F5F9] mb-1">
+              <h3 className="font-headline-sm text-sm font-semibold text-ri-text mb-1">
                 Deterioration risk (rule-based estimate)
               </h3>
-              <p className="text-[11px] text-[#94A3B8] mb-3">
+              <p className="text-[11px] text-ri-muted mb-3">
                 Hand-weighted rules over current damage, health and its observed trend, recurrence, previous repair
                 verification, inspection age and documented traffic. Not a trained or validated model; not a guaranteed
                 outcome.
@@ -539,14 +539,14 @@ export default function RoadDetailPage() {
         </div>
 
         {/* Lifecycle Timeline */}
-        <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-[#06B6D4]" />
-              <h3 className="font-headline-sm text-sm font-bold text-[#F1F5F9]">
+              <History className="h-4 w-4 text-ri-primary" />
+              <h3 className="font-headline-sm text-sm font-bold text-ri-text">
                 Historical timeline
               </h3>
-              <span className="font-code-sm text-xs text-[#94A3B8]">({events.length})</span>
+              <span className="font-code-sm text-xs text-ri-muted">({events.length})</span>
             </div>
 
             {/* Filter Chips */}
@@ -557,8 +557,8 @@ export default function RoadDetailPage() {
                   onClick={() => toggle(t)}
                   className={`px-2.5 py-1 rounded-full font-code-sm text-[10px] font-semibold transition-all ${
                     types.has(t)
-                      ? "bg-[#06B6D4] text-[#003640]"
-                      : "bg-[#17223A] text-[#94A3B8] border border-[#26344F] hover:text-[#F1F5F9]"
+                      ? "bg-ri-primary text-ri-on-primary"
+                      : "bg-ri-raised text-ri-muted border border-ri-line hover:text-ri-text"
                   }`}
                 >
                   {t.replace(/_/g, " ")} ({data.timeline.filter((e) => e.type === t).length})
@@ -568,25 +568,25 @@ export default function RoadDetailPage() {
           </div>
 
           {events.length === 0 ? (
-            <p className="py-8 text-center text-xs text-[#94A3B8]">
+            <p className="py-8 text-center text-xs text-ri-muted">
               No recorded events for this road yet.
             </p>
           ) : (
-            <div className="relative pl-6 border-l-2 border-[#26344F] space-y-3.5 my-2 max-h-[32rem] overflow-y-auto">
+            <div className="relative pl-6 border-l-2 border-ri-line space-y-3.5 my-2 max-h-[32rem] overflow-y-auto">
               {events.map((e, idx) => (
                 <div key={idx} className="relative">
                   <div
-                    className={`absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-[#111A2E] ${
-                      EVENT_COLOR[e.type] || "bg-[#869397]"
+                    className={`absolute -left-[31px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-ri-surface ${
+                      EVENT_COLOR[e.type] || "bg-ri-muted"
                     }`}
                   />
-                  <div className="bg-[#151B2A] border border-[#26344F] p-3 rounded-xl flex items-center justify-between">
+                  <div className="bg-ri-input border border-ri-line p-3 rounded-xl flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-code-sm text-[11px] font-bold text-[#4CD7F6]">
+                        <span className="font-code-sm text-[11px] font-bold text-ri-primary-bright">
                           {e.type.replace(/_/g, " ")}
                         </span>
-                        <span className="font-code-sm text-[10px] text-[#64748B]">
+                        <span className="font-code-sm text-[10px] text-ri-faint">
                           {new Date(e.at).toLocaleString()}
                           {e.type === "PRIORITY" && e.data.mode ? ` · ${e.data.mode} ${e.data.priority_score ?? ""}` : ""}
                           {e.type === "RECURRENCE" && e.data.distance_meters != null
@@ -595,14 +595,14 @@ export default function RoadDetailPage() {
                           {e.type === "VERIFICATION" && e.data.model ? ` · ${e.data.model}` : ""}
                         </span>
                       </div>
-                      <p className="font-body-sm text-xs text-[#DCE2F6] mt-0.5">
+                      <p className="font-body-sm text-xs text-ri-text-soft mt-0.5">
                         {e.title}
                       </p>
                     </div>
                     {eventLink(e) && (
                       <Link
                         href={eventLink(e)!}
-                        className="text-xs font-bold text-[#06B6D4] hover:underline shrink-0"
+                        className="text-xs font-bold text-ri-primary hover:underline shrink-0"
                       >
                         Open
                       </Link>

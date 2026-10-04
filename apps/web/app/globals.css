@@ -2,9 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------------------------------
+   Road Intelligence glass design tokens. Every colour used by the app comes from here
+   (Tailwind `ri-*` utilities, see tailwind.config.ts). RGB triplets so opacity can be applied.
+   ------------------------------------------------------------------------------------------ */
 @layer base {
   :root {
-    --background: 221 47% 9%; /* #0c1321 */
+    /* Backgrounds */
+    --ri-solid: 5 9 20; /* #050914 page background */
+    --ri-bg: 4 8 18; /* recessed wells inside glass */
+    --ri-bg-a: 0.55;
+    --ri-sunken: 2 4 10;
+    --ri-sunken-a: 0.6;
+    --ri-input: 3 6 16;
+    --ri-input-a: 0.6;
+    /* Glass: one cool-white tint at different strengths */
+    --ri-glass: 186 212 255;
+    --ri-surface-a: 0.065;
+    --ri-raised-a: 0.115;
+    --ri-line-a: 0.14;
+    --ri-line-strong-a: 0.26;
+    --ri-blur: 18px;
+    /* Text */
+    --ri-text: 244 247 252;
+    --ri-text-soft: 216 224 240;
+    --ri-muted: 150 164 188;
+    --ri-faint: 108 122 148;
+    /* Accents and status */
+    --ri-primary: 6 182 212;
+    --ri-primary-bright: 86 216 248;
+    --ri-on-primary: 0 38 46;
+    --ri-success: 16 185 129;
+    --ri-warning: 245 158 11;
+    --ri-orange: 251 146 60;
+    --ri-danger: 239 68 68;
+    --ri-danger-soft: 255 190 182;
+    --ri-danger-deep: 147 0 10;
+    --ri-review: 167 139 250;
+    --ri-review-soft: 196 181 253;
+    --ri-info: 59 130 246;
+    --ri-info-soft: 173 198 255;
+    /* Shape and motion */
+    --ri-radius: 16px;
+    --ri-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}
+
+@layer base {
+  :root {
+    --background: 224 60% 5%; /* #050914 */
     --foreground: 220 54% 91%; /* #dce2f6 */
     --card: 221 43% 16%; /* #17223a */
     --card-foreground: 220 54% 91%;
@@ -34,8 +80,8 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
-    background-color: #0c1321;
-    color: #dce2f6;
+    background-color: rgb(var(--ri-solid));
+    color: rgb(var(--ri-text-soft));
   }
 
   /* Custom scrollbar for operations tables and sidebars */
@@ -44,15 +90,160 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0c1321;
+    background: rgb(var(--ri-solid));
   }
   ::-webkit-scrollbar-thumb {
-    background: #232a39;
+    background: rgb(var(--ri-glass) / 0.18);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #323949;
+    background: rgb(var(--ri-glass) / 0.3);
   }
+}
+
+/* Glass surfaces. Utilities on the same element still win (component layer). */
+@layer components {
+  /* Ambient backdrop for full pages: fixed, static gradients (nothing animates). */
+  .ri-ambient {
+    position: relative;
+    isolation: isolate;
+  }
+  .ri-ambient::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(900px 520px at 12% -8%, rgb(var(--ri-primary) / 0.16), transparent 62%),
+      radial-gradient(760px 520px at 96% 4%, rgb(var(--ri-info) / 0.14), transparent 60%),
+      radial-gradient(900px 620px at 70% 108%, rgb(var(--ri-success) / 0.07), transparent 62%),
+      rgb(var(--ri-solid));
+  }
+
+  /* Every translucent card gets the glass edge: a top highlight and soft depth. */
+  [class~="bg-ri-surface"] {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 10px 30px -18px rgb(0 0 0 / 0.7);
+  }
+
+  /* Blurred glass, for the surfaces that float over other content. */
+  .glass {
+    background-color: rgb(var(--ri-glass) / var(--ri-surface-a));
+    border: 1px solid rgb(var(--ri-glass) / var(--ri-line-a));
+    border-radius: var(--ri-radius);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 18px 40px -22px rgb(0 0 0 / 0.75);
+    -webkit-backdrop-filter: blur(var(--ri-blur)) saturate(140%);
+    backdrop-filter: blur(var(--ri-blur)) saturate(140%);
+  }
+  .glass-strong {
+    background-color: rgb(var(--ri-glass) / var(--ri-raised-a));
+    border-color: rgb(var(--ri-glass) / var(--ri-line-strong-a));
+  }
+  /* Opaque-enough glass for overlays that sit on busy content (map, photos, modals). */
+  .glass-solid {
+    background-color: rgb(9 15 30 / 0.86);
+    border: 1px solid rgb(var(--ri-glass) / var(--ri-line-a));
+    border-radius: var(--ri-radius);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 24px 60px -24px rgb(0 0 0 / 0.85);
+    -webkit-backdrop-filter: blur(var(--ri-blur)) saturate(140%);
+    backdrop-filter: blur(var(--ri-blur)) saturate(140%);
+  }
+  .glass-hover {
+    transition: border-color 200ms var(--ri-ease), background-color 200ms var(--ri-ease), transform 200ms var(--ri-ease);
+  }
+  .glass-hover:hover {
+    border-color: rgb(var(--ri-primary) / 0.45);
+    background-color: rgb(var(--ri-glass) / var(--ri-raised-a));
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .glass-lift:hover {
+      transform: translateY(-2px);
+    }
+  }
+  /* Thin accent line along the top edge of important cards. */
+  .glass-accent {
+    position: relative;
+    overflow: hidden;
+  }
+  .glass-accent::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(var(--ri-accent, var(--ri-primary)) / 0.75), transparent);
+    pointer-events: none;
+  }
+  .ri-label {
+    font-family: var(--font-mono), monospace;
+    font-size: 10.5px;
+    line-height: 14px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgb(var(--ri-muted));
+  }
+  .ri-skeleton {
+    border-radius: 10px;
+    background: linear-gradient(90deg, rgb(var(--ri-glass) / 0.06), rgb(var(--ri-glass) / 0.14), rgb(var(--ri-glass) / 0.06));
+    background-size: 200% 100%;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ri-skeleton {
+      animation: ri-shimmer 1.4s linear infinite;
+    }
+  }
+}
+
+@keyframes ri-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Leaflet on dark glass: tiles are darkened in place, popups and controls use the glass tokens. */
+.leaflet-container {
+  background: rgb(var(--ri-solid));
+  font-family: inherit;
+}
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(195deg) brightness(0.92) contrast(0.92) saturate(0.55);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgb(9 15 30 / 0.94);
+  color: rgb(var(--ri-text-soft));
+  border: 1px solid rgb(var(--ri-glass) / var(--ri-line-a));
+  box-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.9);
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(var(--ri-blur));
+  backdrop-filter: blur(var(--ri-blur));
+}
+.leaflet-popup-content a {
+  color: rgb(var(--ri-primary-bright));
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: rgb(var(--ri-muted));
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: rgb(9 15 30 / 0.9);
+  color: rgb(var(--ri-text));
+  border-bottom-color: rgb(var(--ri-glass) / var(--ri-line-a));
+}
+.leaflet-bar {
+  border: 1px solid rgb(var(--ri-glass) / var(--ri-line-a)) !important;
+}
+.leaflet-control-attribution {
+  background: rgb(9 15 30 / 0.75) !important;
+  color: rgb(var(--ri-faint)) !important;
+}
+.leaflet-control-attribution a {
+  color: rgb(var(--ri-muted)) !important;
 }
 
 /* Component layer: an explicit Tailwind text-* / font-* utility on the same element wins. */
@@ -130,4 +321,36 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Landing page scroll reveals (armed by components/landing/motion.tsx after hydration). */
+@media (prefers-reduced-motion: no-preference) {
+  .ri-reveal:not(.is-done),
+  .ri-stagger:not(.is-done) > * {
+    transition: opacity 520ms var(--ri-ease), transform 520ms var(--ri-ease);
+  }
+  .ri-reveal:not(.is-visible),
+  .ri-stagger:not(.is-visible) > * {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  .ri-stagger:not(.is-done) > *:nth-child(2) { transition-delay: 60ms; }
+  .ri-stagger:not(.is-done) > *:nth-child(3) { transition-delay: 120ms; }
+  .ri-stagger:not(.is-done) > *:nth-child(4) { transition-delay: 180ms; }
+  .ri-stagger:not(.is-done) > *:nth-child(5) { transition-delay: 240ms; }
+  .ri-stagger:not(.is-done) > *:nth-child(6) { transition-delay: 300ms; }
+  .ri-stagger:not(.is-done) > *:nth-child(7) { transition-delay: 360ms; }
+  .ri-stagger:not(.is-done) > *:nth-child(n + 8) { transition-delay: 420ms; }
+
+  /* One marker in the illustrative map preview pulses gently. */
+  .ri-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: ri-pulse 2.6s ease-out infinite;
+  }
+}
+@keyframes ri-pulse {
+  0% { transform: scale(1); opacity: 0.55; }
+  70% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
 }

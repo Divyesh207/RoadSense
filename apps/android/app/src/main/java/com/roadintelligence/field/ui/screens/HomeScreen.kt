@@ -77,7 +77,7 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .glassBackground()
     ) {
         CommonTopBar(
             title = "Home",
@@ -111,7 +111,26 @@ fun HomeScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Who is signed in, and the state of the things a field inspection depends on
+            // Greeting from the device clock, then who is signed in and what an inspection depends on
+            item {
+                val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+                Column(modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)) {
+                    Text(
+                        text = when (hour) {
+                            in 5..11 -> "Good morning"
+                            in 12..16 -> "Good afternoon"
+                            else -> "Good evening"
+                        },
+                        color = TextSecondary,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = "Field Operations",
+                        color = TextPrimary,
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
+            }
             item {
                 FieldCard(contentPadding = PaddingValues(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -171,7 +190,7 @@ fun HomeScreen(
 
             item {
                 PrimaryButton(
-                    text = "Start New Inspection",
+                    text = "New Inspection",
                     icon = Icons.Default.AddCircleOutline,
                     onClick = onNavigateToNewInspection,
                     height = 60.dp,
@@ -414,7 +433,7 @@ fun InspectionCard(
             // AI status and detection count come from the server; shown only once it has the inspection.
             if (serverId != null) {
                 Spacer(modifier = Modifier.height(10.dp))
-                HorizontalDivider(color = BorderDark.copy(alpha = 0.6f))
+                HorizontalDivider(color = BorderDark)
                 Spacer(modifier = Modifier.height(8.dp))
                 val ai = aiStatusInfo(serverState?.status)
                 Row(verticalAlignment = Alignment.CenterVertically) {

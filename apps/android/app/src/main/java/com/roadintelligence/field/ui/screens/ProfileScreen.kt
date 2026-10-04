@@ -48,7 +48,7 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .glassBackground()
     ) {
         CommonTopBar(title = "Profile", overline = "Road Intelligence")
 

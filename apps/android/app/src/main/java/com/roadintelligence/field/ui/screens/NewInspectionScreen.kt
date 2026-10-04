@@ -198,7 +198,7 @@ fun NewInspectionScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .glassBackground()
     ) {
         CommonTopBar(
             title = "New Inspection",
@@ -210,7 +210,7 @@ fun NewInspectionScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(SurfaceDark)
+                .background(GlassBar)
                 .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -371,7 +371,7 @@ fun NewInspectionScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(SurfaceLowest, RoundedCornerShape(12.dp))
-                        .border(1.dp, BorderDark.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                        .border(1.dp, BorderDark, RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -558,7 +558,7 @@ fun NewInspectionScreen(
         }
 
         // Sticky actions
-        Column(modifier = Modifier.background(SurfaceDark)) {
+        Column(modifier = Modifier.background(GlassBar)) {
             HorizontalDivider(color = BorderDark)
             Row(
                 modifier = Modifier

@@ -44,15 +44,15 @@ export const HEALTH_ORDER = ["GOOD", "FAIR", "POOR", "CRITICAL", "INSUFFICIENT_D
 
 export const escalationClass = (level?: string | null): string =>
   level === "CRITICAL"
-    ? "bg-red-950 text-red-400 border border-red-800/50"
+    ? "bg-ri-danger/15 text-ri-danger border border-ri-danger/50"
     : level === "ELEVATED"
-      ? "bg-amber-950 text-amber-400 border border-amber-800/50"
-      : "bg-slate-800 text-slate-400 border border-slate-700";
+      ? "bg-ri-warning/15 text-ri-warning border border-ri-warning/50"
+      : "bg-ri-line-strong text-ri-muted border border-ri-line-strong";
 
 export const healthClass = (status?: string | null): string =>
   ({
-    GOOD: "text-emerald-400",
-    FAIR: "text-amber-400",
-    POOR: "text-orange-400",
-    CRITICAL: "text-red-400",
-  })[status || ""] || "text-slate-400";
+    GOOD: "text-ri-success",
+    FAIR: "text-ri-warning",
+    POOR: "text-ri-orange",
+    CRITICAL: "text-ri-danger",
+  })[status || ""] || "text-ri-muted";

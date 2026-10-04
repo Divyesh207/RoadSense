@@ -11,8 +11,8 @@ import {
 } from "@/lib/demo-request";
 
 const inputClass =
-  "w-full bg-[#151B2A] border border-[#26344F] rounded-xl px-3.5 text-sm text-[#F1F5F9] placeholder:text-[#64748B] transition-colors hover:border-[#3D4F73] focus:outline-none focus:ring-2 focus:ring-[#06B6D4]/40 focus:border-[#06B6D4] aria-[invalid=true]:border-[#EF4444]";
-const labelClass = "block font-code-sm text-[11px] text-[#94A3B8] uppercase tracking-wider";
+  "w-full bg-ri-input border border-ri-line rounded-xl px-3.5 text-sm text-ri-text placeholder:text-ri-faint transition-colors hover:border-ri-line-strong focus:outline-none focus:ring-2 focus:ring-ri-primary/40 focus:border-ri-primary aria-[invalid=true]:border-ri-danger";
+const labelClass = "block font-code-sm text-[11px] text-ri-muted uppercase tracking-wider";
 
 function Field({
   id,
@@ -32,7 +32,7 @@ function Field({
       </label>
       {children}
       {error && (
-        <p id={`${id}-error`} className="text-xs text-[#FFB4AB]">
+        <p id={`${id}-error`} className="text-xs text-ri-danger-soft">
           {error}
         </p>
       )}
@@ -82,24 +82,24 @@ export function RequestDemoForm() {
   if (prepared) {
     return (
       <div role="status" className="space-y-4">
-        <div className="flex items-start gap-3 rounded-xl border border-[#10B981]/30 bg-[#10B981]/10 p-4">
-          <CheckCircle2 className="h-5 w-5 text-[#10B981] shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-xl border border-ri-success/30 bg-ri-success/10 p-4">
+          <CheckCircle2 className="h-5 w-5 text-ri-success shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-semibold text-[#F1F5F9]">Your request is ready.</p>
-            <p className="text-[#94A3B8] mt-1 text-xs leading-relaxed">
+            <p className="font-semibold text-ri-text">Your request is ready.</p>
+            <p className="text-ri-muted mt-1 text-xs leading-relaxed">
               This form is not connected to an email or CRM system, so nothing has been sent. Copy the summary
               below and share it with your Road Intelligence contact.
             </p>
           </div>
         </div>
-        <pre className="whitespace-pre-wrap break-words rounded-xl border border-[#26344F] bg-[#070E1C] p-4 text-xs text-[#DCE2F6] font-mono">
+        <pre className="whitespace-pre-wrap break-words rounded-xl border border-ri-line bg-ri-sunken p-4 text-xs text-ri-text-soft font-mono">
           {prepared}
         </pre>
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={copy}
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4CD7F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111A2E]"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-sm font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright focus-visible:ring-offset-2 focus-visible:ring-offset-ri-surface"
           >
             <ClipboardCopy className="h-4 w-4" />
             {copyState === "copied" ? "Copied" : "Copy summary"}
@@ -107,12 +107,12 @@ export function RequestDemoForm() {
           <button
             type="button"
             onClick={() => setPrepared(null)}
-            className="h-11 px-4 rounded-xl border border-[#26344F] bg-[#17223A] text-sm font-semibold text-[#DCE2F6] hover:border-[#06B6D4]/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4CD7F6]"
+            className="h-11 px-4 rounded-xl border border-ri-line bg-ri-raised text-sm font-semibold text-ri-text-soft hover:border-ri-primary/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright"
           >
             Edit request
           </button>
           {copyState === "failed" && (
-            <span className="text-xs text-[#F59E0B]">Copy was blocked by the browser. Select the text above instead.</span>
+            <span className="text-xs text-ri-warning">Copy was blocked by the browser. Select the text above instead.</span>
           )}
         </div>
       </div>
@@ -182,15 +182,15 @@ export function RequestDemoForm() {
         />
       </Field>
 
-      <p className="flex items-start gap-2 text-xs text-[#94A3B8] leading-relaxed">
-        <Info className="h-4 w-4 text-[#4CD7F6] shrink-0 mt-0.5" />
+      <p className="flex items-start gap-2 text-xs text-ri-muted leading-relaxed">
+        <Info className="h-4 w-4 text-ri-primary-bright shrink-0 mt-0.5" />
         This form stays in your browser. It prepares a request summary for you to copy; it does not send an
         email or store your details.
       </p>
 
       <button
         type="submit"
-        className="inline-flex items-center justify-center h-12 px-6 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-sm font-bold shadow-md shadow-[#06B6D4]/20 transition-colors motion-safe:active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4CD7F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#111A2E] w-full sm:w-auto"
+        className="inline-flex items-center justify-center h-12 px-6 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-sm font-bold shadow-md shadow-ri-primary/20 transition-colors motion-safe:active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright focus-visible:ring-offset-2 focus-visible:ring-offset-ri-surface w-full sm:w-auto"
       >
         Prepare Demo Request
       </button>

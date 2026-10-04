@@ -92,7 +92,7 @@ function reviewText(status: string): string {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <span style={{ color: "#64748b" }}>{label}: </span>
+      <span style={{ color: "rgb(var(--ri-muted))" }}>{label}: </span>
       {children}
     </div>
   );
@@ -245,7 +245,7 @@ export default function SpatialMap({
             <Popup>
               <div className="text-xs space-y-0.5" style={{ minWidth: 220 }}>
                 <div className="font-semibold">Field inspection #{i.id.slice(0, 8)}</div>
-                <div style={{ color: "#64748b" }}>Capture point of an inspection, not a damage record.</div>
+                <div style={{ color: "rgb(var(--ri-muted))" }}>Capture point of an inspection, not a damage record.</div>
                 <Row label="Status">{i.status}</Row>
                 <Row label="Source">{i.source}</Row>
                 <Row label="Road">{i.road_name ?? "not assigned"}</Row>

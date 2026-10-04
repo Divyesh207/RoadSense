@@ -35,12 +35,12 @@ import {
 } from "lucide-react";
 
 const STATUS_COLUMNS = [
-  { id: "OPEN", label: "Open", color: "border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#F59E0B]" },
-  { id: "ASSIGNED", label: "Assigned", color: "border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#ADC6FF]" },
-  { id: "IN_PROGRESS", label: "In Progress", color: "border-[#06B6D4]/30 bg-[#06B6D4]/10 text-[#4CD7F6]" },
-  { id: "COMPLETED", label: "Completed", color: "border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981]" },
-  { id: "VERIFICATION_PENDING", label: "Verification Pending", color: "border-[#A78BFA]/30 bg-[#A78BFA]/10 text-[#A78BFA]" },
-  { id: "VERIFIED", label: "Verified", color: "border-[#10B981]/40 bg-[#10B981]/20 text-[#10B981]" },
+  { id: "OPEN", label: "Open", color: "border-ri-warning/30 bg-ri-warning/10 text-ri-warning" },
+  { id: "ASSIGNED", label: "Assigned", color: "border-ri-info/30 bg-ri-info/10 text-ri-info-soft" },
+  { id: "IN_PROGRESS", label: "In Progress", color: "border-ri-primary/30 bg-ri-primary/10 text-ri-primary-bright" },
+  { id: "COMPLETED", label: "Completed", color: "border-ri-success/30 bg-ri-success/10 text-ri-success" },
+  { id: "VERIFICATION_PENDING", label: "Verification Pending", color: "border-ri-review/30 bg-ri-review/10 text-ri-review" },
+  { id: "VERIFIED", label: "Verified", color: "border-ri-success/40 bg-ri-success/20 text-ri-success" },
 ];
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
@@ -197,32 +197,32 @@ export default function MaintenancePage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-code-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+              <span className="font-code-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
                 Maintenance jobs
               </span>
             </div>
-            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-[#F1F5F9] flex items-center gap-2.5">
+            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-ri-text flex items-center gap-2.5">
               Maintenance Operations
             </h1>
-            <p className="font-body-sm text-xs text-[#94A3B8] mt-1">
+            <p className="font-body-sm text-xs text-ri-muted mt-1">
               Operational maintenance workflow, contractor assignments, and repair tracking.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             {/* View Mode Toggle */}
-            <div className="flex rounded-xl bg-[#111A2E] border border-[#26344F] p-1">
+            <div className="flex rounded-xl bg-ri-surface border border-ri-line p-1">
               <button
                 onClick={() => setViewMode("kanban")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === "kanban"
-                    ? "bg-[#06B6D4] text-[#003640] shadow-sm shadow-[#06B6D4]/20"
-                    : "text-[#94A3B8] hover:text-[#F1F5F9]"
+                    ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                    : "text-ri-muted hover:text-ri-text"
                 }`}
               >
                 <Kanban className="h-3.5 w-3.5" />
@@ -232,8 +232,8 @@ export default function MaintenancePage() {
                 onClick={() => setViewMode("table")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === "table"
-                    ? "bg-[#06B6D4] text-[#003640] shadow-sm shadow-[#06B6D4]/20"
-                    : "text-[#94A3B8] hover:text-[#F1F5F9]"
+                    ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                    : "text-ri-muted hover:text-ri-text"
                 }`}
               >
                 <List className="h-3.5 w-3.5" />
@@ -243,7 +243,7 @@ export default function MaintenancePage() {
 
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="flex items-center gap-2 bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-[#06B6D4]/20 active:scale-95"
+              className="flex items-center gap-2 bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-ri-primary/20 active:scale-95"
             >
               <Plus className="h-4 w-4" />
               <span>Create Job</span>
@@ -253,47 +253,47 @@ export default function MaintenancePage() {
 
         {/* 5-Column Bento KPI Strip */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
-            <span className="font-label-sm text-[11px] text-[#94A3B8] uppercase tracking-wider">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider">
               Total Jobs
             </span>
-            <p className="font-code-lg text-2xl font-bold text-[#F1F5F9] mt-2">{counts.total}</p>
+            <p className="font-code-lg text-2xl font-bold text-ri-text mt-2">{counts.total}</p>
           </div>
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
-            <span className="font-label-sm text-[11px] text-[#F59E0B] uppercase tracking-wider">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-ri-warning uppercase tracking-wider">
               Open / Assigned
             </span>
-            <p className="font-code-lg text-2xl font-bold text-[#F59E0B] mt-2">{counts.open}</p>
+            <p className="font-code-lg text-2xl font-bold text-ri-warning mt-2">{counts.open}</p>
           </div>
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
-            <span className="font-label-sm text-[11px] text-[#06B6D4] uppercase tracking-wider">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-ri-primary uppercase tracking-wider">
               In Progress
             </span>
-            <p className="font-code-lg text-2xl font-bold text-[#4CD7F6] mt-2">{counts.inProgress}</p>
+            <p className="font-code-lg text-2xl font-bold text-ri-primary-bright mt-2">{counts.inProgress}</p>
           </div>
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
-            <span className="font-label-sm text-[11px] text-[#ADC6FF] uppercase tracking-wider">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-ri-info-soft uppercase tracking-wider">
               Awaiting Verification
             </span>
-            <p className="font-code-lg text-2xl font-bold text-[#ADC6FF] mt-2">{counts.verification}</p>
+            <p className="font-code-lg text-2xl font-bold text-ri-info-soft mt-2">{counts.verification}</p>
           </div>
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-4">
-            <span className="font-label-sm text-[11px] text-[#10B981] uppercase tracking-wider">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+            <span className="font-label-sm text-[11px] text-ri-success uppercase tracking-wider">
               Verified Repaired
             </span>
-            <p className="font-code-lg text-2xl font-bold text-[#10B981] mt-2">{counts.verified}</p>
+            <p className="font-code-lg text-2xl font-bold text-ri-success mt-2">{counts.verified}</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#111A2E] p-3 rounded-2xl border border-[#26344F]">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="font-label-sm text-xs text-[#94A3B8]">Priority:</span>
+              <span className="font-label-sm text-xs text-ri-muted">Priority:</span>
               <select
                 value={priorityFilter}
                 onChange={(e) => setPriorityFilter(e.target.value)}
-                className="bg-[#151B2A] border border-[#26344F] text-[#F1F5F9] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#06B6D4]"
+                className="bg-ri-input border border-ri-line text-ri-text text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-ri-primary"
               >
                 <option value="">All Priorities</option>
                 <option value="CRITICAL">Critical</option>
@@ -304,11 +304,11 @@ export default function MaintenancePage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-label-sm text-xs text-[#94A3B8]">Status:</span>
+              <span className="font-label-sm text-xs text-ri-muted">Status:</span>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-[#151B2A] border border-[#26344F] text-[#F1F5F9] text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#06B6D4]"
+                className="bg-ri-input border border-ri-line text-ri-text text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-ri-primary"
               >
                 <option value="">All Statuses</option>
                 <option value="OPEN">Open</option>
@@ -329,24 +329,24 @@ export default function MaintenancePage() {
               setStatusFilter("");
             }}
             disabled={!priorityFilter && !statusFilter}
-            className="px-3 py-1.5 rounded-xl bg-[#17223A] border border-[#26344F] text-xs text-[#94A3B8] hover:text-[#F1F5F9] disabled:opacity-40 ml-auto"
+            className="px-3 py-1.5 rounded-xl bg-ri-raised border border-ri-line text-xs text-ri-muted hover:text-ri-text disabled:opacity-40 ml-auto"
           >
             Reset Filters
           </button>
 
           <button
             onClick={() => loadData()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#17223A] border border-[#26344F] text-xs text-[#94A3B8] hover:text-[#F1F5F9] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ri-raised border border-ri-line text-xs text-ri-muted hover:text-ri-text transition-colors"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-[#06B6D4]" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-ri-primary" : ""}`} />
             <span>Refresh</span>
           </button>
         </div>
 
         {/* Content Body */}
         {loading ? (
-          <div className="h-64 flex items-center justify-center border border-[#26344F] rounded-2xl bg-[#111A2E]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#06B6D4]" />
+          <div className="h-64 flex items-center justify-center border border-ri-line rounded-2xl bg-ri-surface">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ri-primary" />
           </div>
         ) : jobs.length === 0 ? (
           <EmptyState
@@ -362,20 +362,20 @@ export default function MaintenancePage() {
               return (
                 <div
                   key={col.id}
-                  className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-3 flex flex-col min-h-[400px]"
+                  className="bg-ri-surface border border-ri-line rounded-2xl p-3 flex flex-col min-h-[400px]"
                 >
-                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#26344F]">
-                    <span className="font-label-sm text-xs font-bold text-[#F1F5F9] truncate">
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-ri-line">
+                    <span className="font-label-sm text-xs font-bold text-ri-text truncate">
                       {col.label}
                     </span>
-                    <span className="font-code-sm text-[10px] px-2 py-0.5 rounded-full bg-[#17223A] text-[#94A3B8] border border-[#26344F]">
+                    <span className="font-code-sm text-[10px] px-2 py-0.5 rounded-full bg-ri-raised text-ri-muted border border-ri-line">
                       {colJobs.length}
                     </span>
                   </div>
 
                   <div className="flex-1 space-y-2.5 overflow-y-auto">
                     {colJobs.length === 0 ? (
-                      <p className="font-code-sm text-[11px] text-[#64748B] text-center py-8">
+                      <p className="font-code-sm text-[11px] text-ri-faint text-center py-8">
                         Empty
                       </p>
                     ) : (
@@ -383,24 +383,24 @@ export default function MaintenancePage() {
                         <div
                           key={job.id}
                           onClick={() => openJobDetail(job)}
-                          className="bg-[#151B2A] border border-[#26344F] hover:border-[#06B6D4]/50 rounded-xl p-3 cursor-pointer transition-all shadow-sm hover:shadow-md space-y-2"
+                          className="bg-ri-input border border-ri-line hover:border-ri-primary/50 rounded-xl p-3 cursor-pointer transition-all shadow-sm hover:shadow-md space-y-2"
                         >
-                          <h4 className="font-headline-sm text-xs font-semibold text-[#F1F5F9] line-clamp-2 leading-snug">
+                          <h4 className="font-headline-sm text-xs font-semibold text-ri-text line-clamp-2 leading-snug">
                             {job.title}
                           </h4>
 
-                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#26344F]/60">
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-ri-line/60">
                             <StatusBadge status={job.priority_level} size="sm" />
                             {job.damage_count !== undefined && job.damage_count > 0 && (
-                              <span className="font-code-sm text-[10px] text-[#94A3B8] flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3 text-[#F59E0B]" />
+                              <span className="font-code-sm text-[10px] text-ri-muted flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3 text-ri-warning" />
                                 {job.damage_count} dmg
                               </span>
                             )}
                           </div>
 
                           {job.due_at && (
-                            <p className="font-code-sm text-[10px] text-[#64748B]">
+                            <p className="font-code-sm text-[10px] text-ri-faint">
                               Due: {new Date(job.due_at).toLocaleDateString()}
                             </p>
                           )}
@@ -414,10 +414,10 @@ export default function MaintenancePage() {
           </div>
         ) : (
           /* Table View */
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+                <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
                   <tr>
                     <th className="py-3 px-4 font-semibold">Title</th>
                     <th className="py-3 px-4 font-semibold">Linked Road</th>
@@ -428,15 +428,15 @@ export default function MaintenancePage() {
                     <th className="py-3 px-4 text-right font-semibold">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+                <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
                   {jobs.map((job) => (
                     <tr
                       key={job.id}
                       onClick={() => openJobDetail(job)}
-                      className="hover:bg-[#17223A]/50 cursor-pointer transition-colors"
+                      className="hover:bg-ri-raised/50 cursor-pointer transition-colors"
                     >
                       <td className="py-3 px-4 font-bold text-white">{job.title}</td>
-                      <td className="py-3 px-4 text-[#DCE2F6]">
+                      <td className="py-3 px-4 text-ri-text-soft">
                         {job.road_id
                           ? roads.find((r) => r.id === job.road_id)?.name || "Linked Road"
                           : "Unassigned"}
@@ -447,10 +447,10 @@ export default function MaintenancePage() {
                       <td className="py-3 px-4">
                         <StatusBadge status={job.status} size="sm" />
                       </td>
-                      <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                      <td className="py-3 px-4 font-code-sm text-ri-muted">
                         {job.damage_count || 0}
                       </td>
-                      <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                      <td className="py-3 px-4 font-code-sm text-ri-muted">
                         {job.due_at ? new Date(job.due_at).toLocaleDateString() : "—"}
                       </td>
                       <td className="py-3 px-4 text-right">
@@ -459,7 +459,7 @@ export default function MaintenancePage() {
                             e.stopPropagation();
                             openJobDetail(job);
                           }}
-                          className="h-8 px-3 rounded-lg bg-[#17223A] border border-[#26344F] text-[#4CD7F6] font-label-md text-xs font-semibold hover:bg-[#232A39]"
+                          className="h-8 px-3 rounded-lg bg-ri-raised border border-ri-line text-ri-primary-bright font-label-md text-xs font-semibold hover:bg-ri-raised"
                         >
                           View Details
                         </button>
@@ -475,8 +475,8 @@ export default function MaintenancePage() {
         {/* Selected Job Drawer */}
         {selectedJob && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-end z-50">
-            <div className="bg-[#111A2E] border-l border-[#26344F] w-full max-w-xl h-full p-6 overflow-y-auto space-y-6 shadow-2xl">
-              <div className="flex items-start justify-between border-b border-[#26344F] pb-4">
+            <div className="bg-ri-surface border-l border-ri-line w-full max-w-xl h-full p-6 overflow-y-auto space-y-6 shadow-2xl">
+              <div className="flex items-start justify-between border-b border-ri-line pb-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={selectedJob.status} />
@@ -488,16 +488,16 @@ export default function MaintenancePage() {
                       showDot={false}
                     />
                   </div>
-                  <h3 className="font-headline-sm text-lg font-bold text-[#F1F5F9] mt-2">
+                  <h3 className="font-headline-sm text-lg font-bold text-ri-text mt-2">
                     {selectedJob.title}
                   </h3>
-                  <p className="font-code-sm text-xs text-[#94A3B8] mt-0.5">
+                  <p className="font-code-sm text-xs text-ri-muted mt-0.5">
                     Job ID: {selectedJob.id}
                   </p>
                 </div>
                 <button
                   onClick={() => setSelectedJob(null)}
-                  className="text-[#94A3B8] hover:text-[#F1F5F9] p-1.5 rounded-lg hover:bg-[#17223A]"
+                  className="text-ri-muted hover:text-ri-text p-1.5 rounded-lg hover:bg-ri-raised"
                 >
                   <XCircle className="h-6 w-6" />
                 </button>
@@ -505,22 +505,22 @@ export default function MaintenancePage() {
 
               {selectedJob.description && (
                 <div className="space-y-1.5">
-                  <h4 className="font-label-md text-xs font-bold text-[#94A3B8]">Description</h4>
-                  <p className="font-body-sm text-xs text-[#DCE2F6] leading-relaxed bg-[#151B2A] p-3 rounded-xl border border-[#26344F]">
+                  <h4 className="font-label-md text-xs font-bold text-ri-muted">Description</h4>
+                  <p className="font-body-sm text-xs text-ri-text-soft leading-relaxed bg-ri-input p-3 rounded-xl border border-ri-line">
                     {selectedJob.description}
                   </p>
                 </div>
               )}
 
               {/* Status Action Controls */}
-              <div className="space-y-3 bg-[#151B2A] p-4 rounded-xl border border-[#26344F]">
-                <h4 className="font-label-md text-xs font-bold text-[#F1F5F9] flex items-center gap-2">
-                  <ArrowRight className="h-4 w-4 text-[#06B6D4]" />
+              <div className="space-y-3 bg-ri-input p-4 rounded-xl border border-ri-line">
+                <h4 className="font-label-md text-xs font-bold text-ri-text flex items-center gap-2">
+                  <ArrowRight className="h-4 w-4 text-ri-primary" />
                   <span>Available State Transitions</span>
                 </h4>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {(ALLOWED_TRANSITIONS[selectedJob.status] || []).length === 0 ? (
-                    <p className="font-code-sm text-xs text-[#64748B]">No further transitions allowed.</p>
+                    <p className="font-code-sm text-xs text-ri-faint">No further transitions allowed.</p>
                   ) : (
                     ALLOWED_TRANSITIONS[selectedJob.status].map((targetStatus) => (
                       <button
@@ -529,7 +529,7 @@ export default function MaintenancePage() {
                           setTransitionTarget(targetStatus);
                           setTransitionNotes("");
                         }}
-                        className="bg-[#06B6D4]/15 hover:bg-[#06B6D4]/25 text-[#4CD7F6] border border-[#06B6D4]/30 px-3 py-1.5 rounded-xl font-label-md text-xs font-bold transition-all"
+                        className="bg-ri-primary/15 hover:bg-ri-primary/25 text-ri-primary-bright border border-ri-primary/30 px-3 py-1.5 rounded-xl font-label-md text-xs font-bold transition-all"
                       >
                         Transition to {targetStatus.replace(/_/g, " ")}
                       </button>
@@ -540,8 +540,8 @@ export default function MaintenancePage() {
 
               {/* Transition Form Modal */}
               {transitionTarget && (
-                <div className="p-4 bg-[#151B2A] border border-[#06B6D4]/40 rounded-xl space-y-3">
-                  <h4 className="font-headline-sm text-xs font-bold text-[#F1F5F9]">
+                <div className="p-4 bg-ri-input border border-ri-primary/40 rounded-xl space-y-3">
+                  <h4 className="font-headline-sm text-xs font-bold text-ri-text">
                     Transition to {transitionTarget.replace(/_/g, " ")}
                   </h4>
                   <textarea
@@ -549,13 +549,13 @@ export default function MaintenancePage() {
                     value={transitionNotes}
                     onChange={(e) => setTransitionNotes(e.target.value)}
                     placeholder="Enter completion notes or transition justification..."
-                    className="w-full bg-[#111A2E] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full bg-ri-surface border border-ri-line rounded-xl p-3 text-xs text-ri-text focus:outline-none focus:border-ri-primary"
                   />
                   <div className="flex items-center justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setTransitionTarget(null)}
-                      className="px-3 py-1.5 text-xs text-[#94A3B8] hover:text-[#F1F5F9]"
+                      className="px-3 py-1.5 text-xs text-ri-muted hover:text-ri-text"
                     >
                       Cancel
                     </button>
@@ -563,7 +563,7 @@ export default function MaintenancePage() {
                       type="button"
                       disabled={transitioning}
                       onClick={handleTransitionSubmit}
-                      className="bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] px-4 py-1.5 rounded-xl font-label-md text-xs font-bold disabled:opacity-50"
+                      className="bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary px-4 py-1.5 rounded-xl font-label-md text-xs font-bold disabled:opacity-50"
                     >
                       {transitioning ? "Updating..." : "Confirm Transition"}
                     </button>
@@ -573,12 +573,12 @@ export default function MaintenancePage() {
 
               {/* Linked Damages */}
               <div className="space-y-2">
-                <h4 className="font-label-md text-xs font-bold text-[#94A3B8] flex items-center justify-between">
+                <h4 className="font-label-md text-xs font-bold text-ri-muted flex items-center justify-between">
                   <span>Linked Damage Records</span>
-                  <span className="font-code-sm text-[#64748B] font-normal">({jobDamages.length})</span>
+                  <span className="font-code-sm text-ri-faint font-normal">({jobDamages.length})</span>
                 </h4>
                 {jobDamages.length === 0 ? (
-                  <p className="text-xs text-[#64748B] bg-[#151B2A] p-3 rounded-xl border border-[#26344F]">
+                  <p className="text-xs text-ri-faint bg-ri-input p-3 rounded-xl border border-ri-line">
                     No individual damage records are linked to this maintenance work order.
                   </p>
                 ) : (
@@ -586,13 +586,13 @@ export default function MaintenancePage() {
                     {jobDamages.map((dmg) => (
                       <div
                         key={dmg.damage_record_id}
-                        className="bg-[#151B2A] border border-[#26344F] p-3 rounded-xl flex items-center justify-between text-xs"
+                        className="bg-ri-input border border-ri-line p-3 rounded-xl flex items-center justify-between text-xs"
                       >
                         <div className="space-y-0.5">
-                          <p className="font-medium text-[#F1F5F9]">
+                          <p className="font-medium text-ri-text">
                             Damage <span className="font-code-sm">#{dmg.damage_record_id.slice(0, 8)}</span>
                           </p>
-                          <p className="text-[11px] text-[#94A3B8]">Role: {dmg.relationship_type}</p>
+                          <p className="text-[11px] text-ri-muted">Role: {dmg.relationship_type}</p>
                         </div>
                         {dmg.severity && <StatusBadge status={dmg.severity} size="sm" showDot={false} />}
                       </div>
@@ -604,7 +604,7 @@ export default function MaintenancePage() {
               {/* Evidence upload, image verification and review live in the job workspace. */}
               <Link
                 href={`/maintenance/${selectedJob.id}`}
-                className="block bg-[#151B2A] p-4 rounded-xl border border-[#06B6D4]/40 hover:border-[#06B6D4] text-xs text-[#4CD7F6] transition-all font-semibold"
+                className="block bg-ri-input p-4 rounded-xl border border-ri-primary/40 hover:border-ri-primary text-xs text-ri-primary-bright transition-all font-semibold"
               >
                 Open job workspace: assignment, before/after evidence upload, automated image verification and review
                 ({jobEvidence.length} evidence item(s), {jobVerifications.length} verification record(s)) →
@@ -612,22 +612,22 @@ export default function MaintenancePage() {
 
               {/* Status History Timeline */}
               <div className="space-y-2">
-                <h4 className="font-label-md text-xs font-bold text-[#94A3B8]">Audit Status History</h4>
+                <h4 className="font-label-md text-xs font-bold text-ri-muted">Audit Status History</h4>
                 {jobHistory.length === 0 ? (
-                  <p className="text-xs text-[#64748B]">No history available.</p>
+                  <p className="text-xs text-ri-faint">No history available.</p>
                 ) : (
-                  <div className="space-y-3 relative pl-4 border-l border-[#26344F] ml-2">
+                  <div className="space-y-3 relative pl-4 border-l border-ri-line ml-2">
                     {jobHistory.map((item) => (
                       <div key={item.id} className="relative space-y-1">
-                        <div className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-[#06B6D4] border border-[#111A2E]" />
+                        <div className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-ri-primary border border-ri-surface" />
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-semibold text-[#F1F5F9]">{item.new_status.replace(/_/g, " ")}</span>
-                          <span className="font-code-sm text-[#64748B]">
+                          <span className="font-semibold text-ri-text">{item.new_status.replace(/_/g, " ")}</span>
+                          <span className="font-code-sm text-ri-faint">
                             {new Date(item.changed_at).toLocaleString()}
                           </span>
                         </div>
                         {item.reason && (
-                          <p className="text-xs text-[#94A3B8] bg-[#151B2A] p-2 rounded-lg border border-[#26344F]">
+                          <p className="text-xs text-ri-muted bg-ri-input p-2 rounded-lg border border-ri-line">
                             {item.reason}
                           </p>
                         )}
@@ -643,17 +643,17 @@ export default function MaintenancePage() {
         {/* Create Job Modal */}
         {isCreateOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#26344F] pb-3">
+            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
-                  <Wrench className="h-5 w-5 text-[#06B6D4]" />
-                  <h3 className="font-headline-sm text-base font-bold text-[#F1F5F9]">
+                  <Wrench className="h-5 w-5 text-ri-primary" />
+                  <h3 className="font-headline-sm text-base font-bold text-ri-text">
                     Create Maintenance Job
                   </h3>
                 </div>
                 <button
                   onClick={() => setIsCreateOpen(false)}
-                  className="text-[#94A3B8] hover:text-[#F1F5F9] text-sm p-1"
+                  className="text-ri-muted hover:text-ri-text text-sm p-1"
                 >
                   ✕
                 </button>
@@ -661,7 +661,7 @@ export default function MaintenancePage() {
 
               <form onSubmit={handleCreateSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Job Title *
                   </label>
                   <input
@@ -670,18 +670,18 @@ export default function MaintenancePage() {
                     value={createForm.title}
                     onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
                     placeholder="e.g. Patch potholes on SH-42 KM 0-2"
-                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full h-11 bg-ri-input border border-ri-line rounded-xl px-3 text-xs text-ri-text focus:outline-none focus:border-ri-primary"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Associated Road (Optional)
                   </label>
                   <select
                     value={createForm.road_id}
                     onChange={(e) => setCreateForm({ ...createForm, road_id: e.target.value })}
-                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full h-11 bg-ri-input border border-ri-line rounded-xl px-3 text-xs text-ri-text focus:outline-none focus:border-ri-primary"
                   >
                     <option value="">None / General Maintenance</option>
                     {roads.map((r) => (
@@ -693,13 +693,13 @@ export default function MaintenancePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Priority Level
                   </label>
                   <select
                     value={createForm.priority}
                     onChange={(e) => setCreateForm({ ...createForm, priority: e.target.value })}
-                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full h-11 bg-ri-input border border-ri-line rounded-xl px-3 text-xs text-ri-text focus:outline-none focus:border-ri-primary"
                   >
                     <option value="CRITICAL">Critical</option>
                     <option value="HIGH">High</option>
@@ -709,19 +709,19 @@ export default function MaintenancePage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Due Date
                   </label>
                   <input
                     type="date"
                     value={createForm.due_at}
                     onChange={(e) => setCreateForm({ ...createForm, due_at: e.target.value })}
-                    className="w-full h-11 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full h-11 bg-ri-input border border-ri-line rounded-xl px-3 text-xs text-ri-text focus:outline-none focus:border-ri-primary"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Description
                   </label>
                   <textarea
@@ -729,7 +729,7 @@ export default function MaintenancePage() {
                     value={createForm.description}
                     onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
                     placeholder="Describe maintenance scope and specifications..."
-                    className="w-full bg-[#151B2A] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full bg-ri-input border border-ri-line rounded-xl p-3 text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
                   />
                 </div>
 
@@ -737,14 +737,14 @@ export default function MaintenancePage() {
                   <button
                     type="button"
                     onClick={() => setIsCreateOpen(false)}
-                    className="h-10 px-4 rounded-xl bg-[#17223A] border border-[#26344F] text-xs font-semibold text-[#94A3B8]"
+                    className="h-10 px-4 rounded-xl bg-ri-raised border border-ri-line text-xs font-semibold text-ri-muted"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className="h-10 px-5 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold transition-all shadow-md shadow-[#06B6D4]/20 disabled:opacity-50"
+                    className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold transition-all shadow-md shadow-ri-primary/20 disabled:opacity-50"
                   >
                     {creating ? "Creating..." : "Create Job"}
                   </button>

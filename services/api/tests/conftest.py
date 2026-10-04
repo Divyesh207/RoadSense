@@ -136,6 +136,21 @@ OTHER_ORG_USER_ID = uuid.UUID("a6666666-6666-6666-6666-666666666666")
 
 
 @pytest.fixture(autouse=True)
+def isolated_rate_limiter():
+    """Every test starts with an empty rate-limit window.
+
+    The limiter itself stays enabled at its configured limits. Only its in-memory request
+    history is cleared, because the whole suite runs in one process from one client address
+    and would otherwise share a single 60-second window across unrelated tests.
+    """
+    from app.core.middleware import rate_limit_store
+
+    rate_limit_store.reset()
+    yield
+    rate_limit_store.reset()
+
+
+@pytest.fixture(autouse=True)
 def isolated_local_storage(tmp_path, monkeypatch):
     """Tests use the local storage backend rooted in a temp dir, never the
     repository's data/media or a Supabase project configured in .env."""

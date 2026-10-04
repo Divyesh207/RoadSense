@@ -39,39 +39,55 @@ export function BentoMetricTile({
       : "cyan");
 
   const iconVariants = {
-    cyan: "bg-[#06B6D4]/15 text-[#4CD7F6] border-[#06B6D4]/30",
-    green: "bg-[#10B981]/15 text-[#10B981] border-[#10B981]/30",
-    amber: "bg-[#F59E0B]/15 text-[#F59E0B] border-[#F59E0B]/30",
-    red: "bg-[#EF4444]/15 text-[#EF4444] border-[#EF4444]/30",
-    blue: "bg-[#3B82F6]/15 text-[#ADC6FF] border-[#3B82F6]/30",
-    neutral: "bg-[#232A39] text-[#94A3B8] border-[#3D494C]",
+    cyan: "bg-ri-primary/15 text-ri-primary-bright border-ri-primary/30",
+    green: "bg-ri-success/15 text-ri-success border-ri-success/30",
+    amber: "bg-ri-warning/15 text-ri-warning border-ri-warning/30",
+    red: "bg-ri-danger/15 text-ri-danger border-ri-danger/30",
+    blue: "bg-ri-info/15 text-ri-info-soft border-ri-info/30",
+    neutral: "bg-ri-raised text-ri-muted border-ri-line-strong",
+  }[resolvedVariant];
+
+  // Token behind the tile's accent line and ambient corner gradient.
+  const accent = {
+    cyan: "var(--ri-primary)",
+    green: "var(--ri-success)",
+    amber: "var(--ri-warning)",
+    red: "var(--ri-danger)",
+    blue: "var(--ri-info)",
+    neutral: "var(--ri-glass)",
   }[resolvedVariant];
 
   const description = subtext || hint;
 
   const content = (
     <div
-      className={`p-4 rounded-xl bg-[#111A2E] border border-[#26344F] hover:border-[#06B6D4]/50 transition-all shadow-sm flex flex-col justify-between h-full group ${className}`}
+      className={`glass glass-accent glass-hover p-4 flex flex-col justify-between h-full group ${className}`}
+      style={
+        {
+          "--ri-accent": accent,
+          backgroundImage: `radial-gradient(240px 120px at 100% 0%, rgb(${accent} / 0.13), transparent 70%)`,
+        } as React.CSSProperties
+      }
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="font-label-sm text-[11px] uppercase tracking-wider text-[#94A3B8] font-semibold font-mono">
+        <span className="ri-label">
           {label}
         </span>
         <div
-          className={`w-7 h-7 rounded-lg border flex items-center justify-center transition-transform group-hover:scale-110 ${iconVariants}`}
+          className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${iconVariants}`}
         >
           <Icon className="h-4 w-4" />
         </div>
       </div>
       <div>
         <div className="flex items-baseline gap-2">
-          <div className="font-code-lg text-2xl font-bold text-[#F1F5F9] tracking-tight font-mono">
+          <div className="font-mono text-[28px] leading-8 font-bold text-ri-text tracking-tight tabular-nums">
             {value}
           </div>
           {trend && (
             <div
               className={`flex items-center text-[10px] font-mono font-semibold ${
-                trend.direction === "up" ? "text-amber-400" : "text-emerald-400"
+                trend.direction === "up" ? "text-ri-warning" : "text-ri-success"
               }`}
             >
               {trend.direction === "up" ? (
@@ -84,7 +100,7 @@ export function BentoMetricTile({
           )}
         </div>
         {description && (
-          <p className="font-body-sm text-[11px] text-[#94A3B8] mt-1 truncate">
+          <p className="text-[11px] text-ri-muted mt-1.5 leading-snug">
             {description}
           </p>
         )}
