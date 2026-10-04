@@ -101,7 +101,8 @@ data class InspectionResponseDto(
     @SerializedName("inspector_name") val inspectorName: String?,
     @SerializedName("client_inspection_id") val clientInspectionId: String?,
     @SerializedName("notes") val notes: String?,
-    @SerializedName("created_at") val createdAt: String?
+    @SerializedName("created_at") val createdAt: String?,
+    @SerializedName("submitted_at") val submittedAt: String? = null
 )
 
 // Media upload flow (POST /inspections/{id}/media/upload-url -> PUT upload_url -> POST /media/complete)
@@ -137,5 +138,39 @@ data class InspectionMediaDto(
     @SerializedName("id") val id: String,
     @SerializedName("inspection_id") val inspectionId: String,
     @SerializedName("storage_path") val storagePath: String,
-    @SerializedName("upload_status") val uploadStatus: String
+    @SerializedName("upload_status") val uploadStatus: String,
+    // Present on GET /inspections/{id}/media; the API returns metadata only (no download URL).
+    @SerializedName("media_type") val mediaType: String? = null,
+    @SerializedName("original_filename") val originalFilename: String? = null,
+    @SerializedName("mime_type") val mimeType: String? = null,
+    @SerializedName("file_size_bytes") val fileSizeBytes: Long? = null,
+    @SerializedName("width_px") val widthPx: Int? = null,
+    @SerializedName("height_px") val heightPx: Int? = null,
+    @SerializedName("created_at") val createdAt: String? = null
+)
+
+// GET /inspections/{id}/detections
+data class BoundingBoxDto(
+    @SerializedName("x_min") val xMin: Float,
+    @SerializedName("y_min") val yMin: Float,
+    @SerializedName("x_max") val xMax: Float,
+    @SerializedName("y_max") val yMax: Float
+)
+
+data class DetectionDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("media_id") val mediaId: String?,
+    @SerializedName("damage_type") val damageType: String?,
+    @SerializedName("confidence") val confidence: Double?,
+    @SerializedName("score_type") val scoreType: String?,
+    @SerializedName("detection_method") val detectionMethod: String?,
+    @SerializedName("model_name") val modelName: String?,
+    @SerializedName("model_version") val modelVersion: String?,
+    @SerializedName("bbox") val bbox: BoundingBoxDto?,
+    @SerializedName("severity") val severity: String?
+)
+
+data class HealthDto(
+    @SerializedName("status") val status: String?,
+    @SerializedName("version") val version: String?
 )

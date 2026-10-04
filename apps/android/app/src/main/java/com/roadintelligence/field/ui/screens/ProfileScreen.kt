@@ -1,137 +1,184 @@
 package com.roadintelligence.field.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.roadintelligence.field.BuildConfig
+import com.roadintelligence.field.data.repository.InspectionRemoteRepository
+import com.roadintelligence.field.domain.model.SyncStatus
 import com.roadintelligence.field.domain.repository.AuthRepository
-import com.roadintelligence.field.ui.components.CommonTopBar
+import com.roadintelligence.field.domain.repository.InspectionRepository
+import com.roadintelligence.field.ui.components.*
 import com.roadintelligence.field.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
     authRepository: AuthRepository,
+    inspectionRepository: InspectionRepository,
+    inspectionRemote: InspectionRemoteRepository,
     onLogout: () -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val session = authRepository.getCurrentSession()
+    val inspections by inspectionRepository.getAllInspections().collectAsState(initial = emptyList())
+    val unsynced = inspections.count { it.syncStatus != SyncStatus.COMPLETED }
+    var confirmSignOut by remember { mutableStateOf(false) }
+
+    val deviceOnline by rememberDeviceOnline()
+    val server by rememberServerReachability(inspectionRemote)
+
+    val displayName = session?.fullName?.takeIf { it.isNotBlank() } ?: session?.email ?: "Not signed in"
+    val initials = displayName.split(" ", "@", ".").filter { it.isNotBlank() }.take(2)
+        .joinToString("") { it.first().uppercase() }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        CommonTopBar(title = "Inspector Profile")
+        CommonTopBar(title = "Profile", overline = "Road Intelligence")
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            FieldCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .background(PrimaryCyan.copy(alpha = 0.15f), RoundedCornerShape(18.dp))
+                            .border(1.dp, PrimaryCyan.copy(alpha = 0.35f), RoundedCornerShape(18.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(initials.ifBlank { "?" }, color = PrimaryCyanBright, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(displayName, color = TextPrimary, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        if (session?.email != null && session.email != displayName) {
+                            Text(session.email, color = TextSecondary, style = CodeSm, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        StatusPill(
+                            label = (session?.role?.takeIf { it.isNotBlank() } ?: "ROLE NOT SET").replace('_', ' '),
+                            color = PrimaryCyanBright,
+                            icon = Icons.Default.Badge
+                        )
+                    }
+                }
+            }
 
-            // User Avatar
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .background(PrimaryCyan.copy(alpha = 0.2f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = PrimaryCyan,
-                    modifier = Modifier.size(36.dp)
+            FieldCard {
+                SectionTitle("Organization", icon = Icons.Default.Business)
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = session?.organizationName?.takeIf { it.isNotBlank() } ?: "Organization not set",
+                    color = TextPrimary,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                if (!session?.organizationId.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text("ID ${session?.organizationId}", color = TextMuted, style = CodeSm, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+
+            FieldCard {
+                SectionTitle(
+                    "Connection",
+                    icon = Icons.Default.Dns,
+                    trailing = {
+                        val chip = serverChip(server, deviceOnline)
+                        ConnectionChip(chip.label, chip.color)
+                    }
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                ValueTile("Server", BuildConfig.API_BASE_URL, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ValueTile("On this device", "${inspections.size} inspections", Modifier.weight(1f))
+                    ValueTile(
+                        "Not yet synced",
+                        unsynced.toString(),
+                        Modifier.weight(1f),
+                        valueColor = if (unsynced > 0) WarningAmber else SuccessEmerald
+                    )
+                }
+            }
+
+            FieldCard {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RiSymbol(size = 44.dp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text("Road Intelligence Field", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+                        Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.BUILD_TYPE})", color = TextSecondary, style = CodeSm)
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    "Offline-first road evidence collection: photos and GPS are saved on this device and uploaded for AI analysis on the server.",
+                    color = TextSecondary,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = session?.fullName ?: "Field Inspector",
-                color = TextPrimary,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = session?.email ?: "inspector@example.com",
-                color = TextSecondary,
-                fontSize = 13.sp
+            SecondaryButton(
+                text = "Sign Out",
+                icon = Icons.AutoMirrored.Filled.ExitToApp,
+                contentColor = ErrorRose,
+                onClick = { confirmSignOut = true },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
 
-            // Organization Card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = SurfaceDark,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Current Organization", color = TextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = session?.organizationName ?: "Default Municipality",
-                        color = TextPrimary,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Role: ${session?.role ?: "FIELD_INSPECTOR"}", color = PrimaryCyan, fontSize = 13.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // App Information Card
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = SurfaceDark,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Application Details", color = TextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Version: 1.0.0 (Phase 14 MVP)", color = TextPrimary, fontSize = 13.sp)
-                    Text("Architecture: Jetpack Compose + Room + WorkManager", color = TextSecondary, fontSize = 12.sp)
-                    Text("Target: Offline-First Road Evidence Collection", color = TextSecondary, fontSize = 12.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Logout Button
-            Button(
-                onClick = {
+    if (confirmSignOut) {
+        AlertDialog(
+            onDismissRequest = { confirmSignOut = false },
+            containerColor = SurfaceCard,
+            title = { Text("Sign out?", color = TextPrimary) },
+            text = {
+                Text(
+                    text = if (unsynced > 0) {
+                        "$unsynced inspection(s) on this device are not synced yet. They stay on the device and upload after you sign in again."
+                    } else {
+                        "You will need to sign in again to capture or upload inspections."
+                    },
+                    color = TextSecondary
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmSignOut = false
                     coroutineScope.launch {
                         authRepository.logout()
                         onLogout()
                     }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = ErrorRose.copy(alpha = 0.85f)),
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = null, tint = Color.White)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Sign Out", color = Color.White, fontWeight = FontWeight.Bold)
+                }) { Text("Sign Out", color = ErrorRose) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmSignOut = false }) { Text("Cancel", color = TextOnSurface) }
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
-        }
+        )
     }
 }

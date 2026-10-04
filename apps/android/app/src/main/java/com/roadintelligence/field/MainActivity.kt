@@ -2,6 +2,7 @@ package com.roadintelligence.field
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,13 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import com.roadintelligence.field.domain.model.SyncStatus
 import com.roadintelligence.field.ui.components.FieldBottomNavBar
 import com.roadintelligence.field.ui.components.NavItem
 import com.roadintelligence.field.ui.screens.*
+import com.roadintelligence.field.ui.theme.BackgroundDark
 import com.roadintelligence.field.ui.theme.RoadIntelligenceFieldTheme
 
 sealed class Screen {
     object Login : Screen()
+    object Register : Screen()
     object Home : Screen()
     object NewInspection : Screen()
     data class Camera(val inspectionLocalId: String) : Screen()
@@ -37,6 +41,7 @@ class MainActivity : ComponentActivity() {
                 val roadRepository = app.roadRepository
                 val inspectionRepository = app.inspectionRepository
                 val syncRepository = app.syncRepository
+                val inspectionRemote = app.inspectionRemote
 
                 var currentScreen by remember {
                     mutableStateOf<Screen>(
@@ -50,6 +55,16 @@ class MainActivity : ComponentActivity() {
                 // screen; replaced with a fresh form once it is saved/queued or abandoned.
                 var inspectionForm by remember { mutableStateOf(NewInspectionFormState()) }
 
+                fun goToTab(tab: NavItem) {
+                    selectedNavTab = tab
+                    currentScreen = when (tab) {
+                        NavItem.HOME -> Screen.Home
+                        NavItem.NEW_INSPECTION -> Screen.NewInspection
+                        NavItem.SYNC_QUEUE -> Screen.SyncQueue
+                        NavItem.PROFILE -> Screen.Profile
+                    }
+                }
+
                 when (val screen = currentScreen) {
                     is Screen.Login -> {
                         LoginScreen(
@@ -57,45 +72,67 @@ class MainActivity : ComponentActivity() {
                             onLoginSuccess = {
                                 currentScreen = Screen.Home
                                 selectedNavTab = NavItem.HOME
-                            }
+                            },
+                            onCreateAccount = { currentScreen = Screen.Register }
                         )
                     }
 
+                    is Screen.Register -> {
+                        RegisterScreen(onBackToLogin = { currentScreen = Screen.Login })
+                    }
+
                     is Screen.Camera -> {
+                        // System back returns to the form, which is still held in inspectionForm.
+                        BackHandler { currentScreen = Screen.NewInspection }
+                        val form = inspectionForm
                         CameraCaptureScreen(
                             inspectionLocalId = screen.inspectionLocalId,
                             inspectionRepository = inspectionRepository,
                             onNavigateBack = {
                                 currentScreen = Screen.NewInspection
-                            }
+                            },
+                            roadLabel = form.selectedRoad?.let { road ->
+                                form.selectedSegment?.let { "${road.name} · Seg #${it.segmentNumber}" } ?: road.name
+                            },
+                            hasGpsFix = form.latitude != null && form.longitude != null,
+                            gpsAccuracyMeters = form.accuracyMeters
                         )
                     }
 
                     is Screen.Detail -> {
+                        // Returns to the tab the inspection was opened from (Home or Sync).
+                        val back = { goToTab(selectedNavTab) }
                         InspectionDetailScreen(
                             localId = screen.inspectionLocalId,
+                            authRepository = authRepository,
                             inspectionRepository = inspectionRepository,
+                            inspectionRemote = inspectionRemote,
                             syncRepository = syncRepository,
-                            onNavigateBack = {
-                                currentScreen = Screen.Home
-                            }
+                            onNavigateBack = back
                         )
                     }
 
                     else -> {
+                        // From any other tab, system back goes to Home; on Home it leaves the app.
+                        BackHandler(enabled = selectedNavTab != NavItem.HOME) {
+                            if (selectedNavTab == NavItem.NEW_INSPECTION) inspectionForm = NewInspectionFormState()
+                            goToTab(NavItem.HOME)
+                        }
+
+                        val allInspections by inspectionRepository.getAllInspections().collectAsState(initial = emptyList())
+                        val pendingSync = allInspections.count {
+                            it.syncStatus == SyncStatus.QUEUED ||
+                                it.syncStatus == SyncStatus.UPLOADING ||
+                                it.syncStatus == SyncStatus.UPLOAD_FAILED
+                        }
+
                         Scaffold(
+                            containerColor = BackgroundDark,
                             bottomBar = {
                                 FieldBottomNavBar(
                                     selectedItem = selectedNavTab,
-                                    onItemSelected = { tab ->
-                                        selectedNavTab = tab
-                                        currentScreen = when (tab) {
-                                            NavItem.HOME -> Screen.Home
-                                            NavItem.NEW_INSPECTION -> Screen.NewInspection
-                                            NavItem.SYNC_QUEUE -> Screen.SyncQueue
-                                            NavItem.PROFILE -> Screen.Profile
-                                        }
-                                    }
+                                    onItemSelected = { tab -> goToTab(tab) },
+                                    syncBadgeCount = pendingSync
                                 )
                             }
                         ) { innerPadding ->
@@ -107,16 +144,16 @@ class MainActivity : ComponentActivity() {
                                 when (selectedNavTab) {
                                     NavItem.HOME -> {
                                         HomeScreen(
+                                            authRepository = authRepository,
                                             inspectionRepository = inspectionRepository,
+                                            inspectionRemote = inspectionRemote,
                                             roadRepository = roadRepository,
                                             syncRepository = syncRepository,
-                                            onNavigateToNewInspection = {
-                                                selectedNavTab = NavItem.NEW_INSPECTION
-                                                currentScreen = Screen.NewInspection
-                                            },
+                                            onNavigateToNewInspection = { goToTab(NavItem.NEW_INSPECTION) },
                                             onNavigateToDetail = { localId ->
                                                 currentScreen = Screen.Detail(localId)
-                                            }
+                                            },
+                                            onNavigateToSync = { goToTab(NavItem.SYNC_QUEUE) }
                                         )
                                     }
 
@@ -140,9 +177,11 @@ class MainActivity : ComponentActivity() {
                                     NavItem.SYNC_QUEUE -> {
                                         SyncQueueScreen(
                                             syncRepository = syncRepository,
-                                            onNavigateBack = {
-                                                selectedNavTab = NavItem.HOME
-                                                currentScreen = Screen.Home
+                                            inspectionRepository = inspectionRepository,
+                                            inspectionRemote = inspectionRemote,
+                                            onNavigateBack = { goToTab(NavItem.HOME) },
+                                            onOpenInspection = { localId ->
+                                                currentScreen = Screen.Detail(localId)
                                             }
                                         )
                                     }
@@ -150,6 +189,8 @@ class MainActivity : ComponentActivity() {
                                     NavItem.PROFILE -> {
                                         ProfileScreen(
                                             authRepository = authRepository,
+                                            inspectionRepository = inspectionRepository,
+                                            inspectionRemote = inspectionRemote,
                                             onLogout = {
                                                 currentScreen = Screen.Login
                                             }

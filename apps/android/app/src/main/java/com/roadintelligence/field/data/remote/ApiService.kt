@@ -69,6 +69,21 @@ interface ApiService {
         @Body fileBytes: RequestBody
     ): Response<Unit>
 
+    // Read-only server state for the inspection detail screen (existing endpoints).
+    @GET("api/v1/inspections/{id}/media")
+    suspend fun getInspectionMedia(
+        @Path("id") inspectionId: String
+    ): Response<ApiEnvelope<List<InspectionMediaDto>>>
+
+    @GET("api/v1/inspections/{id}/detections")
+    suspend fun getInspectionDetections(
+        @Path("id") inspectionId: String
+    ): Response<ApiEnvelope<List<DetectionDto>>>
+
+    // Public liveness probe, used only for the connection indicator.
+    @GET("api/v1/health/live")
+    suspend fun healthLive(): Response<ApiEnvelope<HealthDto>>
+
     // Submit (DRAFT/UPLOADING -> SUBMITTED)
     @POST("api/v1/inspections/{id}/submit")
     suspend fun submitInspection(

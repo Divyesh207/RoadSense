@@ -1,7 +1,6 @@
 package com.roadintelligence.field.ui.screens
 
 import android.Manifest
-import android.content.Context
 import android.util.Log
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -19,17 +18,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.roadintelligence.field.domain.model.InspectionMedia
 import com.roadintelligence.field.domain.model.UploadStatus
 import com.roadintelligence.field.domain.repository.InspectionRepository
+import com.roadintelligence.field.ui.components.LocalThumbnail
+import com.roadintelligence.field.ui.components.PrimaryButton
+import com.roadintelligence.field.ui.components.accuracyColor
 import com.roadintelligence.field.ui.permissions.hasAllPermissions
 import com.roadintelligence.field.ui.theme.*
 import kotlinx.coroutines.launch
@@ -37,11 +40,18 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * CameraX still-photo capture. [roadLabel] and the GPS values are display-only context taken from
+ * the inspection form; they do not change what is captured or stored.
+ */
 @Composable
 fun CameraCaptureScreen(
     inspectionLocalId: String,
     inspectionRepository: InspectionRepository,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    roadLabel: String? = null,
+    hasGpsFix: Boolean = false,
+    gpsAccuracyMeters: Float? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -60,11 +70,13 @@ fun CameraCaptureScreen(
     var capturedCount by remember { mutableStateOf(0) }
     var lastCapturedPath by remember { mutableStateOf<String?>(null) }
     var isCapturing by remember { mutableStateOf(false) }
+    var captureError by remember { mutableStateOf<String?>(null) }
 
     // Check count of existing media
     LaunchedEffect(Unit) {
         val mediaList = inspectionRepository.getMediaForInspection(inspectionLocalId)
         capturedCount = mediaList.size
+        if (lastCapturedPath == null) lastCapturedPath = mediaList.lastOrNull()?.localFilePath
     }
 
     Box(
@@ -111,93 +123,144 @@ fun CameraCaptureScreen(
             }
         )
 
-        // Top Controls Overlay
-        Row(
+        // Top overlay: back, inspection context, flash
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 40.dp, start = 16.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .align(Alignment.TopCenter)
+                .background(Color.Black.copy(alpha = 0.55f))
+                .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
-            IconButton(
-                onClick = onNavigateBack,
-                modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
-            ) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
-            }
-
-            // Photo counter badge
-            Surface(
-                color = Color.Black.copy(alpha = 0.6f),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onNavigateBack,
+                    modifier = Modifier.background(SurfaceDark.copy(alpha = 0.85f), CircleShape)
                 ) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = PrimaryCyan, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "$capturedCount photos",
+                        text = roadLabel ?: "No road selected",
                         color = Color.White,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val gpsColor = if (hasGpsFix) accuracyColor(gpsAccuracyMeters) else TextSecondary
+                        Icon(
+                            imageVector = if (hasGpsFix) Icons.Default.GpsFixed else Icons.Default.GpsOff,
+                            contentDescription = null,
+                            tint = gpsColor,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = when {
+                                !hasGpsFix -> "No GPS fix captured yet"
+                                gpsAccuracyMeters != null -> "GPS fix ±%.1f m".format(gpsAccuracyMeters)
+                                else -> "GPS fix captured"
+                            },
+                            color = gpsColor,
+                            style = CodeSm
+                        )
+                    }
+                }
+
+                // Flash mode toggle
+                IconButton(
+                    onClick = {
+                        flashMode = when (flashMode) {
+                            ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
+                            ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
+                            else -> ImageCapture.FLASH_MODE_AUTO
+                        }
+                        imageCapture?.flashMode = flashMode
+                    },
+                    modifier = Modifier.background(SurfaceDark.copy(alpha = 0.85f), CircleShape)
+                ) {
+                    val icon = when (flashMode) {
+                        ImageCapture.FLASH_MODE_ON -> Icons.Default.FlashOn
+                        ImageCapture.FLASH_MODE_OFF -> Icons.Default.FlashOff
+                        else -> Icons.Default.FlashAuto
+                    }
+                    val description = when (flashMode) {
+                        ImageCapture.FLASH_MODE_ON -> "Flash on"
+                        ImageCapture.FLASH_MODE_OFF -> "Flash off"
+                        else -> "Flash auto"
+                    }
+                    Icon(icon, contentDescription = description, tint = Color.White)
                 }
             }
 
-            // Flash mode toggle
-            IconButton(
-                onClick = {
-                    flashMode = when (flashMode) {
-                        ImageCapture.FLASH_MODE_AUTO -> ImageCapture.FLASH_MODE_ON
-                        ImageCapture.FLASH_MODE_ON -> ImageCapture.FLASH_MODE_OFF
-                        else -> ImageCapture.FLASH_MODE_AUTO
-                    }
-                    imageCapture?.flashMode = flashMode
-                },
-                modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), CircleShape)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(SurfaceDark.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val icon = when (flashMode) {
-                    ImageCapture.FLASH_MODE_ON -> Icons.Default.FlashOn
-                    ImageCapture.FLASH_MODE_OFF -> Icons.Default.FlashOff
-                    else -> Icons.Default.FlashAuto
-                }
-                Icon(icon, contentDescription = "Flash", tint = Color.White)
+                Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryCyanBright, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = captureError ?: "Frame the damage with surrounding road visible",
+                    color = if (captureError != null) ErrorSoft else Color.White,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
 
         // Bottom Capture Controls
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
-                .background(Color.Black.copy(alpha = 0.65f))
-                .padding(vertical = 32.dp, horizontal = 24.dp)
+                .background(Color.Black.copy(alpha = 0.7f))
+                .padding(vertical = 18.dp, horizontal = 20.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Done button
-                TextButton(
-                    onClick = onNavigateBack,
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
-                ) {
-                    Text("Done", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                // Last capture and photo count
+                Box(modifier = Modifier.size(64.dp), contentAlignment = Alignment.Center) {
+                    LocalThumbnail(
+                        path = lastCapturedPath,
+                        maxDimensionPx = 200,
+                        contentDescription = "Last captured photo",
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(2.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(12.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .background(PrimaryCyan, CircleShape)
+                            .defaultMinSize(minWidth = 22.dp, minHeight = 22.dp)
+                            .padding(horizontal = 5.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(capturedCount.toString(), color = OnPrimaryCyan, style = CodeSm, fontWeight = FontWeight.Bold)
+                    }
                 }
 
                 // Shutter Button
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(76.dp)
                         .border(4.dp, Color.White, CircleShape)
-                        .padding(6.dp)
+                        .padding(7.dp)
                         .background(if (isCapturing) Color.Gray else PrimaryCyan, CircleShape)
-                        .clickable(enabled = !isCapturing) {
+                        .clickable(enabled = !isCapturing, onClickLabel = "Capture photo") {
                             val capture = imageCapture ?: return@clickable
                             isCapturing = true
+                            captureError = null
 
                             val outputDir = File(context.filesDir, "inspections/$inspectionLocalId")
                             if (!outputDir.exists()) outputDir.mkdirs()
@@ -232,6 +295,7 @@ fun CameraCaptureScreen(
 
                                     override fun onError(exception: ImageCaptureException) {
                                         isCapturing = false
+                                        captureError = "Capture failed — try again"
                                         Log.e(CAMERA_TAG, "takePicture failed", exception)
                                     }
                                 }
@@ -252,16 +316,28 @@ fun CameraCaptureScreen(
                         } else {
                             CameraSelector.LENS_FACING_BACK
                         }
-                    }
+                    },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(SurfaceDark.copy(alpha = 0.85f), CircleShape)
                 ) {
                     Icon(
                         Icons.Default.Cameraswitch,
                         contentDescription = "Switch Camera",
                         tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            PrimaryButton(
+                text = if (capturedCount == 0) "Done" else "Done — review $capturedCount photo" + if (capturedCount == 1) "" else "s",
+                icon = Icons.Default.Check,
+                onClick = onNavigateBack,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -278,15 +354,26 @@ private fun CameraPermissionMissing(onNavigateBack: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(Icons.Default.NoPhotography, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(40.dp))
-            Spacer(modifier = Modifier.height(12.dp))
-            Text("Camera permission required", color = TextPrimary, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text("Go back and tap Capture Photo Evidence to allow camera access.", color = TextSecondary, fontSize = 13.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onNavigateBack, colors = ButtonDefaults.buttonColors(containerColor = PrimaryCyan)) {
-                Text("Back", color = Color.Black, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .background(WarningAmber.copy(alpha = 0.12f), RoundedCornerShape(18.dp))
+                    .border(1.dp, WarningAmber.copy(alpha = 0.4f), RoundedCornerShape(18.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.NoPhotography, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(32.dp))
             }
+            Spacer(modifier = Modifier.height(14.dp))
+            Text("Camera permission required", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                "Go back and tap Capture Photo Evidence to allow camera access.",
+                color = TextSecondary,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(18.dp))
+            PrimaryButton(text = "Back", onClick = onNavigateBack, modifier = Modifier.fillMaxWidth())
         }
     }
 }

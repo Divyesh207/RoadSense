@@ -1,0 +1,9 @@
+<resources>
+    <!-- Android 12+: the system splash shows the launcher icon on this background. -->
+    <style name="Theme.RoadIntelligenceField" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@color/background_dark</item>
+        <item name="android:navigationBarColor">@color/background_dark</item>
+        <item name="android:windowBackground">@color/background_dark</item>
+        <item name="android:windowSplashScreenBackground">@color/ic_launcher_background</item>
+    </style>
+</resources>
