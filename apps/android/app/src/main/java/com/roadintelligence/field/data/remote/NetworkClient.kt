@@ -55,6 +55,25 @@ object NetworkClient {
     // Every ApiService call, including the upload handshake, resolves against it.
     val baseUrl: String = BuildConfig.API_BASE_URL
 
+    // Route of the platform's own (local) storage backend, relative to the server root.
+    private const val LOCAL_STORAGE_ROUTE = "/api/v1/storage/local/"
+
+    /**
+     * The address to send a signed upload to. The server builds the URL from its own
+     * PUBLIC_API_BASE_URL setting, which can name a host this device cannot reach (a LAN
+     * address while the app talks to the API through `adb reverse`, for example). When the
+     * URL points at the platform's own storage route, it is the API itself, so it is
+     * re-addressed to [apiBase], the one address every other call uses. The signature covers
+     * the method, bucket, path and expiry only, so it stays valid. URLs for external storage
+     * (e.g. Supabase) are returned unchanged.
+     */
+    fun resolveUploadUrl(serverUrl: String, apiBase: String = baseUrl): String {
+        val url = serverUrl.toHttpUrlOrNull() ?: return serverUrl
+        val base = apiBase.toHttpUrlOrNull() ?: return serverUrl
+        if (!url.encodedPath.startsWith(LOCAL_STORAGE_ROUTE)) return serverUrl
+        return url.newBuilder().scheme(base.scheme).host(base.host).port(base.port).build().toString()
+    }
+
     private var apiServiceInstance: ApiService? = null
 
     fun getApiService(sessionManager: SecureSessionManager): ApiService {
