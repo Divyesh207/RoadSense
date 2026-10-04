@@ -26,7 +26,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.roadintelligence.field.BuildConfig
 import com.roadintelligence.field.R
+import com.roadintelligence.field.data.repository.InspectionRemoteRepository
 import com.roadintelligence.field.domain.repository.AuthRepository
+import com.roadintelligence.field.ui.components.ConnectionChip
+import com.roadintelligence.field.ui.components.rememberDeviceOnline
+import com.roadintelligence.field.ui.components.rememberServerReachability
+import com.roadintelligence.field.ui.components.serverChip
 import com.roadintelligence.field.ui.components.FieldCard
 import com.roadintelligence.field.ui.components.MessageCard
 import com.roadintelligence.field.ui.components.MessageKind
@@ -40,7 +45,8 @@ import kotlinx.coroutines.launch
 fun LoginScreen(
     authRepository: AuthRepository,
     onLoginSuccess: () -> Unit,
-    onCreateAccount: () -> Unit = {}
+    onCreateAccount: () -> Unit = {},
+    inspectionRemote: InspectionRemoteRepository? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     // No pre-filled credentials: accounts are created with `python -m app.bootstrap`
@@ -71,7 +77,7 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .glassBackground()
             .verticalScroll(rememberScrollState())
             .imePadding()
             .padding(horizontal = 20.dp, vertical = 24.dp),
@@ -82,16 +88,30 @@ fun LoginScreen(
         Image(
             painter = painterResource(R.drawable.ri_logo_full),
             contentDescription = "Road Intelligence Operations Platform",
-            modifier = Modifier.size(168.dp)
+            modifier = Modifier.size(132.dp)
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Field Inspection",
-            color = PrimaryCyanBright,
-            style = CodeMd,
-            letterSpacing = androidx.compose.ui.unit.TextUnit(1.5f, androidx.compose.ui.unit.TextUnitType.Sp)
+            text = "Road Intelligence",
+            color = TextPrimary,
+            style = MaterialTheme.typography.headlineSmall
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = "FIELD OPERATIONS PLATFORM",
+            color = PrimaryCyanBright,
+            style = CodeSm,
+            letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp)
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        // Live state of the API this build talks to (public liveness endpoint).
+        if (inspectionRemote != null) {
+            val deviceOnline by rememberDeviceOnline()
+            val server by rememberServerReachability(inspectionRemote)
+            val info = serverChip(server, deviceOnline)
+            ConnectionChip(info.label, info.color)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
         Text(
             text = "Sign in to capture and upload road inspections.",
             color = TextSecondary,

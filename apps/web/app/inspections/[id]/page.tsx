@@ -182,8 +182,8 @@ export default function InspectionDetailPage() {
   if (loading) {
     return (
       <AppShell>
-        <div className="flex flex-col items-center justify-center py-24 text-xs text-[#94A3B8] gap-3">
-          <RefreshCw className="h-6 w-6 text-[#06B6D4] animate-spin" />
+        <div className="flex flex-col items-center justify-center py-24 text-xs text-ri-muted gap-3">
+          <RefreshCw className="h-6 w-6 text-ri-primary animate-spin" />
           <span className="font-code-sm">Loading field inspection record...</span>
         </div>
       </AppShell>
@@ -193,27 +193,27 @@ export default function InspectionDetailPage() {
   if (error || !inspection) {
     return (
       <AppShell>
-        <div className="max-w-xl mx-auto mt-16 bg-[#111A2E] border border-[#26344F] rounded-2xl p-8 text-center space-y-4">
-          <AlertCircle className="h-10 w-10 mx-auto text-[#F59E0B]" />
+        <div className="max-w-xl mx-auto mt-16 bg-ri-surface border border-ri-line rounded-2xl p-8 text-center space-y-4">
+          <AlertCircle className="h-10 w-10 mx-auto text-ri-warning" />
           <div>
-            <h1 className="font-headline-sm text-base font-bold text-[#F1F5F9]">
+            <h1 className="font-headline-sm text-base font-bold text-ri-text">
               {error?.notFound ? "Inspection Not Found" : "Unable to Load Inspection"}
             </h1>
-            <p className="font-body-sm text-xs text-[#94A3B8] mt-1">
+            <p className="font-body-sm text-xs text-ri-muted mt-1">
               {error?.message || "Inspection not found."}
             </p>
           </div>
           <div className="flex items-center justify-center gap-3 pt-2">
             <Link
               href="/inspections"
-              className="h-10 px-4 bg-[#17223A] hover:bg-[#232A39] border border-[#26344F] text-[#F1F5F9] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
+              className="h-10 px-4 bg-ri-raised hover:bg-ri-raised border border-ri-line text-ri-text rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Back to Inspections
             </Link>
             {!error?.notFound && (
               <button
                 onClick={load}
-                className="h-10 px-4 bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] rounded-xl text-xs font-bold transition-all"
+                className="h-10 px-4 bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary rounded-xl text-xs font-bold transition-all"
               >
                 Retry Request
               </button>
@@ -280,38 +280,38 @@ export default function InspectionDetailPage() {
           <div>
             <Link
               href="/inspections"
-              className="inline-flex items-center gap-1.5 font-code-sm text-xs text-[#06B6D4] hover:underline mb-1"
+              className="inline-flex items-center gap-1.5 font-code-sm text-xs text-ri-primary hover:underline mb-1"
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Inspections
             </Link>
             <div className="flex items-center gap-3">
-              <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-[#F1F5F9]">
-                Inspection <span className="font-code-lg text-[#06B6D4]">#{inspection.id.slice(0, 8)}</span>
+              <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-ri-text">
+                Inspection <span className="font-code-lg text-ri-primary">#{inspection.id.slice(0, 8)}</span>
               </h1>
               <StatusBadge status={inspection.status} variant={inspection.status === "COMPLETED" ? "success" : undefined} />
             </div>
-            <p className="font-code-sm text-[11px] text-[#64748B] mt-0.5">{inspection.id}</p>
+            <p className="font-code-sm text-[11px] text-ri-faint mt-0.5">{inspection.id}</p>
           </div>
           <button
             onClick={load}
-            className="self-start sm:self-auto inline-flex items-center gap-2 h-10 px-4 bg-[#17223A] hover:bg-[#232A39] border border-[#26344F] text-[#F1F5F9] rounded-xl font-label-md text-xs font-semibold transition-all active:scale-95"
+            className="self-start sm:self-auto inline-flex items-center gap-2 h-10 px-4 bg-ri-raised hover:bg-ri-raised border border-ri-line text-ri-text rounded-xl font-label-md text-xs font-semibold transition-all active:scale-95"
           >
-            <RefreshCw className="h-3.5 w-3.5 text-[#06B6D4]" /> Refresh
+            <RefreshCw className="h-3.5 w-3.5 text-ri-primary" /> Refresh
           </button>
         </div>
 
         {/* Stitch Header Card (Asset Record Summary) */}
-        <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <span className="font-label-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+              <span className="font-label-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
                 Road / Segment
               </span>
-              <h2 className="font-headline-sm text-lg font-bold text-[#F1F5F9] mt-0.5">
+              <h2 className="font-headline-sm text-lg font-bold text-ri-text mt-0.5">
                 {inspection.road_name || "Unassigned road"}
               </h2>
               {inspection.segment_number != null && (
-                <p className="font-code-sm text-xs text-[#ADC6FF] mt-0.5">
+                <p className="font-code-sm text-xs text-ri-info-soft mt-0.5">
                   Segment #{inspection.segment_number}
                 </p>
               )}
@@ -319,28 +319,28 @@ export default function InspectionDetailPage() {
             <StatusBadge status={inspection.status} variant={inspection.status === "COMPLETED" ? "success" : undefined} />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-[#26344F]/60">
-            <div className="bg-[#151B2A] border border-[#26344F]/60 p-3 rounded-xl">
-              <span className="font-label-sm text-[11px] text-[#94A3B8]">Inspector</span>
-              <p className="font-headline-sm text-xs font-semibold text-[#F1F5F9] mt-1 truncate">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-ri-line/60">
+            <div className="bg-ri-input border border-ri-line/60 p-3 rounded-xl">
+              <span className="font-label-sm text-[11px] text-ri-muted">Inspector</span>
+              <p className="font-headline-sm text-xs font-semibold text-ri-text mt-1 truncate">
                 {inspection.inspector_name || "Field Agent"}
               </p>
             </div>
-            <div className="bg-[#151B2A] border border-[#26344F]/60 p-3 rounded-xl">
-              <span className="font-label-sm text-[11px] text-[#94A3B8]">Captured</span>
-              <p className="font-code-sm text-xs text-[#F1F5F9] mt-1">
+            <div className="bg-ri-input border border-ri-line/60 p-3 rounded-xl">
+              <span className="font-label-sm text-[11px] text-ri-muted">Captured</span>
+              <p className="font-code-sm text-xs text-ri-text mt-1">
                 {formatDateTime(inspection.captured_at)}
               </p>
             </div>
-            <div className="bg-[#151B2A] border border-[#26344F]/60 p-3 rounded-xl">
-              <span className="font-label-sm text-[11px] text-[#94A3B8]">Submitted</span>
-              <p className="font-code-sm text-xs text-[#F1F5F9] mt-1">
+            <div className="bg-ri-input border border-ri-line/60 p-3 rounded-xl">
+              <span className="font-label-sm text-[11px] text-ri-muted">Submitted</span>
+              <p className="font-code-sm text-xs text-ri-text mt-1">
                 {formatDateTime(inspection.submitted_at)}
               </p>
             </div>
-            <div className="bg-[#151B2A] border border-[#26344F]/60 p-3 rounded-xl">
-              <span className="font-label-sm text-[11px] text-[#94A3B8]">Source</span>
-              <p className="font-code-sm text-xs text-[#06B6D4] mt-1 truncate">
+            <div className="bg-ri-input border border-ri-line/60 p-3 rounded-xl">
+              <span className="font-label-sm text-[11px] text-ri-muted">Source</span>
+              <p className="font-code-sm text-xs text-ri-primary mt-1 truncate">
                 {inspection.source || "—"}
               </p>
             </div>
@@ -348,18 +348,18 @@ export default function InspectionDetailPage() {
         </div>
 
         {/* Processing stages */}
-        <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
-            <span className="font-label-md text-xs font-semibold text-[#F1F5F9]">
+            <span className="font-label-md text-xs font-semibold text-ri-text">
               Processing
             </span>
-            <span className="font-code-sm text-xs text-[#94A3B8]">
+            <span className="font-code-sm text-xs text-ri-muted">
               {failed ? "Failed" : `Progress: ${progressPct}%`}
             </span>
           </div>
 
           <div className="grid grid-cols-5 gap-2 relative">
-            <div className="absolute top-4 left-6 right-6 h-0.5 bg-[#26344F] z-0"></div>
+            <div className="absolute top-4 left-6 right-6 h-0.5 bg-ri-line z-0"></div>
             {PROCESSING_STAGES.map((s, idx) => {
               const isPast = idx <= stageIndex && !failed;
               const isCurrent = idx === stageIndex && !failed;
@@ -370,12 +370,12 @@ export default function InspectionDetailPage() {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-sm ${
                       isFailedStage
-                        ? "bg-[#EF4444] text-white"
+                        ? "bg-ri-danger text-white"
                         : isPast
-                        ? "bg-[#10B981] text-[#003824]"
+                        ? "bg-ri-success text-ri-on-primary"
                         : isCurrent
-                        ? "bg-[#06B6D4] text-[#003640] animate-pulse"
-                        : "bg-[#232A39] text-[#94A3B8] border border-[#3D494C]"
+                        ? "bg-ri-primary text-ri-on-primary animate-pulse"
+                        : "bg-ri-raised text-ri-muted border border-ri-line-strong"
                     }`}
                   >
                     {isPast ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
@@ -383,12 +383,12 @@ export default function InspectionDetailPage() {
                   <span
                     className={`font-label-sm text-[11px] font-semibold ${
                       isFailedStage
-                        ? "text-[#EF4444]"
+                        ? "text-ri-danger"
                         : isPast
-                        ? "text-[#10B981]"
+                        ? "text-ri-success"
                         : isCurrent
-                        ? "text-[#4CD7F6]"
-                        : "text-[#869397]"
+                        ? "text-ri-primary-bright"
+                        : "text-ri-muted"
                     }`}
                   >
                     {s}
@@ -399,8 +399,8 @@ export default function InspectionDetailPage() {
           </div>
 
           {failed && (
-            <div className="p-3 bg-[#EF4444]/15 border border-[#EF4444]/30 rounded-xl text-xs text-[#FFB4AB] flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-[#EF4444] shrink-0" />
+            <div className="p-3 bg-ri-danger/15 border border-ri-danger/30 rounded-xl text-xs text-ri-danger-soft flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-ri-danger shrink-0" />
               <span>AI processing failed. Re-run processing from the inspections list.</span>
             </div>
           )}
@@ -409,11 +409,11 @@ export default function InspectionDetailPage() {
         {/* Location & AI Results */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Location */}
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-[#06B6D4]" />
-                <h3 className="font-headline-sm text-sm font-semibold text-[#F1F5F9]">Location (WGS84)</h3>
+                <MapPin className="h-4 w-4 text-ri-primary" />
+                <h3 className="font-headline-sm text-sm font-semibold text-ri-text">Location (WGS84)</h3>
               </div>
               <StatusBadge
                 status={inspection.location ? "GPS RECORDED" : "NO GPS LOCATION"}
@@ -423,21 +423,21 @@ export default function InspectionDetailPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="bg-[#151B2A] border border-[#26344F]/60 rounded-xl p-3">
-                <span className="font-label-sm text-[11px] text-[#94A3B8]">Latitude</span>
-                <p className="font-code-md text-sm font-bold text-[#F1F5F9] mt-0.5">
+              <div className="bg-ri-input border border-ri-line/60 rounded-xl p-3">
+                <span className="font-label-sm text-[11px] text-ri-muted">Latitude</span>
+                <p className="font-code-md text-sm font-bold text-ri-text mt-0.5">
                   {inspection.location ? inspection.location.latitude.toFixed(6) : "—"}
                 </p>
               </div>
-              <div className="bg-[#151B2A] border border-[#26344F]/60 rounded-xl p-3">
-                <span className="font-label-sm text-[11px] text-[#94A3B8]">Longitude</span>
-                <p className="font-code-md text-sm font-bold text-[#F1F5F9] mt-0.5">
+              <div className="bg-ri-input border border-ri-line/60 rounded-xl p-3">
+                <span className="font-label-sm text-[11px] text-ri-muted">Longitude</span>
+                <p className="font-code-md text-sm font-bold text-ri-text mt-0.5">
                   {inspection.location ? inspection.location.longitude.toFixed(6) : "—"}
                 </p>
               </div>
-              <div className="col-span-2 bg-[#151B2A] border border-[#26344F]/60 rounded-xl p-3">
-                <span className="font-label-sm text-[11px] text-[#94A3B8]">Reported GPS accuracy</span>
-                <p className="font-code-md text-sm font-bold text-[#06B6D4] mt-0.5">
+              <div className="col-span-2 bg-ri-input border border-ri-line/60 rounded-xl p-3">
+                <span className="font-label-sm text-[11px] text-ri-muted">Reported GPS accuracy</span>
+                <p className="font-code-md text-sm font-bold text-ri-primary mt-0.5">
                   {inspection.location?.accuracy_m != null ? `±${inspection.location.accuracy_m} m` : "—"}
                 </p>
               </div>
@@ -445,37 +445,37 @@ export default function InspectionDetailPage() {
           </div>
 
           {/* AI results & review (values from the backend only) */}
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Cpu className="h-4 w-4 text-[#06B6D4]" />
-                <h3 className="font-headline-sm text-sm font-semibold text-[#F1F5F9]">AI Results</h3>
+                <Cpu className="h-4 w-4 text-ri-primary" />
+                <h3 className="font-headline-sm text-sm font-semibold text-ri-text">AI Results</h3>
               </div>
-              <p className="font-code-lg text-2xl font-bold text-[#F1F5F9]">
+              <p className="font-code-lg text-2xl font-bold text-ri-text">
                 {detections.loading ? "…" : detections.error ? "—" : detections.data.length}
               </p>
-              <p className="text-[11px] text-[#94A3B8]">detections · AI status: {aiStatus}</p>
+              <p className="text-[11px] text-ri-muted">detections · AI status: {aiStatus}</p>
               {methods.length > 0 && (
-                <p className={`text-[11px] mt-1 ${heuristicOnly ? "text-[#F59E0B]" : "text-[#94A3B8]"}`}>
+                <p className={`text-[11px] mt-1 ${heuristicOnly ? "text-ri-warning" : "text-ri-muted"}`}>
                   Method: {methods.map(detectionMethodLabel).join(", ")}
                 </p>
               )}
               {models.length > 0 && (
-                <p className="font-code-sm text-[11px] text-[#94A3B8] mt-1">Model: {models.join(", ")}</p>
+                <p className="font-code-sm text-[11px] text-ri-muted mt-1">Model: {models.join(", ")}</p>
               )}
-              <p className="text-[11px] text-[#64748B] mt-2 leading-relaxed">
+              <p className="text-[11px] text-ri-faint mt-2 leading-relaxed">
                 Detections are candidates until an authorized reviewer confirms them as damage records.
               </p>
             </div>
 
-            <div className="pt-3 border-t border-[#26344F]/60">
-              <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8]">
-                <ShieldCheck className="h-3.5 w-3.5 text-[#06B6D4]" /> Human review
+            <div className="pt-3 border-t border-ri-line/60">
+              <div className="flex items-center gap-1.5 text-[11px] text-ri-muted">
+                <ShieldCheck className="h-3.5 w-3.5 text-ri-primary" /> Human review
               </div>
-              <p className={`text-sm font-semibold mt-1 ${pendingReview > 0 ? "text-[#F59E0B]" : "text-[#F1F5F9]"}`}>
+              <p className={`text-sm font-semibold mt-1 ${pendingReview > 0 ? "text-ri-warning" : "text-ri-text"}`}>
                 {reviewStatus}
               </p>
-              <p className="text-[11px] text-[#64748B] mt-0.5">
+              <p className="text-[11px] text-ri-faint mt-0.5">
                 {damages.data.length} damage records from this inspection
               </p>
             </div>
@@ -483,9 +483,9 @@ export default function InspectionDetailPage() {
         </div>
 
         {inspection.notes && (
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl p-5 shadow-sm">
-            <h2 className="font-headline-sm text-sm font-semibold text-[#F1F5F9] mb-1">Notes</h2>
-            <p className="text-xs text-[#94A3B8] whitespace-pre-wrap">{inspection.notes}</p>
+          <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm">
+            <h2 className="font-headline-sm text-sm font-semibold text-ri-text mb-1">Notes</h2>
+            <p className="text-xs text-ri-muted whitespace-pre-wrap">{inspection.notes}</p>
           </div>
         )}
 
@@ -494,8 +494,8 @@ export default function InspectionDetailPage() {
           <div
             className={`p-4 rounded-xl border text-xs flex items-center gap-2 ${
               promotionNotice.ok
-                ? "bg-[#10B981]/15 border-[#10B981]/30 text-[#10B981]"
-                : "bg-[#EF4444]/15 border-[#EF4444]/30 text-[#FFB4AB]"
+                ? "bg-ri-success/15 border-ri-success/30 text-ri-success"
+                : "bg-ri-danger/15 border-ri-danger/30 text-ri-danger-soft"
             }`}
           >
             {promotionNotice.ok ? (
@@ -510,19 +510,19 @@ export default function InspectionDetailPage() {
         {/* AI detections */}
         <Panel
           title="AI Detections"
-          icon={<Cpu className="h-4 w-4 text-[#06B6D4]" />}
+          icon={<Cpu className="h-4 w-4 text-ri-primary" />}
           section={detections}
           empty="No AI detections for this inspection yet."
         >
           {heuristicOnly && (
-            <p className="px-4 py-2 text-[11px] text-[#F59E0B] bg-[#F59E0B]/10 border-b border-[#26344F]">
+            <p className="px-4 py-2 text-[11px] text-ri-warning bg-ri-warning/10 border-b border-ri-line">
               These results were produced by the OpenCV heuristic fallback (rule-based, not a trained model), not by
               the trained detection model. Scores are rule-derived, not probabilities; treat these as unverified
               candidates.
             </p>
           )}
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+            <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
               <tr>
                 <th className="py-3 px-4 font-semibold">Damage Type</th>
                 <th className="py-3 px-4 font-semibold">{scoreHeader}</th>
@@ -533,32 +533,32 @@ export default function InspectionDetailPage() {
                 <th className="py-3 px-4 text-right font-semibold">Damage record</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+            <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
               {detections.data.map((d) => {
                 const record = promoted[d.id] ?? damages.data.find((r) => r.source_detection_id === d.id);
                 const heuristic = isHeuristic(d.detection_method, d.score_type);
 
                 return (
-                  <tr key={d.id} className="hover:bg-[#17223A]/50 transition-colors">
+                  <tr key={d.id} className="hover:bg-ri-raised/50 transition-colors">
                     <td className="py-3 px-4 font-bold text-white">{d.damage_type}</td>
                     <td className="py-3 px-4 font-code-sm">{(d.confidence * 100).toFixed(1)}%</td>
-                    <td className={`py-3 px-4 text-[11px] ${heuristic ? "text-[#F59E0B]" : "text-[#94A3B8]"}`}>
+                    <td className={`py-3 px-4 text-[11px] ${heuristic ? "text-ri-warning" : "text-ri-muted"}`}>
                       {heuristic ? "Heuristic fallback (unverified)" : detectionMethodLabel(d.detection_method)}
                     </td>
                     <td className="py-3 px-4">
                       <StatusBadge status={d.severity} size="sm" />
                     </td>
-                    <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                    <td className="py-3 px-4 font-code-sm text-ri-muted">
                       {[d.bbox.x_min, d.bbox.y_min, d.bbox.x_max, d.bbox.y_max].map((v) => v.toFixed(3)).join(", ")}
                     </td>
-                    <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                    <td className="py-3 px-4 font-code-sm text-ri-muted">
                       {d.location ? `${d.location.latitude.toFixed(5)}, ${d.location.longitude.toFixed(5)}` : "—"}
                     </td>
                     <td className="py-3 px-4 text-right">
                       {record ? (
                         <Link
                           href="/damages"
-                          className="inline-flex items-center gap-1.5 font-code-sm text-xs text-[#06B6D4] hover:underline"
+                          className="inline-flex items-center gap-1.5 font-code-sm text-xs text-ri-primary hover:underline"
                         >
                           <StatusBadge status={record.status} size="sm" />
                           <span>{record.id.slice(0, 8)}</span>
@@ -570,8 +570,8 @@ export default function InspectionDetailPage() {
                           title={heuristic ? "Heuristic fallback candidate (unverified)" : "Trained-model detection"}
                           className={`h-8 px-3 rounded-lg font-label-md text-xs font-bold transition-all active:scale-95 disabled:opacity-50 ${
                             heuristic
-                              ? "bg-[#F59E0B]/20 border border-[#F59E0B]/40 text-[#F59E0B] hover:bg-[#F59E0B]/30"
-                              : "bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640]"
+                              ? "bg-ri-warning/20 border border-ri-warning/40 text-ri-warning hover:bg-ri-warning/30"
+                              : "bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary"
                           }`}
                         >
                           {promoting === d.id
@@ -592,12 +592,12 @@ export default function InspectionDetailPage() {
         {/* Damage records */}
         <Panel
           title="Damage Records"
-          icon={<AlertTriangle className="h-4 w-4 text-[#F59E0B]" />}
+          icon={<AlertTriangle className="h-4 w-4 text-ri-warning" />}
           section={damages}
           empty="No damage records have been created from this inspection."
         >
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+            <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
               <tr>
                 <th className="py-3 px-4 font-semibold">Type</th>
                 <th className="py-3 px-4 font-semibold">Severity</th>
@@ -606,11 +606,11 @@ export default function InspectionDetailPage() {
                 <th className="py-3 px-4 font-semibold">Detected</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+            <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
               {damages.data.map((d) => (
-                <tr key={d.id} className="hover:bg-[#17223A]/50 transition-colors">
+                <tr key={d.id} className="hover:bg-ri-raised/50 transition-colors">
                   <td className="py-3 px-4 font-bold text-white">
-                    <Link href="/damages" className="hover:text-[#06B6D4]">
+                    <Link href="/damages" className="hover:text-ri-primary">
                       {d.damage_type_name || d.damage_type_code}
                     </Link>
                   </td>
@@ -620,8 +620,8 @@ export default function InspectionDetailPage() {
                   <td className="py-3 px-4">
                     <StatusBadge status={d.status} size="sm" />
                   </td>
-                  <td className="py-3 px-4 font-code-sm text-[#94A3B8]">{d.source_type}</td>
-                  <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                  <td className="py-3 px-4 font-code-sm text-ri-muted">{d.source_type}</td>
+                  <td className="py-3 px-4 font-code-sm text-ri-muted">
                     {formatDateTime(d.detected_at || d.created_at)}
                   </td>
                 </tr>
@@ -633,12 +633,12 @@ export default function InspectionDetailPage() {
         {/* Media */}
         <Panel
           title="Media"
-          icon={<FileImage className="h-4 w-4 text-[#10B981]" />}
+          icon={<FileImage className="h-4 w-4 text-ri-success" />}
           section={media}
           empty="No media uploaded for this inspection."
         >
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+            <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
               <tr>
                 <th className="py-3 px-4 font-semibold">File</th>
                 <th className="py-3 px-4 font-semibold">Type</th>
@@ -647,22 +647,22 @@ export default function InspectionDetailPage() {
                 <th className="py-3 px-4 font-semibold">Uploaded</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+            <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
               {media.data.map((m) => (
-                <tr key={m.id} className="hover:bg-[#17223A]/50 transition-colors">
+                <tr key={m.id} className="hover:bg-ri-raised/50 transition-colors">
                   <td className="py-3 px-4 font-code-sm text-white">
                     {m.original_filename || m.storage_path.split("/").pop()}
                   </td>
-                  <td className="py-3 px-4 text-[#94A3B8]">
+                  <td className="py-3 px-4 text-ri-muted">
                     {m.media_type} · {m.mime_type}
                   </td>
-                  <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                  <td className="py-3 px-4 font-code-sm text-ri-muted">
                     {m.file_size_bytes != null ? `${(m.file_size_bytes / 1024).toFixed(1)} KB` : "—"}
                   </td>
                   <td className="py-3 px-4">
                     <StatusBadge status={m.upload_status} variant={m.upload_status === "COMPLETED" ? "success" : undefined} size="sm" />
                   </td>
-                  <td className="py-3 px-4 font-code-sm text-[#94A3B8]">{formatDateTime(m.created_at)}</td>
+                  <td className="py-3 px-4 font-code-sm text-ri-muted">{formatDateTime(m.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -672,12 +672,12 @@ export default function InspectionDetailPage() {
         {/* Audit history */}
         <Panel
           title="Audit History"
-          icon={<History className="h-4 w-4 text-[#06B6D4]" />}
+          icon={<History className="h-4 w-4 text-ri-primary" />}
           section={audit}
           empty="No audit events recorded for this inspection."
         >
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+            <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
               <tr>
                 <th className="py-3 px-4 font-semibold">Time</th>
                 <th className="py-3 px-4 font-semibold">Action</th>
@@ -685,13 +685,13 @@ export default function InspectionDetailPage() {
                 <th className="py-3 px-4 font-semibold">Actor</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+            <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
               {audit.data.map((a) => (
-                <tr key={a.id} className="hover:bg-[#17223A]/50 transition-colors">
-                  <td className="py-3 px-4 font-code-sm text-[#94A3B8]">{formatDateTime(a.created_at)}</td>
+                <tr key={a.id} className="hover:bg-ri-raised/50 transition-colors">
+                  <td className="py-3 px-4 font-code-sm text-ri-muted">{formatDateTime(a.created_at)}</td>
                   <td className="py-3 px-4 text-white">{a.action}</td>
-                  <td className="py-3 px-4 text-[#94A3B8]">{a.entity_type}</td>
-                  <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                  <td className="py-3 px-4 text-ri-muted">{a.entity_type}</td>
+                  <td className="py-3 px-4 font-code-sm text-ri-muted">
                     {a.actor_user_id ? a.actor_user_id.slice(0, 8) : "system"}
                   </td>
                 </tr>
@@ -718,20 +718,20 @@ function Panel<T>({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
-      <div className="p-4 border-b border-[#26344F] flex items-center gap-2">
+    <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+      <div className="p-4 border-b border-ri-line flex items-center gap-2">
         {icon}
-        <h2 className="font-headline-sm text-sm font-bold text-[#F1F5F9]">{title}</h2>
+        <h2 className="font-headline-sm text-sm font-bold text-ri-text">{title}</h2>
         {!section.loading && !section.error && (
-          <span className="font-code-sm text-xs text-[#94A3B8]">({section.data.length})</span>
+          <span className="font-code-sm text-xs text-ri-muted">({section.data.length})</span>
         )}
       </div>
       {section.loading ? (
-        <p className="py-8 text-center text-xs text-[#94A3B8]">Loading...</p>
+        <p className="py-8 text-center text-xs text-ri-muted">Loading...</p>
       ) : section.error ? (
-        <p className="py-8 px-4 text-center text-xs text-[#F59E0B]">{section.error}</p>
+        <p className="py-8 px-4 text-center text-xs text-ri-warning">{section.error}</p>
       ) : section.data.length === 0 ? (
-        <p className="py-8 text-center text-xs text-[#94A3B8]">{empty}</p>
+        <p className="py-8 text-center text-xs text-ri-muted">{empty}</p>
       ) : (
         <div className="overflow-x-auto">{children}</div>
       )}

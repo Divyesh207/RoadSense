@@ -101,14 +101,14 @@ export default function ReportsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="p-2 rounded-lg bg-[#06B6D4]/10 border border-[#06B6D4]/30 text-[#06B6D4]">
+              <span className="p-2 rounded-lg bg-ri-primary/10 border border-ri-primary/30 text-ri-primary">
                 <FileText className="h-5 w-5" />
               </span>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white">
                 Operational Reports & Exports
               </h1>
             </div>
-            <p className="text-xs text-slate-400 mt-1 max-w-3xl leading-relaxed">
+            <p className="text-xs text-ri-muted mt-1 max-w-3xl leading-relaxed">
               Generate reports from stored operational records (road health, damage, maintenance and recurrence) and
               download them as PDF, CSV or JSON.
             </p>
@@ -118,14 +118,14 @@ export default function ReportsPage() {
             <button
               onClick={() => loadReports()}
               disabled={loading}
-              className="p-2 rounded-xl bg-[#111A2E] border border-[#26344F] text-slate-400 hover:text-white hover:border-slate-600 transition-colors disabled:opacity-50"
+              className="p-2 rounded-xl bg-ri-surface border border-ri-line text-ri-muted hover:text-white hover:border-ri-faint transition-colors disabled:opacity-50"
               title="Refresh Reports"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-[#06B6D4]" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-ri-primary" : ""}`} />
             </button>
             <button
               onClick={() => setShowGenerateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#06B6D4] to-[#2563EB] hover:from-[#4CD7F6] hover:to-[#3B82F6] text-[#0C1321] font-bold rounded-xl text-xs shadow-lg shadow-[#06B6D4]/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-ri-primary to-ri-info hover:from-ri-primary-bright hover:to-ri-info text-ri-bg font-bold rounded-xl text-xs shadow-lg shadow-ri-primary/20 transition-all"
             >
               <Plus className="h-4 w-4 stroke-[3]" />
               <span>Generate Report</span>
@@ -146,10 +146,10 @@ export default function ReportsPage() {
         </div>
 
         {/* Filter and List Container */}
-        <div className="p-5 rounded-2xl bg-[#111A2E] border border-[#26344F] space-y-4 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#26344F]">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-slate-400">
-              <Filter className="h-3.5 w-3.5 text-[#06B6D4]" />
+        <div className="p-5 rounded-2xl bg-ri-surface border border-ri-line space-y-4 shadow-xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-ri-line">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ri-muted">
+              <Filter className="h-3.5 w-3.5 text-ri-primary" />
               <span>Filter by Type:</span>
               {["ALL", "ROAD_HEALTH", "DAMAGE_SUMMARY", "MAINTENANCE_LOG", "RECURRENCE_INTELLIGENCE"].map((t) => (
                 <button
@@ -157,22 +157,22 @@ export default function ReportsPage() {
                   onClick={() => setFilterType(t)}
                   className={`px-2.5 py-1 rounded-full text-xs font-mono font-medium transition-all ${
                     filterType === t
-                      ? "bg-[#06B6D4]/15 text-[#4CD7F6] border border-[#06B6D4]/40"
-                      : "text-slate-400 hover:text-slate-200 bg-[#0C1321] border border-[#26344F]"
+                      ? "bg-ri-primary/15 text-ri-primary-bright border border-ri-primary/40"
+                      : "text-ri-muted hover:text-ri-text-soft bg-ri-bg border border-ri-line"
                   }`}
                 >
                   {t.replace(/_/g, " ")}
                 </button>
               ))}
             </div>
-            <div className="text-xs font-mono text-slate-400">
+            <div className="text-xs font-mono text-ri-muted">
               Showing <span className="text-white font-semibold">{filteredReports.length}</span> reports
             </div>
           </div>
 
           {loading ? (
-            <div className="py-16 text-center text-slate-400 text-xs font-mono flex flex-col items-center justify-center gap-2">
-              <RefreshCw className="h-6 w-6 animate-spin text-[#06B6D4]" />
+            <div className="py-16 text-center text-ri-muted text-xs font-mono flex flex-col items-center justify-center gap-2">
+              <RefreshCw className="h-6 w-6 animate-spin text-ri-primary" />
               <span>Loading reports...</span>
             </div>
           ) : filteredReports.length === 0 ? (
@@ -185,7 +185,7 @@ export default function ReportsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-[#26344F] bg-[#0C1321]/60 text-slate-400 text-[11px] font-mono uppercase tracking-wider">
+                  <tr className="border-b border-ri-line bg-ri-bg/60 text-ri-muted text-[11px] font-mono uppercase tracking-wider">
                     <th className="px-4 py-3.5">Report Title / Type</th>
                     <th className="px-4 py-3.5">Format</th>
                     <th className="px-4 py-3.5">Status</th>
@@ -194,23 +194,23 @@ export default function ReportsPage() {
                     <th className="px-4 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#26344F]/60">
+                <tbody className="divide-y divide-ri-line/60">
                   {filteredReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-[#17223A]/50 transition-colors">
+                    <tr key={report.id} className="hover:bg-ri-raised/50 transition-colors">
                       <td className="px-4 py-3.5 font-medium text-white flex items-center gap-2.5">
-                        <span className="p-1.5 rounded-lg bg-[#0C1321] border border-[#26344F] text-[#06B6D4]">
+                        <span className="p-1.5 rounded-lg bg-ri-bg border border-ri-line text-ri-primary">
                           <FileText className="h-4 w-4" />
                         </span>
                         <div>
-                          <span className="font-semibold text-slate-200">{report.report_type.replace(/_/g, " ")}</span>
-                          <span className="block text-[10px] text-slate-500 font-mono mt-0.5">
+                          <span className="font-semibold text-ri-text-soft">{report.report_type.replace(/_/g, " ")}</span>
+                          <span className="block text-[10px] text-ri-faint font-mono mt-0.5">
                             REF: {report.id}
                           </span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-3.5 text-slate-300">
-                        <span className="px-2 py-0.5 rounded-md bg-[#0C1321] border border-[#26344F] text-[10px] font-mono font-bold text-[#4CD7F6]">
+                      <td className="px-4 py-3.5 text-ri-text-soft">
+                        <span className="px-2 py-0.5 rounded-md bg-ri-bg border border-ri-line text-[10px] font-mono font-bold text-ri-primary-bright">
                           {report.parameters?.artifact_format || report.parameters?.format || "PDF"}
                         </span>
                       </td>
@@ -219,10 +219,10 @@ export default function ReportsPage() {
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold ${
                             report.status === "COMPLETED"
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
+                              ? "bg-ri-success/10 text-ri-success border border-ri-success/30"
                               : report.status === "QUEUED"
-                              ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 animate-pulse"
-                              : "bg-red-500/10 text-red-400 border border-red-500/30"
+                              ? "bg-ri-primary/10 text-ri-primary-bright border border-ri-primary/30 animate-pulse"
+                              : "bg-ri-danger/10 text-ri-danger border border-ri-danger/30"
                           }`}
                         >
                           {report.status === "COMPLETED" ? (
@@ -234,11 +234,11 @@ export default function ReportsPage() {
                         </span>
                       </td>
 
-                      <td className="px-4 py-3.5 text-slate-300 font-mono text-xs">
+                      <td className="px-4 py-3.5 text-ri-text-soft font-mono text-xs">
                         {report.parameters?.timeframe?.replace(/_/g, " ") || "Default Window"}
                       </td>
 
-                      <td className="px-4 py-3.5 text-slate-400 font-mono text-xs">
+                      <td className="px-4 py-3.5 text-ri-muted font-mono text-xs">
                         {report.generated_at
                           ? new Date(report.generated_at).toLocaleString()
                           : new Date(report.created_at).toLocaleString()}
@@ -248,12 +248,12 @@ export default function ReportsPage() {
                         <button
                           onClick={() => handleDownload(report.id)}
                           disabled={report.status !== "COMPLETED" || downloadingId === report.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0C1321] hover:bg-[#17223A] border border-[#26344F] text-slate-200 text-xs font-semibold disabled:opacity-40 transition-all hover:border-[#06B6D4]/40"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ri-bg hover:bg-ri-raised border border-ri-line text-ri-text-soft text-xs font-semibold disabled:opacity-40 transition-all hover:border-ri-primary/40"
                         >
                           {downloadingId === report.id ? (
-                            <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#06B6D4]" />
+                            <RefreshCw className="h-3.5 w-3.5 animate-spin text-ri-primary" />
                           ) : (
-                            <Download className="h-3.5 w-3.5 text-[#06B6D4]" />
+                            <Download className="h-3.5 w-3.5 text-ri-primary" />
                           )}
                           <span>Download</span>
                         </button>
@@ -269,11 +269,11 @@ export default function ReportsPage() {
 
       {/* Generate Report Modal */}
       {showGenerateModal && (
-        <div className="fixed inset-0 z-50 bg-[#0C1321]/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#26344F]">
+        <div className="fixed inset-0 z-50 bg-ri-bg/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-ri-line">
               <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-lg bg-[#06B6D4]/10 border border-[#06B6D4]/30 text-[#06B6D4]">
+                <span className="p-1.5 rounded-lg bg-ri-primary/10 border border-ri-primary/30 text-ri-primary">
                   <Sparkles className="h-4 w-4" />
                 </span>
                 <h3 className="text-base font-bold text-white">Generate Operational Report</h3>
@@ -281,25 +281,25 @@ export default function ReportsPage() {
               <button
                 type="button"
                 onClick={() => setShowGenerateModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#17223A] transition"
+                className="p-1.5 rounded-lg text-ri-muted hover:text-white hover:bg-ri-raised transition"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-ri-muted">
               Select parameters to compile persisted operational data into an exported intelligence report.
             </p>
 
             <form onSubmit={handleGenerateReport} className="space-y-4 pt-1">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">
+                <label className="block text-xs font-semibold text-ri-text-soft mb-1.5 font-mono">
                   Report Type
                 </label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="w-full bg-[#0C1321] border border-[#26344F] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#06B6D4]"
+                  className="w-full bg-ri-bg border border-ri-line rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-ri-primary"
                 >
                   <option value="ROAD_HEALTH">Road & Segment Health Scores (rule-based)</option>
                   <option value="DAMAGE_SUMMARY">Damage & Defect Intelligence Summary</option>
@@ -309,7 +309,7 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">
+                <label className="block text-xs font-semibold text-ri-text-soft mb-1.5 font-mono">
                   Export Format
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -320,8 +320,8 @@ export default function ReportsPage() {
                       onClick={() => setFormat(fmt)}
                       className={`py-2 rounded-xl text-xs font-mono font-bold border transition-all ${
                         format === fmt
-                          ? "bg-[#06B6D4]/15 text-[#4CD7F6] border-[#06B6D4] shadow-sm shadow-[#06B6D4]/20"
-                          : "bg-[#0C1321] text-slate-400 border-[#26344F] hover:text-white"
+                          ? "bg-ri-primary/15 text-ri-primary-bright border-ri-primary shadow-sm shadow-ri-primary/20"
+                          : "bg-ri-bg text-ri-muted border-ri-line hover:text-white"
                       }`}
                     >
                       {fmt}
@@ -331,13 +331,13 @@ export default function ReportsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">
+                <label className="block text-xs font-semibold text-ri-text-soft mb-1.5 font-mono">
                   Timeframe
                 </label>
                 <select
                   value={timeframe}
                   onChange={(e) => setTimeframe(e.target.value)}
-                  className="w-full bg-[#0C1321] border border-[#26344F] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#06B6D4]"
+                  className="w-full bg-ri-bg border border-ri-line rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-ri-primary"
                 >
                   <option value="last_7_days">Last 7 Days</option>
                   <option value="last_30_days">Last 30 Days</option>
@@ -346,18 +346,18 @@ export default function ReportsPage() {
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#26344F]">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-ri-line">
                 <button
                   type="button"
                   onClick={() => setShowGenerateModal(false)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white transition"
+                  className="px-3.5 py-2 rounded-xl text-xs font-medium text-ri-muted hover:text-white transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-4 py-2 bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#0C1321] font-bold rounded-xl text-xs disabled:opacity-40 transition-all shadow-md shadow-[#06B6D4]/20"
+                  className="px-4 py-2 bg-ri-primary hover:bg-ri-primary-bright text-ri-bg font-bold rounded-xl text-xs disabled:opacity-40 transition-all shadow-md shadow-ri-primary/20"
                 >
                   {creating ? "Submitting Request..." : "Request Generation"}
                 </button>

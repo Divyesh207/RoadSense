@@ -134,7 +134,7 @@ fun CameraCaptureScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = onNavigateBack,
-                    modifier = Modifier.background(SurfaceDark.copy(alpha = 0.85f), CircleShape)
+                    modifier = Modifier.background(GlassBar, CircleShape)
                 ) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                 }
@@ -180,7 +180,7 @@ fun CameraCaptureScreen(
                         }
                         imageCapture?.flashMode = flashMode
                     },
-                    modifier = Modifier.background(SurfaceDark.copy(alpha = 0.85f), CircleShape)
+                    modifier = Modifier.background(GlassBar, CircleShape)
                 ) {
                     val icon = when (flashMode) {
                         ImageCapture.FLASH_MODE_ON -> Icons.Default.FlashOn
@@ -200,7 +200,7 @@ fun CameraCaptureScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SurfaceDark.copy(alpha = 0.7f), RoundedCornerShape(10.dp))
+                    .background(GlassBar, RoundedCornerShape(10.dp))
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -319,7 +319,7 @@ fun CameraCaptureScreen(
                     },
                     modifier = Modifier
                         .size(56.dp)
-                        .background(SurfaceDark.copy(alpha = 0.85f), CircleShape)
+                        .background(GlassBar, CircleShape)
                 ) {
                     Icon(
                         Icons.Default.Cameraswitch,
@@ -349,7 +349,7 @@ private fun CameraPermissionMissing(onNavigateBack: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .glassBackground()
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {

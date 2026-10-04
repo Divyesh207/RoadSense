@@ -113,14 +113,21 @@ fun FieldCard(
     contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = containerColor,
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, borderColor)
-    ) {
-        Column(modifier = Modifier.padding(contentPadding), content = content)
-    }
+    // Glass panel. The default look is the shared glass fill and highlighted edge; a caller
+    // that passes its own colours (status-tinted cards) gets those on the same shape.
+    val isDefault = borderColor == BorderDark && containerColor == SurfaceDark
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(GlassShape)
+            .then(if (isDefault) Modifier.background(GlassFill, GlassShape) else Modifier.background(containerColor, GlassShape))
+            .border(
+                if (isDefault) BorderStroke(1.dp, GlassEdge) else BorderStroke(1.dp, borderColor),
+                GlassShape
+            )
+            .padding(contentPadding),
+        content = content
+    )
 }
 
 /** Small uppercase label used above values and sections. */
@@ -168,7 +175,7 @@ fun ValueTile(
     Column(
         modifier = modifier
             .background(SurfaceLowest, RoundedCornerShape(12.dp))
-            .border(1.dp, BorderDark.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+            .border(1.dp, BorderDark, RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         FieldLabel(label)
@@ -323,7 +330,7 @@ fun SecondaryButton(
         onClick = onClick,
         enabled = enabled,
         border = BorderStroke(1.dp, if (contentColor == TextPrimary) BorderDark else contentColor.copy(alpha = 0.5f)),
-        colors = ButtonDefaults.outlinedButtonColors(containerColor = SurfaceCard.copy(alpha = 0.5f), contentColor = contentColor),
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = SurfaceCard, contentColor = contentColor),
         shape = RoundedCornerShape(12.dp),
         contentPadding = PaddingValues(horizontal = 12.dp),
         modifier = modifier.height(height)
@@ -340,7 +347,7 @@ fun SecondaryButton(
 fun fieldTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = PrimaryCyan,
     unfocusedBorderColor = BorderDark,
-    disabledBorderColor = BorderDark.copy(alpha = 0.5f),
+    disabledBorderColor = BorderDark,
     focusedTextColor = TextPrimary,
     unfocusedTextColor = TextPrimary,
     disabledTextColor = TextMuted,
@@ -377,7 +384,7 @@ fun CommonTopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(SurfaceDark)
+                .background(GlassBar)
                 .heightIn(min = 60.dp)
                 .padding(start = if (canNavigateBack) 4.dp else 16.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -435,7 +442,7 @@ fun ConnectionChip(label: String, color: Color, modifier: Modifier = Modifier) {
 enum class NavItem(val label: String, val icon: ImageVector) {
     HOME("Home", Icons.Default.Home),
     NEW_INSPECTION("New", Icons.Default.AddCircleOutline),
-    SYNC_QUEUE("Sync", Icons.Default.Sync),
+    SYNC_QUEUE("Queue", Icons.Default.Sync),
     PROFILE("Profile", Icons.Default.Person)
 }
 
@@ -445,9 +452,23 @@ fun FieldBottomNavBar(
     onItemSelected: (NavItem) -> Unit,
     syncBadgeCount: Int = 0
 ) {
-    Column {
-        HorizontalDivider(color = BorderDark, thickness = 1.dp)
-        NavigationBar(containerColor = SurfaceDark, tonalElevation = 0.dp) {
+    // Floating glass bar: rounded, inset from the screen edges, above the system navigation.
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(BackgroundDark)
+            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 8.dp)
+    ) {
+        NavigationBar(
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp,
+            windowInsets = WindowInsets(0, 0, 0, 0),
+            modifier = Modifier
+                .height(68.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(GlassFill, RoundedCornerShape(22.dp))
+                .border(BorderStroke(1.dp, GlassEdge), RoundedCornerShape(22.dp))
+        ) {
             NavItem.values().forEach { item ->
                 val selected = selectedItem == item
                 NavigationBarItem(
@@ -478,7 +499,7 @@ fun FieldBottomNavBar(
                         selectedTextColor = PrimaryCyanBright,
                         unselectedIconColor = TextSecondary,
                         unselectedTextColor = TextSecondary,
-                        indicatorColor = PrimaryCyan.copy(alpha = 0.16f)
+                        indicatorColor = PrimaryCyan.copy(alpha = 0.20f)
                     )
                 )
             }

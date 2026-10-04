@@ -10,8 +10,8 @@ const ROAD_TYPES = ["HIGHWAY", "ARTERIAL", "URBAN", "RURAL", "LOCAL"] as const;
 const TRAFFIC_CLASSES = ["LOW", "MEDIUM", "HIGH", "VERY_HIGH"] as const;
 
 const inputClass =
-  "w-full h-10 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]";
-const labelClass = "font-label-sm text-xs text-[#94A3B8] font-semibold";
+  "w-full h-10 bg-ri-input border border-ri-line rounded-xl px-3 text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary";
+const labelClass = "font-label-sm text-xs text-ri-muted font-semibold";
 
 interface RoadFormModalProps {
   onClose: () => void;
@@ -65,13 +65,13 @@ export function RoadFormModal({ onClose, onCreated }: RoadFormModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[2000]">
-      <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#26344F] pb-3">
+      <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-ri-line pb-3">
           <div className="flex items-center gap-2">
-            <Route className="h-5 w-5 text-[#06B6D4]" />
-            <h3 className="font-headline-sm text-base font-bold text-[#F1F5F9]">Add Road</h3>
+            <Route className="h-5 w-5 text-ri-primary" />
+            <h3 className="font-headline-sm text-base font-bold text-ri-text">Add Road</h3>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-[#94A3B8] hover:text-[#F1F5F9] p-1">
+          <button onClick={onClose} aria-label="Close" className="text-ri-muted hover:text-ri-text p-1">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -130,12 +130,12 @@ export function RoadFormModal({ onClose, onCreated }: RoadFormModalProps) {
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-[#151B2A] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+              className="w-full bg-ri-input border border-ri-line rounded-xl p-3 text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
             />
           </div>
 
-          <div className="rounded-xl border border-[#26344F] bg-[#151B2A]/60 p-3 space-y-3">
-            <p className="text-[11px] text-[#94A3B8]">
+          <div className="rounded-xl border border-ri-line bg-ri-input/60 p-3 space-y-3">
+            <p className="text-[11px] text-ri-muted">
               Documented traffic (optional). Leave empty if there is no documented source; traffic is never estimated.
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -172,26 +172,26 @@ export function RoadFormModal({ onClose, onCreated }: RoadFormModalProps) {
             </div>
           </div>
 
-          <p className="text-[11px] text-[#64748B]">
+          <p className="text-[11px] text-ri-faint">
             After the road is created, add its segments. Inspections are recorded against a road and, optionally, a segment.
           </p>
 
           {error && (
-            <p className="text-xs px-3 py-2 rounded-xl border border-[#EF4444]/40 bg-[#EF4444]/10 text-[#FFB4AB]">{error}</p>
+            <p className="text-xs px-3 py-2 rounded-xl border border-ri-danger/40 bg-ri-danger/10 text-ri-danger-soft">{error}</p>
           )}
 
           <div className="flex items-center justify-end gap-3 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="h-10 px-4 rounded-xl bg-[#17223A] border border-[#26344F] text-xs font-semibold text-[#94A3B8] hover:text-[#F1F5F9]"
+              className="h-10 px-4 rounded-xl bg-ri-raised border border-ri-line text-xs font-semibold text-ri-muted hover:text-ri-text"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="h-10 px-5 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold disabled:opacity-50"
+              className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold disabled:opacity-50"
             >
               {saving ? "Creating..." : "Create Road"}
             </button>

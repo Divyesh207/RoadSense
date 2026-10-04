@@ -100,14 +100,14 @@ export default function InspectionsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-code-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+              <span className="font-code-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
                 Field Operations & Evidence
               </span>
             </div>
-            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-[#F1F5F9]">
+            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-ri-text">
               Field Inspections & Evidence
             </h1>
-            <p className="font-body-sm text-xs text-[#94A3B8] mt-1">
+            <p className="font-body-sm text-xs text-ri-muted mt-1">
               Field evidence captures, media uploads, and AI damage processing lifecycle
             </p>
           </div>
@@ -115,57 +115,57 @@ export default function InspectionsPage() {
 
         {/* Operational Metric Tiles (4-Column Bento matching Stitch Screen) */}
         <section aria-label="Inspection Metrics" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#111A2E] border border-[#26344F] text-center shadow-sm">
-            <div className="w-8 h-8 rounded-xl bg-[#232A39] flex items-center justify-center text-[#BCC9CD] mb-1.5 border border-[#3D494C]">
+          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-ri-raised flex items-center justify-center text-ri-text-soft mb-1.5 border border-ri-line-strong">
               <Clock className="h-4 w-4" />
             </div>
-            <span className="font-code-lg text-2xl font-bold text-[#F1F5F9] leading-none mb-1">
+            <span className="font-code-lg text-2xl font-bold text-ri-text leading-none mb-1">
               {draftCount}
             </span>
-            <span className="font-label-sm text-[11px] text-[#94A3B8] uppercase tracking-wider font-semibold">
+            <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider font-semibold">
               Drafts
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#111A2E] border border-[#26344F] text-center shadow-sm">
-            <div className="w-8 h-8 rounded-xl bg-[#3B82F6]/15 flex items-center justify-center text-[#ADC6FF] mb-1.5 border border-[#3B82F6]/30">
+          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-ri-info/15 flex items-center justify-center text-ri-info-soft mb-1.5 border border-ri-info/30">
               <Layers className="h-4 w-4" />
             </div>
-            <span className="font-code-lg text-2xl font-bold text-[#ADC6FF] leading-none mb-1">
+            <span className="font-code-lg text-2xl font-bold text-ri-info-soft leading-none mb-1">
               {submittedCount}
             </span>
-            <span className="font-label-sm text-[11px] text-[#94A3B8] uppercase tracking-wider font-semibold">
+            <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider font-semibold">
               Submitted
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#111A2E] border border-[#26344F] text-center shadow-sm">
-            <div className="w-8 h-8 rounded-xl bg-[#06B6D4]/15 flex items-center justify-center text-[#4CD7F6] mb-1.5 border border-[#06B6D4]/30">
+          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-ri-primary/15 flex items-center justify-center text-ri-primary-bright mb-1.5 border border-ri-primary/30">
               <Cpu className="h-4 w-4" />
             </div>
-            <span className="font-code-lg text-2xl font-bold text-[#4CD7F6] leading-none mb-1">
+            <span className="font-code-lg text-2xl font-bold text-ri-primary-bright leading-none mb-1">
               {processingCount}
             </span>
-            <span className="font-label-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+            <span className="font-label-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
               AI Processing
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-[#111A2E] border border-[#26344F] text-center shadow-sm">
-            <div className="w-8 h-8 rounded-xl bg-[#10B981]/15 flex items-center justify-center text-[#10B981] mb-1.5 border border-[#10B981]/30">
+          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-ri-success/15 flex items-center justify-center text-ri-success mb-1.5 border border-ri-success/30">
               <CheckCircle2 className="h-4 w-4" />
             </div>
-            <span className="font-code-lg text-2xl font-bold text-[#10B981] leading-none mb-1">
+            <span className="font-code-lg text-2xl font-bold text-ri-success leading-none mb-1">
               {completedCount}
             </span>
-            <span className="font-label-sm text-[11px] text-[#94A3B8] uppercase tracking-wider font-semibold">
+            <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider font-semibold">
               Completed
             </span>
           </div>
         </section>
 
         {/* Filter Pills Bar (Matching Stitch Scrollable Horizon) */}
-        <div className="flex items-center justify-between gap-3 bg-[#111A2E] p-3 rounded-2xl border border-[#26344F]">
+        <div className="flex items-center justify-between gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
           <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
             {[
               { label: "All", value: "", count: countLabel("") },
@@ -179,16 +179,16 @@ export default function InspectionsPage() {
                 onClick={() => setStatusFilter(tab.value)}
                 className={`px-3.5 py-1.5 rounded-full font-label-md text-xs whitespace-nowrap flex items-center gap-1.5 font-bold transition-all ${
                   statusFilter === tab.value
-                    ? "bg-[#06B6D4] text-[#003640] shadow-sm shadow-[#06B6D4]/20"
-                    : "bg-[#17223A] text-[#94A3B8] hover:text-[#F1F5F9] border border-[#26344F]"
+                    ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                    : "bg-ri-raised text-ri-muted hover:text-ri-text border border-ri-line"
                 }`}
               >
                 <span>{tab.label}</span>
                 <span
                   className={`min-w-4 h-4 px-1 rounded-full font-code-sm text-[10px] flex items-center justify-center ${
                     statusFilter === tab.value
-                      ? "bg-[#003640]/30 text-[#003640]"
-                      : "bg-[#232A39] text-[#94A3B8]"
+                      ? "bg-ri-on-primary/30 text-ri-on-primary"
+                      : "bg-ri-raised text-ri-muted"
                   }`}
                 >
                   {tab.count}
@@ -199,9 +199,9 @@ export default function InspectionsPage() {
 
           <button
             onClick={() => loadInspections()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#17223A] border border-[#26344F] text-xs text-[#94A3B8] hover:text-[#F1F5F9] transition-colors shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ri-raised border border-ri-line text-xs text-ri-muted hover:text-ri-text transition-colors shrink-0"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-[#06B6D4]" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-ri-primary" : ""}`} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
@@ -212,14 +212,14 @@ export default function InspectionsPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-full bg-[#111A2E] border border-[#26344F] rounded-2xl p-5 animate-pulse flex flex-col gap-3"
+                className="w-full bg-ri-surface border border-ri-line rounded-2xl p-5 animate-pulse flex flex-col gap-3"
               >
                 <div className="flex justify-between items-center">
-                  <div className="h-4 bg-[#232A39] rounded w-1/4"></div>
-                  <div className="h-6 bg-[#232A39] rounded-full w-24"></div>
+                  <div className="h-4 bg-ri-raised rounded w-1/4"></div>
+                  <div className="h-6 bg-ri-raised rounded-full w-24"></div>
                 </div>
-                <div className="h-5 bg-[#232A39] rounded w-1/2"></div>
-                <div className="h-4 bg-[#232A39] rounded w-3/4"></div>
+                <div className="h-5 bg-ri-raised rounded w-1/2"></div>
+                <div className="h-4 bg-ri-raised rounded w-3/4"></div>
               </div>
             ))}
           </div>
@@ -234,15 +234,15 @@ export default function InspectionsPage() {
             {inspections.map((insp) => (
               <article
                 key={insp.id}
-                className="flex flex-col p-5 rounded-2xl bg-[#111A2E] border border-[#26344F] hover:border-[#06B6D4]/50 transition-all shadow-sm group"
+                className="flex flex-col p-5 rounded-2xl bg-ri-surface border border-ri-line hover:border-ri-primary/50 transition-all shadow-sm group"
               >
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-3 mb-2.5">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
-                    <span className="px-2.5 py-0.5 rounded-lg bg-[#17223A] border border-[#26344F] text-[#4CD7F6] font-code-sm text-[11px] uppercase font-semibold">
+                    <span className="px-2.5 py-0.5 rounded-lg bg-ri-raised border border-ri-line text-ri-primary-bright font-code-sm text-[11px] uppercase font-semibold">
                       {insp.segment_number ? `Seg #${insp.segment_number}` : `ID: ${insp.id.slice(0, 8)}`}
                     </span>
-                    <span className="font-code-sm text-xs text-[#94A3B8]">
+                    <span className="font-code-sm text-xs text-ri-muted">
                       {new Date(insp.captured_at).toLocaleString()}
                     </span>
                   </div>
@@ -250,24 +250,24 @@ export default function InspectionsPage() {
                 </div>
 
                 {/* Road Title */}
-                <h3 className="font-headline-sm text-base text-[#F1F5F9] font-bold leading-snug mb-3">
+                <h3 className="font-headline-sm text-base text-ri-text font-bold leading-snug mb-3">
                   <Link
                     href={`/inspections/${insp.id}`}
-                    className="hover:text-[#4CD7F6] transition-colors"
+                    className="hover:text-ri-primary-bright transition-colors"
                   >
                     {insp.road_name ? insp.road_name : "Unassigned road"}
                   </Link>
                 </h3>
 
                 {/* Telemetry and Media row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#26344F]/60">
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-[#94A3B8]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-ri-line/60">
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-ri-muted">
                     <div className="flex items-center gap-1.5 font-code-sm">
-                      <MapPin className="h-3.5 w-3.5 text-[#06B6D4]" />
+                      <MapPin className="h-3.5 w-3.5 text-ri-primary" />
                       <span>Inspector: {insp.inspector_name || "Field Agent"}</span>
                     </div>
                     <div className="flex items-center gap-1.5 font-code-sm">
-                      <Camera className="h-3.5 w-3.5 text-[#10B981]" />
+                      <Camera className="h-3.5 w-3.5 text-ri-success" />
                       <span>
                         {insp.media_summary?.media_count || 0} Media Units (
                         {insp.media_summary?.image_count || 0} img,{" "}
@@ -281,9 +281,9 @@ export default function InspectionsPage() {
                     {insp.status === "DRAFT" && (
                       <button
                         onClick={() => handleSubmitDraft(insp.id)}
-                        className="h-9 px-3.5 rounded-xl bg-[#232A39] hover:bg-[#2E3544] text-[#F1F5F9] font-label-md text-xs font-semibold flex items-center gap-1.5 border border-[#3D494C] transition-all active:scale-95"
+                        className="h-9 px-3.5 rounded-xl bg-ri-raised hover:bg-ri-raised text-ri-text font-label-md text-xs font-semibold flex items-center gap-1.5 border border-ri-line-strong transition-all active:scale-95"
                       >
-                        <Send className="h-3.5 w-3.5 text-[#06B6D4]" />
+                        <Send className="h-3.5 w-3.5 text-ri-primary" />
                         <span>Submit Inspection</span>
                       </button>
                     )}
@@ -292,7 +292,7 @@ export default function InspectionsPage() {
                       <button
                         disabled={processingId === insp.id}
                         onClick={() => handleTriggerAI(insp.id)}
-                        className="h-9 px-3.5 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-[#06B6D4]/20 transition-all active:scale-95 disabled:opacity-50"
+                        className="h-9 px-3.5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-ri-primary/20 transition-all active:scale-95 disabled:opacity-50"
                       >
                         <Cpu className="h-3.5 w-3.5" />
                         <span>{processingId === insp.id ? "Queuing..." : "Process AI"}</span>
@@ -301,7 +301,7 @@ export default function InspectionsPage() {
 
                     <Link
                       href={`/inspections/${insp.id}`}
-                      className="h-9 px-3.5 rounded-xl bg-[#17223A] hover:bg-[#232A39] text-[#4CD7F6] font-label-md text-xs font-semibold flex items-center gap-1.5 border border-[#26344F] transition-all"
+                      className="h-9 px-3.5 rounded-xl bg-ri-raised hover:bg-ri-raised text-ri-primary-bright font-label-md text-xs font-semibold flex items-center gap-1.5 border border-ri-line transition-all"
                     >
                       <Eye className="h-3.5 w-3.5" />
                       <span>Details</span>

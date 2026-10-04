@@ -113,7 +113,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .glassBackground()
             .verticalScroll(rememberScrollState())
             .imePadding()
             .padding(horizontal = 20.dp, vertical = 16.dp),

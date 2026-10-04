@@ -68,16 +68,16 @@ export function BrandLogo({
         width={symbolDimensions.width}
         height={symbolDimensions.height}
         priority
-        className={`${symbolDimensions.class} rounded-xl object-contain shadow-sm border border-[#26344F]/60 shrink-0`}
+        className={`${symbolDimensions.class} rounded-xl object-contain shadow-sm border border-ri-line/60 shrink-0`}
       />
       <div className="flex flex-col min-w-0">
         <div className="flex items-center gap-1.5">
           <span className="font-sans font-bold tracking-tight text-white leading-none">
-            Road <span className="text-[#06B6D4]">Intelligence</span>
+            Road <span className="text-ri-primary">Intelligence</span>
           </span>
         </div>
         {showSubtitle && (
-          <span className="font-code-sm text-[10px] tracking-widest text-[#94A3B8] uppercase mt-1 leading-none">
+          <span className="font-code-sm text-[10px] tracking-widest text-ri-muted uppercase mt-1 leading-none">
             Operations Platform
           </span>
         )}

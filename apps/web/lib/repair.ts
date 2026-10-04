@@ -9,13 +9,13 @@ export type VerificationResult = (typeof VERIFICATION_RESULTS)[number];
 export const resultBadgeClass = (result?: string | null): string => {
   switch (result) {
     case "SUCCESSFUL":
-      return "bg-emerald-950 text-emerald-400 border border-emerald-800/50";
+      return "bg-ri-success/15 text-ri-success border border-ri-success/50";
     case "SUBSTANDARD":
-      return "bg-red-950 text-red-400 border border-red-800/50";
+      return "bg-ri-danger/15 text-ri-danger border border-ri-danger/50";
     case "UNRESOLVED":
-      return "bg-amber-950 text-amber-400 border border-amber-800/50";
+      return "bg-ri-warning/15 text-ri-warning border border-ri-warning/50";
     default:
-      return "bg-slate-800 text-slate-400 border border-slate-700";
+      return "bg-ri-line-strong text-ri-muted border border-ri-line-strong";
   }
 };
 

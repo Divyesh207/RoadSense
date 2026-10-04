@@ -170,26 +170,26 @@ export default function RoadsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-code-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+              <span className="font-code-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
                 Road network
               </span>
             </div>
-            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-[#F1F5F9]">
+            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-ri-text">
               Road Network & Recurrence Intelligence
             </h1>
-            <p className="font-body-sm text-xs text-[#94A3B8] mt-1">
+            <p className="font-body-sm text-xs text-ri-muted mt-1">
               Road inventory, recurrence review and segment lifecycle timelines.
             </p>
           </div>
 
           {/* Tab Selector */}
-          <div className="flex bg-[#111A2E] border border-[#26344F] p-1 rounded-xl">
+          <div className="flex bg-ri-surface border border-ri-line p-1 rounded-xl">
             <button
               onClick={() => setActiveTab("roads")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "roads"
-                  ? "bg-[#06B6D4] text-[#003640] shadow-sm shadow-[#06B6D4]/20"
-                  : "text-[#94A3B8] hover:text-[#F1F5F9]"
+                  ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                  : "text-ri-muted hover:text-ri-text"
               }`}
             >
               <Route className="h-3.5 w-3.5" />
@@ -199,8 +199,8 @@ export default function RoadsPage() {
               onClick={() => setActiveTab("recurrence")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "recurrence"
-                  ? "bg-[#06B6D4] text-[#003640] shadow-sm shadow-[#06B6D4]/20"
-                  : "text-[#94A3B8] hover:text-[#F1F5F9]"
+                  ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                  : "text-ri-muted hover:text-ri-text"
               }`}
             >
               <RotateCcw className="h-3.5 w-3.5" />
@@ -214,7 +214,7 @@ export default function RoadsPage() {
             {canAddRoad && (
               <button
                 onClick={() => setShowAddRoad(true)}
-                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold"
+                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold"
               >
                 <Plus className="h-4 w-4" /> Add Road
               </button>
@@ -223,42 +223,42 @@ export default function RoadsPage() {
               <button
                 onClick={() => setAddSegmentFor("")}
                 disabled={roads.length === 0}
-                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-[#17223A] border border-[#06B6D4]/40 text-[#4CD7F6] text-xs font-bold hover:bg-[#232A39] disabled:opacity-40"
+                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-ri-raised border border-ri-primary/40 text-ri-primary-bright text-xs font-bold hover:bg-ri-raised disabled:opacity-40"
               >
                 <Plus className="h-4 w-4" /> Add Segment
               </button>
             )}
-            <span className="text-[11px] text-[#64748B]">
+            <span className="text-[11px] text-ri-faint">
               New roads and segments are available to field inspectors as soon as they are saved.
             </span>
           </div>
         )}
 
         {notice && (
-          <p className="text-xs px-3 py-2 rounded-xl border border-[#10B981]/30 bg-[#10B981]/10 text-[#10B981]">{notice}</p>
+          <p className="text-xs px-3 py-2 rounded-xl border border-ri-success/30 bg-ri-success/10 text-ri-success">{notice}</p>
         )}
 
         {activeTab === "roads" ? (
           <>
             {/* Filter & Search Bar */}
-            <div className="flex items-center gap-4 bg-[#111A2E] p-3 rounded-2xl border border-[#26344F]">
+            <div className="flex items-center gap-4 bg-ri-surface p-3 rounded-2xl border border-ri-line">
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#869397]" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ri-muted" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search roads by name, road code, or district..."
-                  className="w-full pl-10 pr-4 py-2 bg-[#151B2A] border border-[#26344F] rounded-xl font-body-sm text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+                  className="w-full pl-10 pr-4 py-2 bg-ri-input border border-ri-line rounded-xl font-body-sm text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
                 />
               </div>
             </div>
 
             {/* Roads Table */}
-            <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+                  <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
                     <tr>
                       <th className="py-3 px-4 font-semibold">Road Name</th>
                       <th className="py-3 px-4 font-semibold">Road Code</th>
@@ -268,19 +268,19 @@ export default function RoadsPage() {
                       <th className="py-3 px-4 text-right font-semibold">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+                  <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
                     {loading ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-[#94A3B8]">
+                        <td colSpan={6} className="py-12 text-center text-ri-muted">
                           <div className="flex items-center justify-center gap-2">
-                            <RefreshCw className="h-4 w-4 animate-spin text-[#06B6D4]" />
+                            <RefreshCw className="h-4 w-4 animate-spin text-ri-primary" />
                             <span>Loading road network database...</span>
                           </div>
                         </td>
                       </tr>
                     ) : roads.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-[#94A3B8]">
+                        <td colSpan={6} className="py-12 text-center text-ri-muted">
                           No roads found.
                         </td>
                       </tr>
@@ -289,30 +289,30 @@ export default function RoadsPage() {
                         const segs = expanded[road.id];
                         return (
                         <React.Fragment key={road.id}>
-                        <tr className="hover:bg-[#17223A]/50 transition-colors">
+                        <tr className="hover:bg-ri-raised/50 transition-colors">
                           <td className="py-3 px-4 font-bold text-white">
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => toggleRoad(road.id)}
                                 aria-label={segs !== undefined ? "Hide segments" : "Show segments"}
-                                className="p-1 rounded-md text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-[#232A39]"
+                                className="p-1 rounded-md text-ri-muted hover:text-ri-text hover:bg-ri-raised"
                               >
                                 {segs !== undefined ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                               </button>
-                              <Route className="h-4 w-4 text-[#06B6D4] shrink-0" />
-                              <Link href={`/roads/${road.id}`} className="hover:text-[#4CD7F6] transition-colors">
+                              <Route className="h-4 w-4 text-ri-primary shrink-0" />
+                              <Link href={`/roads/${road.id}`} className="hover:text-ri-primary-bright transition-colors">
                                 {road.name}
                               </Link>
-                              <span className="font-code-sm text-[10px] font-normal text-[#94A3B8] px-1.5 py-0.5 rounded bg-[#17223A] border border-[#26344F]">
+                              <span className="font-code-sm text-[10px] font-normal text-ri-muted px-1.5 py-0.5 rounded bg-ri-raised border border-ri-line">
                                 {road.segment_count ?? 0} {road.segment_count === 1 ? "segment" : "segments"}
                               </span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 font-code-sm text-[#94A3B8]">
+                          <td className="py-3 px-4 font-code-sm text-ri-muted">
                             {road.road_code || "—"}
                           </td>
-                          <td className="py-3 px-4 text-[#ADC6FF]">{road.road_type || "—"}</td>
-                          <td className="py-3 px-4 text-[#94A3B8]">
+                          <td className="py-3 px-4 text-ri-info-soft">{road.road_type || "—"}</td>
+                          <td className="py-3 px-4 text-ri-muted">
                             {road.administrative_area || "—"}
                           </td>
                           <td className="py-3 px-4">
@@ -333,38 +333,38 @@ export default function RoadsPage() {
                                   }
                                 });
                               }}
-                              className="inline-flex items-center text-xs font-bold text-[#06B6D4] hover:text-[#4CD7F6]"
+                              className="inline-flex items-center text-xs font-bold text-ri-primary hover:text-ri-primary-bright"
                             >
                               Timeline <ChevronRight className="h-3.5 w-3.5 ml-0.5" />
                             </button>
                           </td>
                         </tr>
                         {segs !== undefined && (
-                          <tr className="bg-[#0C1321]/60">
+                          <tr className="bg-ri-bg/60">
                             <td colSpan={6} className="px-4 py-3">
-                              <div className="ml-7 border-l-2 border-[#26344F] pl-4 space-y-1.5">
-                                {segs === "loading" && <p className="text-xs text-[#94A3B8]">Loading segments...</p>}
-                                {segs === "error" && <p className="text-xs text-[#F59E0B]">Could not load segments.</p>}
+                              <div className="ml-7 border-l-2 border-ri-line pl-4 space-y-1.5">
+                                {segs === "loading" && <p className="text-xs text-ri-muted">Loading segments...</p>}
+                                {segs === "error" && <p className="text-xs text-ri-warning">Could not load segments.</p>}
                                 {Array.isArray(segs) && segs.length === 0 && (
-                                  <p className="text-xs text-[#94A3B8]">This road has no segments yet.</p>
+                                  <p className="text-xs text-ri-muted">This road has no segments yet.</p>
                                 )}
                                 {Array.isArray(segs) &&
                                   segs.map((s) => (
                                     <div key={s.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                                      <GitBranch className="h-3.5 w-3.5 text-[#64748B]" />
-                                      <span className="font-code-sm font-semibold text-[#F1F5F9]">
+                                      <GitBranch className="h-3.5 w-3.5 text-ri-faint" />
+                                      <span className="font-code-sm font-semibold text-ri-text">
                                         Segment {String(s.segment_number).padStart(2, "0")}
                                       </span>
-                                      {s.name && <span className="text-[#DCE2F6]">{s.name}</span>}
-                                      <span className="font-code-sm text-[#94A3B8]">
+                                      {s.name && <span className="text-ri-text-soft">{s.name}</span>}
+                                      <span className="font-code-sm text-ri-muted">
                                         {s.length_meters != null ? `${s.length_meters} m` : "length not set"}
                                       </span>
-                                      <span className={`font-code-sm text-[10px] ${s.geometry ? "text-[#10B981]" : "text-[#F59E0B]"}`}>
+                                      <span className={`font-code-sm text-[10px] ${s.geometry ? "text-ri-success" : "text-ri-warning"}`}>
                                         {s.geometry ? "mapped" : "no geometry"}
                                       </span>
                                       <button
                                         onClick={() => openTimeline(s.id)}
-                                        className="text-[11px] font-semibold text-[#06B6D4] hover:underline"
+                                        className="text-[11px] font-semibold text-ri-primary hover:underline"
                                       >
                                         Timeline
                                       </button>
@@ -373,7 +373,7 @@ export default function RoadsPage() {
                                 {canAddSegment && (
                                   <button
                                     onClick={() => setAddSegmentFor(road.id)}
-                                    className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-[#4CD7F6] hover:underline"
+                                    className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-ri-primary-bright hover:underline"
                                   >
                                     <Plus className="h-3 w-3" /> Add segment to this road
                                   </button>
@@ -394,12 +394,12 @@ export default function RoadsPage() {
         ) : (
           /* Recurrence Tracking Tab */
           <div className="space-y-4">
-            <div className="flex items-center gap-3 bg-[#111A2E] p-3 rounded-2xl border border-[#26344F]">
-              <span className="font-label-sm text-xs text-[#94A3B8] font-medium">Status:</span>
+            <div className="flex items-center gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
+              <span className="font-label-sm text-xs text-ri-muted font-medium">Status:</span>
               <select
                 value={recurrenceStatusFilter}
                 onChange={(e) => setRecurrenceStatusFilter(e.target.value)}
-                className="bg-[#151B2A] border border-[#26344F] text-xs text-[#F1F5F9] rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#06B6D4]"
+                className="bg-ri-input border border-ri-line text-xs text-ri-text rounded-xl px-3 py-1.5 focus:outline-none focus:border-ri-primary"
               >
                 <option value="">All Recurrence Statuses</option>
                 <option value="POTENTIAL">Potential</option>
@@ -409,7 +409,7 @@ export default function RoadsPage() {
             </div>
 
             {recurrenceLoading ? (
-              <div className="p-12 text-center text-[#94A3B8] bg-[#111A2E] border border-[#26344F] rounded-2xl">
+              <div className="p-12 text-center text-ri-muted bg-ri-surface border border-ri-line rounded-2xl">
                 Loading recurrence events...
               </div>
             ) : recurrences.length === 0 ? (
@@ -419,10 +419,10 @@ export default function RoadsPage() {
                 description="No recurrence records match the selected status."
               />
             ) : (
-              <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#0C1321] border-b border-[#26344F] text-[#94A3B8]">
+                    <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
                       <tr>
                         <th className="py-3 px-4 font-semibold">Recurrence</th>
                         <th className="py-3 px-4 font-semibold">Status</th>
@@ -434,14 +434,14 @@ export default function RoadsPage() {
                         <th className="py-3 px-4 text-right font-semibold">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#26344F]/50 text-[#DCE2F6]">
+                    <tbody className="divide-y divide-ri-line/50 text-ri-text-soft">
                       {recurrences.map((rec) => (
-                        <tr key={rec.id} className="hover:bg-[#17223A]/50 transition-colors">
+                        <tr key={rec.id} className="hover:bg-ri-raised/50 transition-colors">
                           <td className="py-3 px-4 align-top">
                             <span className="font-bold text-white block">{rec.segment_name || "Road Segment Defect"}</span>
-                            <span className="font-code-sm text-[11px] text-[#06B6D4]">ID: {rec.id.slice(0, 8)}</span>
+                            <span className="font-code-sm text-[11px] text-ri-primary">ID: {rec.id.slice(0, 8)}</span>
                             {rec.review_notes && (
-                              <span className="block text-[11px] text-[#94A3B8] mt-1">
+                              <span className="block text-[11px] text-ri-muted mt-1">
                                 Reviewer note: &quot;{rec.review_notes}&quot;
                               </span>
                             )}
@@ -449,25 +449,25 @@ export default function RoadsPage() {
                           <td className="py-3 px-4 align-top">
                             <StatusBadge status={rec.status} variant={rec.status === "CONFIRMED" ? "error" : undefined} size="sm" />
                           </td>
-                          <td className="py-3 px-4 align-top text-[#DCE2F6]">
+                          <td className="py-3 px-4 align-top text-ri-text-soft">
                             {rec.historical_damage
                               ? `${rec.historical_damage.damage_type} (${rec.historical_damage.severity})`
                               : "—"}
                           </td>
-                          <td className="py-3 px-4 align-top text-[#DCE2F6]">
+                          <td className="py-3 px-4 align-top text-ri-text-soft">
                             {rec.new_damage ? `${rec.new_damage.damage_type} (${rec.new_damage.severity})` : "—"}
                           </td>
-                          <td className="py-3 px-4 align-top font-code-sm text-[#94A3B8]">
+                          <td className="py-3 px-4 align-top font-code-sm text-ri-muted">
                             {rec.spatial_distance_meters != null ? `${rec.spatial_distance_meters.toFixed(1)} m` : "—"}
                           </td>
-                          <td className="py-3 px-4 align-top font-code-sm text-[#94A3B8]">
+                          <td className="py-3 px-4 align-top font-code-sm text-ri-muted">
                             {rec.temporal_distance_days != null ? `${rec.temporal_distance_days} days after repair` : "—"}
                           </td>
-                          <td className="py-3 px-4 align-top font-code-sm text-[#DCE2F6]">
+                          <td className="py-3 px-4 align-top font-code-sm text-ri-text-soft">
                             {rec.recurrence_score != null ? (
                               <>
                                 {Math.round(rec.recurrence_score * 100)}%
-                                <span className="block text-[10px] text-[#64748B] font-sans">rule-based score, not a probability</span>
+                                <span className="block text-[10px] text-ri-faint font-sans">rule-based score, not a probability</span>
                               </>
                             ) : (
                               "—"
@@ -478,7 +478,7 @@ export default function RoadsPage() {
                               <button
                                 type="button"
                                 onClick={() => openTimeline(rec.road_segment_id!)}
-                                className="h-8 px-3 rounded-lg bg-[#17223A] border border-[#26344F] text-[#4CD7F6] font-label-md text-xs font-semibold hover:bg-[#232A39]"
+                                className="h-8 px-3 rounded-lg bg-ri-raised border border-ri-line text-ri-primary-bright font-label-md text-xs font-semibold hover:bg-ri-raised"
                               >
                                 View Segment Timeline
                               </button>
@@ -490,7 +490,7 @@ export default function RoadsPage() {
                                 setReviewStatus("CONFIRMED");
                                 setReviewNotes("");
                               }}
-                              className="h-8 px-3 rounded-lg bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] font-label-md text-xs font-bold transition-all active:scale-95"
+                              className="h-8 px-3 rounded-lg bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold transition-all active:scale-95"
                             >
                               Review Decision
                             </button>
@@ -535,11 +535,11 @@ export default function RoadsPage() {
         {/* Timeline Modal */}
         {timelineSegmentId && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
-              <div className="flex items-center justify-between border-b border-[#26344F] pb-3">
+            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+              <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
-                  <History className="h-5 w-5 text-[#06B6D4]" />
-                  <h3 className="font-headline-sm text-base font-bold text-[#F1F5F9]">
+                  <History className="h-5 w-5 text-ri-primary" />
+                  <h3 className="font-headline-sm text-base font-bold text-ri-text">
                     Historical Segment Lifecycle Audit
                   </h3>
                 </div>
@@ -548,7 +548,7 @@ export default function RoadsPage() {
                     setTimelineSegmentId(null);
                     setTimelineData(null);
                   }}
-                  className="text-[#94A3B8] hover:text-[#F1F5F9] text-sm p-1"
+                  className="text-ri-muted hover:text-ri-text text-sm p-1"
                 >
                   ✕
                 </button>
@@ -556,40 +556,40 @@ export default function RoadsPage() {
 
               <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                 {timelineLoading ? (
-                  <p className="py-12 text-center text-xs text-[#94A3B8]">
+                  <p className="py-12 text-center text-xs text-ri-muted">
                     Reconstructing historical timeline...
                   </p>
                 ) : !timelineData || timelineData.events.length === 0 ? (
-                  <p className="py-12 text-center text-xs text-[#94A3B8]">
+                  <p className="py-12 text-center text-xs text-ri-muted">
                     No historical events recorded for this segment yet.
                   </p>
                 ) : (
-                  <div className="relative pl-6 border-l-2 border-[#26344F] space-y-4 my-2">
+                  <div className="relative pl-6 border-l-2 border-ri-line space-y-4 my-2">
                     {timelineData.events.map((evt, idx) => (
                       <div key={idx} className="relative">
                         <div
-                          className={`absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full border-2 border-[#111A2E] ${
+                          className={`absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full border-2 border-ri-surface ${
                             evt.event_type === "RECURRENCE_DETECTED"
-                              ? "bg-[#EF4444]"
+                              ? "bg-ri-danger"
                               : evt.event_type === "REPAIR_VERIFIED"
-                              ? "bg-[#10B981]"
+                              ? "bg-ri-success"
                               : evt.event_type === "MAINTENANCE_COMPLETED"
-                              ? "bg-[#3B82F6]"
+                              ? "bg-ri-info"
                               : evt.event_type === "MAINTENANCE_CREATED"
-                              ? "bg-[#F59E0B]"
-                              : "bg-[#06B6D4]"
+                              ? "bg-ri-warning"
+                              : "bg-ri-primary"
                           }`}
                         />
-                        <div className="bg-[#151B2A] border border-[#26344F] p-3 rounded-xl">
+                        <div className="bg-ri-input border border-ri-line p-3 rounded-xl">
                           <div className="flex items-center justify-between">
-                            <span className="font-label-md text-xs font-bold text-[#F1F5F9]">
+                            <span className="font-label-md text-xs font-bold text-ri-text">
                               {evt.title}
                             </span>
-                            <span className="font-code-sm text-[11px] text-[#94A3B8]">
+                            <span className="font-code-sm text-[11px] text-ri-muted">
                               {new Date(evt.timestamp).toLocaleString()}
                             </span>
                           </div>
-                          {evt.description && <p className="text-xs text-[#94A3B8] mt-1">{evt.description}</p>}
+                          {evt.description && <p className="text-xs text-ri-muted mt-1">{evt.description}</p>}
                         </div>
                       </div>
                     ))}
@@ -603,17 +603,17 @@ export default function RoadsPage() {
         {/* Recurrence Review Modal */}
         {reviewingRecurrence && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-[#26344F] pb-3">
+            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
-                  <RotateCcw className="h-5 w-5 text-[#06B6D4]" />
-                  <h3 className="font-headline-sm text-base font-bold text-[#F1F5F9]">
+                  <RotateCcw className="h-5 w-5 text-ri-primary" />
+                  <h3 className="font-headline-sm text-base font-bold text-ri-text">
                     Review Recurrence Match
                   </h3>
                 </div>
                 <button
                   onClick={() => setReviewingRecurrence(null)}
-                  className="text-[#94A3B8] hover:text-[#F1F5F9] text-sm p-1"
+                  className="text-ri-muted hover:text-ri-text text-sm p-1"
                 >
                   ✕
                 </button>
@@ -621,7 +621,7 @@ export default function RoadsPage() {
 
               <form onSubmit={handleReviewSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Decision
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -630,8 +630,8 @@ export default function RoadsPage() {
                       onClick={() => setReviewStatus("CONFIRMED")}
                       className={`h-10 rounded-xl font-label-md text-xs font-bold border transition-all ${
                         reviewStatus === "CONFIRMED"
-                          ? "bg-[#10B981] text-[#003824] border-[#10B981]"
-                          : "bg-[#17223A] text-[#94A3B8] border-[#26344F]"
+                          ? "bg-ri-success text-ri-on-primary border-ri-success"
+                          : "bg-ri-raised text-ri-muted border-ri-line"
                       }`}
                     >
                       Confirm Recurrence (Pothole re-formed at same site)
@@ -641,8 +641,8 @@ export default function RoadsPage() {
                       onClick={() => setReviewStatus("DISMISSED")}
                       className={`h-10 rounded-xl font-label-md text-xs font-bold border transition-all ${
                         reviewStatus === "DISMISSED"
-                          ? "bg-[#EF4444] text-white border-[#EF4444]"
-                          : "bg-[#17223A] text-[#94A3B8] border-[#26344F]"
+                          ? "bg-ri-danger text-white border-ri-danger"
+                          : "bg-ri-raised text-ri-muted border-ri-line"
                       }`}
                     >
                       Dismiss (Unrelated nearby defect)
@@ -651,7 +651,7 @@ export default function RoadsPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="font-label-sm text-xs text-[#94A3B8] font-semibold">
+                  <label className="font-label-sm text-xs text-ri-muted font-semibold">
                     Audit Justification Notes
                   </label>
                   <textarea
@@ -659,7 +659,7 @@ export default function RoadsPage() {
                     value={reviewNotes}
                     onChange={(e) => setReviewNotes(e.target.value)}
                     placeholder="Document root cause or contractor rework instructions..."
-                    className="w-full bg-[#151B2A] border border-[#26344F] rounded-xl p-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+                    className="w-full bg-ri-input border border-ri-line rounded-xl p-3 text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
                   />
                 </div>
 
@@ -667,14 +667,14 @@ export default function RoadsPage() {
                   <button
                     type="button"
                     onClick={() => setReviewingRecurrence(null)}
-                    className="h-10 px-4 rounded-xl bg-[#17223A] border border-[#26344F] text-xs font-semibold text-[#94A3B8]"
+                    className="h-10 px-4 rounded-xl bg-ri-raised border border-ri-line text-xs font-semibold text-ri-muted"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={submittingReview}
-                    className="h-10 px-4 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold transition-all disabled:opacity-50"
+                    className="h-10 px-4 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold transition-all disabled:opacity-50"
                   >
                     {submittingReview ? "Submitting..." : "Save Determination"}
                   </button>

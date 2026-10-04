@@ -78,14 +78,14 @@ const STATUS_VARIANTS: Record<string, StatusVariant> = {
 };
 
 const VARIANT_STYLES: Record<StatusVariant, { bg: string; border: string; text: string; dot: string }> = {
-  error: { bg: "bg-[#EF4444]/15", border: "border-[#EF4444]/35", text: "text-[#EF4444]", dot: "bg-[#EF4444]" },
-  orange: { bg: "bg-[#FB923C]/15", border: "border-[#FB923C]/35", text: "text-[#FB923C]", dot: "bg-[#FB923C]" },
-  warning: { bg: "bg-[#F59E0B]/15", border: "border-[#F59E0B]/35", text: "text-[#F59E0B]", dot: "bg-[#F59E0B]" },
-  success: { bg: "bg-[#10B981]/15", border: "border-[#10B981]/35", text: "text-[#10B981]", dot: "bg-[#10B981]" },
-  primary: { bg: "bg-[#06B6D4]/15", border: "border-[#06B6D4]/35", text: "text-[#4CD7F6]", dot: "bg-[#06B6D4]" },
-  info: { bg: "bg-[#3B82F6]/15", border: "border-[#3B82F6]/35", text: "text-[#ADC6FF]", dot: "bg-[#3B82F6]" },
-  review: { bg: "bg-[#A78BFA]/15", border: "border-[#A78BFA]/35", text: "text-[#C4B5FD]", dot: "bg-[#A78BFA]" },
-  neutral: { bg: "bg-[#232A39]", border: "border-[#3D494C]", text: "text-[#BCC9CD]", dot: "bg-[#869397]" },
+  error: { bg: "bg-ri-danger/15", border: "border-ri-danger/35", text: "text-ri-danger", dot: "bg-ri-danger" },
+  orange: { bg: "bg-ri-orange/15", border: "border-ri-orange/35", text: "text-ri-orange", dot: "bg-ri-orange" },
+  warning: { bg: "bg-ri-warning/15", border: "border-ri-warning/35", text: "text-ri-warning", dot: "bg-ri-warning" },
+  success: { bg: "bg-ri-success/15", border: "border-ri-success/35", text: "text-ri-success", dot: "bg-ri-success" },
+  primary: { bg: "bg-ri-primary/15", border: "border-ri-primary/35", text: "text-ri-primary-bright", dot: "bg-ri-primary" },
+  info: { bg: "bg-ri-info/15", border: "border-ri-info/35", text: "text-ri-info-soft", dot: "bg-ri-info" },
+  review: { bg: "bg-ri-review/15", border: "border-ri-review/35", text: "text-ri-review-soft", dot: "bg-ri-review" },
+  neutral: { bg: "bg-ri-raised", border: "border-ri-line-strong", text: "text-ri-text-soft", dot: "bg-ri-muted" },
 };
 
 export function statusVariant(status?: string | null): StatusVariant {

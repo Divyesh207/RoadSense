@@ -48,13 +48,13 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="p-5 rounded-2xl bg-[#111A2E] border border-[#26344F] shadow-sm flex flex-col justify-between">
+    <div className="p-5 rounded-2xl bg-ri-surface border border-ri-line shadow-sm flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-headline-sm text-sm font-semibold text-[#F1F5F9]">{title}</h3>
+        <h3 className="font-headline-sm text-sm font-semibold text-ri-text">{title}</h3>
       </div>
       {empty ? (
         <div className="h-56 flex flex-col items-center justify-center p-6 text-center">
-          <p className="font-body-sm text-xs text-[#94A3B8]">{empty}</p>
+          <p className="font-body-sm text-xs text-ri-muted">{empty}</p>
         </div>
       ) : (
         <div className="h-56">{children}</div>
@@ -101,37 +101,37 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-code-sm text-[11px] text-[#06B6D4] uppercase tracking-wider font-semibold">
+              <span className="font-code-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
                 Operations overview
               </span>
             </div>
-            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-[#F1F5F9]">
+            <h1 className="font-headline-sm text-2xl font-bold tracking-tight text-ri-text">
               Road Intelligence Overview
             </h1>
-            <p className="font-body-sm text-xs text-[#94A3B8] mt-1">
-              Counts from inspections, damage records, health snapshots, maintenance and verification records.
+            <p className="font-body-sm text-xs text-ri-muted mt-1">
+              Live visibility across road condition, maintenance and repair verification. Every figure is counted from stored records.
             </p>
           </div>
           <Link
             href="/damages"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#06B6D4] hover:bg-[#4CD7F6] rounded-xl text-xs font-bold text-[#003640] shadow-sm shadow-[#06B6D4]/20 transition-all active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-ri-primary hover:bg-ri-primary-bright rounded-xl text-xs font-bold text-ri-on-primary shadow-sm shadow-ri-primary/20 transition-all active:scale-95"
           >
             Review damage queue <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
         {loading && (
-          <div className="p-8 rounded-xl bg-[#111A2E] border border-[#26344F] flex items-center justify-center gap-3">
-            <div className="h-5 w-5 border-2 border-[#06B6D4] border-t-transparent rounded-full animate-spin" />
-            <span className="font-code-sm text-xs text-[#94A3B8]">
+          <div className="p-8 rounded-xl bg-ri-surface border border-ri-line flex items-center justify-center gap-3">
+            <div className="h-5 w-5 border-2 border-ri-primary border-t-transparent rounded-full animate-spin" />
+            <span className="font-code-sm text-xs text-ri-muted">
               Loading…
             </span>
           </div>
         )}
 
         {error && (
-          <div className="p-4 rounded-xl bg-[#93000A]/20 border border-[#93000A]/50 flex items-center gap-3 text-[#FFB4AB]">
-            <AlertCircle className="h-5 w-5 text-[#EF4444] shrink-0" />
+          <div className="p-4 rounded-xl bg-ri-danger-deep/20 border border-ri-danger-deep/50 flex items-center gap-3 text-ri-danger-soft">
+            <AlertCircle className="h-5 w-5 text-ri-danger shrink-0" />
             <p className="font-body-sm text-xs">Could not load dashboard data: {error}</p>
           </div>
         )}
@@ -332,30 +332,30 @@ export default function DashboardPage() {
 
             {/* Critical Segments Warning Alert */}
             {health && health.critical_segments.length > 0 && (
-              <div className="p-5 rounded-2xl bg-[#EF4444]/10 border border-[#EF4444]/30">
-                <div className="flex items-center gap-2 mb-2 text-[#EF4444]">
+              <div className="p-5 rounded-2xl bg-ri-danger/10 border border-ri-danger/30">
+                <div className="flex items-center gap-2 mb-2 text-ri-danger">
                   <ShieldAlert className="h-5 w-5" />
                   <h3 className="font-headline-sm text-sm font-semibold">
                     Segments in CRITICAL health
                   </h3>
                 </div>
-                <ul className="text-xs text-[#DCE2F6] space-y-1.5 divide-y divide-[#26344F]/40 pt-1">
+                <ul className="text-xs text-ri-text-soft space-y-1.5 divide-y divide-ri-line/40 pt-1">
                   {health.critical_segments.map((c) => (
                     <li key={c.segment_id} className="pt-1.5 flex items-center justify-between">
                       <div>
                         <Link
                           href={`/roads/${c.road_id}`}
-                          className="text-[#4CD7F6] font-semibold hover:underline"
+                          className="text-ri-primary-bright font-semibold hover:underline"
                         >
                           {c.road_name}
                         </Link>
-                        <span className="text-[#94A3B8]"> · segment {c.segment_number}</span>
+                        <span className="text-ri-muted"> · segment {c.segment_number}</span>
                       </div>
                       <div className="flex items-center gap-3 font-code-sm">
-                        <span className="text-[#EF4444] font-bold">
+                        <span className="text-ri-danger font-bold">
                           Score: {c.current_health_score}
                         </span>
-                        <span className="text-[#F59E0B]">
+                        <span className="text-ri-warning">
                           {c.open_damages_count} active damage(s)
                         </span>
                       </div>
@@ -366,7 +366,7 @@ export default function DashboardPage() {
             )}
 
             {health && (health.segments_insufficient_data ?? 0) > 0 && (
-              <p className="font-code-sm text-[11px] text-[#64748B]">
+              <p className="font-code-sm text-[11px] text-ri-faint">
                 {health.segments_insufficient_data} segment(s) have insufficient inspection data and are not scored.
               </p>
             )}

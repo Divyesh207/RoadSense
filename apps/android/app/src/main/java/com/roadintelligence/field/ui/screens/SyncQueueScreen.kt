@@ -55,7 +55,7 @@ fun SyncQueueScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundDark)
+            .glassBackground()
     ) {
         CommonTopBar(
             title = "Sync Queue",

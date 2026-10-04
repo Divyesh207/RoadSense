@@ -11,15 +11,15 @@ import { MapSegmentFeature, Road, RoadSegment, RoadSegmentCreatePayload } from "
 const GeometryDrawMap = dynamic(() => import("@/components/map/geometry-draw-map"), {
   ssr: false,
   loading: () => (
-    <div className="h-full w-full flex items-center justify-center rounded-xl bg-[#0C1321] text-xs text-[#94A3B8]">
+    <div className="h-full w-full flex items-center justify-center rounded-xl bg-ri-bg text-xs text-ri-muted">
       Loading map...
     </div>
   ),
 });
 
 const inputClass =
-  "w-full h-10 bg-[#151B2A] border border-[#26344F] rounded-xl px-3 text-xs text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4] disabled:opacity-50";
-const labelClass = "font-label-sm text-xs text-[#94A3B8] font-semibold";
+  "w-full h-10 bg-ri-input border border-ri-line rounded-xl px-3 text-xs text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary disabled:opacity-50";
+const labelClass = "font-label-sm text-xs text-ri-muted font-semibold";
 
 interface SegmentFormModalProps {
   /** Roads the administrator can choose from. */
@@ -140,13 +140,13 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[2000]">
-      <div className="bg-[#111A2E] border border-[#26344F] rounded-2xl max-w-5xl w-full p-6 space-y-4 shadow-2xl max-h-[94vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-[#26344F] pb-3">
+      <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-5xl w-full p-6 space-y-4 shadow-2xl max-h-[94vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-ri-line pb-3">
           <div className="flex items-center gap-2">
-            <GitBranch className="h-5 w-5 text-[#06B6D4]" />
-            <h3 className="font-headline-sm text-base font-bold text-[#F1F5F9]">Add Segment</h3>
+            <GitBranch className="h-5 w-5 text-ri-primary" />
+            <h3 className="font-headline-sm text-base font-bold text-ri-text">Add Segment</h3>
           </div>
-          <button onClick={onClose} aria-label="Close" className="text-[#94A3B8] hover:text-[#F1F5F9] p-1">
+          <button onClick={onClose} aria-label="Close" className="text-ri-muted hover:text-ri-text p-1">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -175,7 +175,7 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
                 ))}
               </select>
               {roadId && (
-                <p className="text-[11px] text-[#64748B]">
+                <p className="text-[11px] text-ri-faint">
                   {loadingRoad
                     ? "Loading existing segments..."
                     : existing.length === 0
@@ -213,7 +213,7 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
                 />
               </div>
             </div>
-            <p className="text-[11px] text-[#64748B] -mt-2">
+            <p className="text-[11px] text-ri-faint -mt-2">
               {drawnLength != null
                 ? `Drawn line measures ${drawnLength.toFixed(1)} m.${lengthEdited ? " The length above was typed by you." : ""}`
                 : "Length fills in from the line you draw; you can also type it."}
@@ -255,29 +255,29 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
             </div>
 
             {/* Preview of exactly what will be sent */}
-            <div className="rounded-xl border border-[#26344F] bg-[#151B2A]/60 p-3 text-[11px] space-y-1">
-              <p className="font-semibold text-[#F1F5F9] text-xs">Preview</p>
-              <p className="text-[#94A3B8]">
-                Road: <span className="text-[#DCE2F6]">{road?.name ?? "not selected"}</span>
+            <div className="rounded-xl border border-ri-line bg-ri-input/60 p-3 text-[11px] space-y-1">
+              <p className="font-semibold text-ri-text text-xs">Preview</p>
+              <p className="text-ri-muted">
+                Road: <span className="text-ri-text-soft">{road?.name ?? "not selected"}</span>
               </p>
-              <p className="text-[#94A3B8]">
-                Segment: <span className="text-[#DCE2F6]">#{segmentNumber || "—"}</span>
+              <p className="text-ri-muted">
+                Segment: <span className="text-ri-text-soft">#{segmentNumber || "—"}</span>
                 {name.trim() ? ` · ${name.trim()}` : ""}
               </p>
-              <p className="text-[#94A3B8]">
+              <p className="text-ri-muted">
                 Geometry:{" "}
-                <span className={points.length >= 2 ? "text-[#10B981]" : "text-[#F59E0B]"}>
+                <span className={points.length >= 2 ? "text-ri-success" : "text-ri-warning"}>
                   {points.length >= 2 ? `line with ${points.length} points` : "none drawn"}
                 </span>
               </p>
               {points.length >= 2 && (
-                <p className="font-mono text-[#94A3B8]">
+                <p className="font-mono text-ri-muted">
                   {points[0][1].toFixed(6)}, {points[0][0].toFixed(6)} → {points[points.length - 1][1].toFixed(6)},{" "}
                   {points[points.length - 1][0].toFixed(6)}
                 </p>
               )}
               {points.length < 2 && (
-                <p className="text-[#F59E0B]">
+                <p className="text-ri-warning">
                   Without a line the segment is saved but will not appear on the Spatial Map and cannot be matched to GPS
                   positions.
                 </p>
@@ -288,16 +288,16 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
           {/* Geometry */}
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-[#DCE2F6]">
+              <p className="text-xs text-ri-text-soft">
                 <span className="font-semibold">Draw the segment:</span>{" "}
-                <span className="text-[#94A3B8]">click along the road from its start to its end.</span>
+                <span className="text-ri-muted">click along the road from its start to its end.</span>
               </p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setPoints((p) => p.slice(0, -1))}
                   disabled={points.length === 0}
-                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-[#17223A] border border-[#26344F] text-[11px] text-[#DCE2F6] disabled:opacity-40"
+                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-ri-raised border border-ri-line text-[11px] text-ri-text-soft disabled:opacity-40"
                 >
                   <Undo2 className="h-3 w-3" /> Undo
                 </button>
@@ -305,7 +305,7 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
                   type="button"
                   onClick={() => setPoints([])}
                   disabled={points.length === 0}
-                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-[#17223A] border border-[#26344F] text-[11px] text-[#DCE2F6] disabled:opacity-40"
+                  className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-ri-raised border border-ri-line text-[11px] text-ri-text-soft disabled:opacity-40"
                 >
                   <Trash2 className="h-3 w-3" /> Clear
                 </button>
@@ -313,34 +313,34 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] text-[#94A3B8]">Move map to:</span>
+              <span className="text-[11px] text-ri-muted">Move map to:</span>
               <input
                 value={gotoLat}
                 onChange={(e) => setGotoLat(e.target.value)}
                 placeholder="Latitude"
                 inputMode="decimal"
-                className="h-8 w-28 bg-[#151B2A] border border-[#26344F] rounded-lg px-2 text-[11px] font-mono text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+                className="h-8 w-28 bg-ri-input border border-ri-line rounded-lg px-2 text-[11px] font-mono text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
               />
               <input
                 value={gotoLon}
                 onChange={(e) => setGotoLon(e.target.value)}
                 placeholder="Longitude"
                 inputMode="decimal"
-                className="h-8 w-28 bg-[#151B2A] border border-[#26344F] rounded-lg px-2 text-[11px] font-mono text-[#F1F5F9] placeholder:text-[#64748B] focus:outline-none focus:border-[#06B6D4]"
+                className="h-8 w-28 bg-ri-input border border-ri-line rounded-lg px-2 text-[11px] font-mono text-ri-text placeholder:text-ri-faint focus:outline-none focus:border-ri-primary"
               />
               <button
                 type="button"
                 onClick={goTo}
-                className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-[#17223A] border border-[#26344F] text-[11px] text-[#4CD7F6]"
+                className="inline-flex items-center gap-1 h-8 px-2.5 rounded-lg bg-ri-raised border border-ri-line text-[11px] text-ri-primary-bright"
               >
                 <Crosshair className="h-3 w-3" /> Go
               </button>
             </div>
 
-            <div className="h-[420px] rounded-xl border border-[#26344F] overflow-hidden">
+            <div className="h-[420px] rounded-xl border border-ri-line overflow-hidden">
               <GeometryDrawMap points={points} onChange={setPoints} contextSegments={context} focus={focus} />
             </div>
-            <p className="text-[11px] text-[#64748B]">
+            <p className="text-[11px] text-ri-faint">
               Grey dashed lines are this road&apos;s existing segments. Green is the start point, red the end. Coordinates are
               WGS 84 and are saved exactly as clicked.
             </p>
@@ -348,20 +348,20 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
 
           <div className="lg:col-span-2 space-y-3">
             {error && (
-              <p className="text-xs px-3 py-2 rounded-xl border border-[#EF4444]/40 bg-[#EF4444]/10 text-[#FFB4AB]">{error}</p>
+              <p className="text-xs px-3 py-2 rounded-xl border border-ri-danger/40 bg-ri-danger/10 text-ri-danger-soft">{error}</p>
             )}
             <div className="flex items-center justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="h-10 px-4 rounded-xl bg-[#17223A] border border-[#26344F] text-xs font-semibold text-[#94A3B8] hover:text-[#F1F5F9]"
+                className="h-10 px-4 rounded-xl bg-ri-raised border border-ri-line text-xs font-semibold text-ri-muted hover:text-ri-text"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving || !roadId}
-                className="h-10 px-5 rounded-xl bg-[#06B6D4] hover:bg-[#4CD7F6] text-[#003640] text-xs font-bold disabled:opacity-50"
+                className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save Segment"}
               </button>
