@@ -41,7 +41,12 @@ import {
   AuditLogItem,
 } from "@/types/api";
 
+import { resolveMediaUrl } from "@/lib/media-url";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+/** A server-issued signed URL, addressed so this browser can reach it (see lib/media-url.ts). */
+const mediaUrl = (url: string | null | undefined) => resolveMediaUrl(url, API_BASE_URL);
 
 // URLSearchParams serializes undefined/null as the literal strings "undefined"/"null",
 // which the API then applies as filters (e.g. status=undefined returns no rows).
@@ -175,8 +180,15 @@ class ApiClient {
     get: async (inspectionId: string): Promise<ResponseEnvelope<Inspection>> => {
       return this.request<ResponseEnvelope<Inspection>>(`/inspections/${inspectionId}`);
     },
-    getMedia: async (inspectionId: string): Promise<ResponseEnvelope<InspectionMedia[]>> => {
-      return this.request<ResponseEnvelope<InspectionMedia[]>>(`/inspections/${inspectionId}/media`);
+    getMedia: async (
+      inspectionId: string,
+      opts: { includeUrls?: boolean } = {}
+    ): Promise<ResponseEnvelope<InspectionMedia[]>> => {
+      const res = await this.request<ResponseEnvelope<InspectionMedia[]>>(
+        `/inspections/${inspectionId}/media${opts.includeUrls ? "?include_urls=true" : ""}`
+      );
+      res.data?.forEach((m) => (m.download_url = mediaUrl(m.download_url)));
+      return res;
     },
     getDetections: async (inspectionId: string): Promise<ResponseEnvelope<InspectionDetection[]>> => {
       return this.request<ResponseEnvelope<InspectionDetection[]>>(`/inspections/${inspectionId}/detections`);
@@ -385,7 +397,7 @@ class ApiClient {
         method: "POST",
         body: JSON.stringify({ filename: file.name, content_type: file.type, size_bytes: file.size, evidence_type: evidenceType }),
       });
-      const put = await fetch(signed.data!.upload_url, {
+      const put = await fetch(mediaUrl(signed.data!.upload_url)!, {
         method: "PUT",
         headers: { ...(signed.data!.upload_headers || {}), "Content-Type": file.type },
         body: file,
@@ -411,7 +423,11 @@ class ApiClient {
       jobId: string,
       evidenceId: string
     ): Promise<ResponseEnvelope<{ download_url: string; expires_in_seconds: number }>> => {
-      return this.request(`/maintenance-jobs/${jobId}/repair-evidence/${evidenceId}/download-url`);
+      const res = await this.request<ResponseEnvelope<{ download_url: string; expires_in_seconds: number }>>(
+        `/maintenance-jobs/${jobId}/repair-evidence/${evidenceId}/download-url`
+      );
+      if (res.data) res.data.download_url = mediaUrl(res.data.download_url) ?? res.data.download_url;
+      return res;
     },
     queueImageVerification: async (
       jobId: string,
@@ -436,7 +452,14 @@ class ApiClient {
       jobId: string,
       verificationId: string
     ): Promise<ResponseEnvelope<{ before_url: string | null; before_source: string | null; after_url: string | null }>> => {
-      return this.request(`/maintenance-jobs/${jobId}/repair-verifications/${verificationId}/image-urls`);
+      const res = await this.request<
+        ResponseEnvelope<{ before_url: string | null; before_source: string | null; after_url: string | null }>
+      >(`/maintenance-jobs/${jobId}/repair-verifications/${verificationId}/image-urls`);
+      if (res.data) {
+        res.data.before_url = mediaUrl(res.data.before_url);
+        res.data.after_url = mediaUrl(res.data.after_url);
+      }
+      return res;
     },
   };
 
@@ -536,7 +559,9 @@ class ApiClient {
       return this.request<ResponseEnvelope<GeneratedReport>>(`/reports/${reportId}`);
     },
     getDownloadUrl: async (reportId: string): Promise<ResponseEnvelope<ReportDownloadUrlResponse>> => {
-      return this.request<ResponseEnvelope<ReportDownloadUrlResponse>>(`/reports/${reportId}/download-url`);
+      const res = await this.request<ResponseEnvelope<ReportDownloadUrlResponse>>(`/reports/${reportId}/download-url`);
+      if (res.data) res.data.download_url = mediaUrl(res.data.download_url) ?? res.data.download_url;
+      return res;
     },
   };
 

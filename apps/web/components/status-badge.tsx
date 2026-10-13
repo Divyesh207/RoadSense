@@ -108,7 +108,7 @@ export function StatusBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-code-sm font-semibold tracking-wide border ${current.bg} ${current.border} ${current.text} ${sizeClasses} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md font-code-sm font-semibold tracking-wide border ${current.bg} ${current.border} ${current.text} ${sizeClasses} ${className}`}
     >
       {showDot && (
         <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${current.dot} ${isRunning ? "animate-pulse" : ""}`} />

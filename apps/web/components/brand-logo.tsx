@@ -53,7 +53,7 @@ export function BrandLogo({
           width={fullDimensions.width}
           height={fullDimensions.height}
           priority
-          className={`${fullDimensions.class} rounded-2xl object-contain drop-shadow-lg`}
+          className={`${fullDimensions.class} rounded-xl object-contain drop-shadow-lg`}
         />
       </div>
     );

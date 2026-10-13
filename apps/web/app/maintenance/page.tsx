@@ -221,7 +221,7 @@ export default function MaintenancePage() {
                 onClick={() => setViewMode("kanban")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === "kanban"
-                    ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                    ? "bg-ri-primary text-ri-on-primary"
                     : "text-ri-muted hover:text-ri-text"
                 }`}
               >
@@ -232,7 +232,7 @@ export default function MaintenancePage() {
                 onClick={() => setViewMode("table")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   viewMode === "table"
-                    ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                    ? "bg-ri-primary text-ri-on-primary"
                     : "text-ri-muted hover:text-ri-text"
                 }`}
               >
@@ -243,7 +243,7 @@ export default function MaintenancePage() {
 
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="flex items-center gap-2 bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md shadow-ri-primary/20 active:scale-95"
+              className="flex items-center gap-2 bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
             >
               <Plus className="h-4 w-4" />
               <span>Create Job</span>
@@ -253,31 +253,31 @@ export default function MaintenancePage() {
 
         {/* 5-Column Bento KPI Strip */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-4">
             <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider">
               Total Jobs
             </span>
             <p className="font-code-lg text-2xl font-bold text-ri-text mt-2">{counts.total}</p>
           </div>
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-4">
             <span className="font-label-sm text-[11px] text-ri-warning uppercase tracking-wider">
               Open / Assigned
             </span>
             <p className="font-code-lg text-2xl font-bold text-ri-warning mt-2">{counts.open}</p>
           </div>
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-4">
             <span className="font-label-sm text-[11px] text-ri-primary uppercase tracking-wider">
               In Progress
             </span>
             <p className="font-code-lg text-2xl font-bold text-ri-primary-bright mt-2">{counts.inProgress}</p>
           </div>
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-4">
             <span className="font-label-sm text-[11px] text-ri-info-soft uppercase tracking-wider">
               Awaiting Verification
             </span>
             <p className="font-code-lg text-2xl font-bold text-ri-info-soft mt-2">{counts.verification}</p>
           </div>
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-4">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-4">
             <span className="font-label-sm text-[11px] text-ri-success uppercase tracking-wider">
               Verified Repaired
             </span>
@@ -286,7 +286,7 @@ export default function MaintenancePage() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-ri-surface p-3 rounded-xl border border-ri-line">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="font-label-sm text-xs text-ri-muted">Priority:</span>
@@ -345,7 +345,7 @@ export default function MaintenancePage() {
 
         {/* Content Body */}
         {loading ? (
-          <div className="h-64 flex items-center justify-center border border-ri-line rounded-2xl bg-ri-surface">
+          <div className="h-64 flex items-center justify-center border border-ri-line rounded-xl bg-ri-surface">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ri-primary" />
           </div>
         ) : jobs.length === 0 ? (
@@ -362,7 +362,7 @@ export default function MaintenancePage() {
               return (
                 <div
                   key={col.id}
-                  className="bg-ri-surface border border-ri-line rounded-2xl p-3 flex flex-col min-h-[400px]"
+                  className="bg-ri-surface border border-ri-line rounded-xl p-3 flex flex-col min-h-[400px]"
                 >
                   <div className="flex items-center justify-between pb-2 mb-2 border-b border-ri-line">
                     <span className="font-label-sm text-xs font-bold text-ri-text truncate">
@@ -414,7 +414,7 @@ export default function MaintenancePage() {
           </div>
         ) : (
           /* Table View */
-          <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
@@ -643,7 +643,7 @@ export default function MaintenancePage() {
         {/* Create Job Modal */}
         {isCreateOpen && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="bg-ri-surface border border-ri-line rounded-xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
               <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
                   <Wrench className="h-5 w-5 text-ri-primary" />
@@ -744,7 +744,7 @@ export default function MaintenancePage() {
                   <button
                     type="submit"
                     disabled={creating}
-                    className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold transition-all shadow-md shadow-ri-primary/20 disabled:opacity-50"
+                    className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold transition-all disabled:opacity-50"
                   >
                     {creating ? "Creating..." : "Create Job"}
                   </button>

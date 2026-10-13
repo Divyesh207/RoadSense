@@ -74,7 +74,7 @@ export default function GeometryDrawMap({ points, onChange, contextSegments, foc
       zoom={INITIAL_ZOOM}
       scrollWheelZoom
       className="h-full w-full rounded-xl"
-      style={{ background: "#0f172a", cursor: "crosshair" }}
+      style={{ background: "#0a0a0b", cursor: "crosshair" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -87,7 +87,7 @@ export default function GeometryDrawMap({ points, onChange, contextSegments, foc
         <GeoJSON
           key={s.id}
           data={s.geometry as Geometry}
-          style={{ color: "#64748b", weight: 4, opacity: 0.8, dashArray: "6 6" }}
+          style={{ color: "#71717a", weight: 4, opacity: 0.8, dashArray: "6 6" }}
         >
           <Tooltip sticky>
             Existing: {s.road_name ?? "Road"} · Segment {s.segment_number}
@@ -103,7 +103,7 @@ export default function GeometryDrawMap({ points, onChange, contextSegments, foc
           bubblingMouseEvents={false}
           radius={i === 0 || i === latLngs.length - 1 ? 7 : 5}
           pathOptions={{
-            color: "#0C1321",
+            color: "#0A0A0B",
             weight: 2,
             fillColor: i === 0 ? "#10B981" : i === latLngs.length - 1 ? "#EF4444" : "#06B6D4",
             fillOpacity: 1,

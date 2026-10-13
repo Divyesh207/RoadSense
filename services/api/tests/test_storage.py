@@ -78,6 +78,17 @@ async def test_local_signed_upload_round_trip(async_client, isolated_local_stora
     )
     assert complete.status_code == 201
 
+    # The list carries no view URL unless asked; with include_urls the URL serves the stored bytes.
+    plain = await async_client.get(f"/api/v1/inspections/{insp_id}/media", headers=headers)
+    assert plain.json()["data"][0]["download_url"] is None
+    listed = await async_client.get(f"/api/v1/inspections/{insp_id}/media?include_urls=true", headers=headers)
+    assert listed.status_code == 200
+    view_url = listed.json()["data"][0]["download_url"]
+    assert view_url
+    fetched = await async_client.get(_relative(view_url))
+    assert fetched.status_code == 200
+    assert fetched.content == b"hello"
+
 
 @pytest.mark.asyncio
 async def test_local_upload_rejects_tampered_and_expired_signatures(async_client):
@@ -307,7 +318,7 @@ async def test_report_artifact_is_generated_and_downloadable(async_client):
     assert artifact.status_code == 200
     assert artifact.headers["content-type"] == "application/pdf"
     assert artifact.content.startswith(b"%PDF-1.4")
-    assert b"Road Health Report" in artifact.content and b"Road Health" in artifact.content
+    assert b"Road Health Assessment Report" in artifact.content
 
 
 @pytest.mark.asyncio

@@ -3,8 +3,9 @@ Report artifact renderers: the same report content (a JSON-serialisable dict bui
 analytics) rendered as JSON, CSV or PDF. No values are added or estimated here; CSV and PDF
 are flattened views of exactly the data in the JSON representation.
 
-The PDF writer produces a plain, standards-conforming PDF 1.4 text document (Helvetica, A4,
-multi-page) without third-party dependencies.
+The Road Health report has its own designed PDF layout (road_health_pdf), used when the content
+carries the "road_health_detail" data. Every other report type uses the plain PDF 1.4 text
+writer below (Helvetica, A4, multi-page, no third-party dependencies).
 """
 
 import csv
@@ -107,6 +108,11 @@ def _report_lines(content: dict[str, Any]) -> list[tuple[str, str]]:
 
 
 def render_pdf(content: dict[str, Any]) -> bytes:
+    detail = content.get("road_health_detail")
+    if detail:
+        from app.services.road_health_pdf import render_road_health_pdf
+
+        return render_road_health_pdf(detail)
     styles = {"title": ("F2", 16, 2.0), "heading": ("F2", 12, 1.6), "body": ("F1", 9, 1.0)}
     pages: list[list[str]] = [[]]
     y = _PAGE_H - _MARGIN

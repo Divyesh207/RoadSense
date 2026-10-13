@@ -189,7 +189,7 @@ export default function AuditLogsPage() {
         )}
 
         {/* Audit Log Table */}
-        <div className="rounded-2xl border border-ri-line bg-ri-surface overflow-hidden shadow-xl">
+        <div className="rounded-xl border border-ri-line bg-ri-surface overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
@@ -303,7 +303,7 @@ export default function AuditLogsPage() {
         {/* Modal / Detail Drawer for selected log */}
         {selectedLog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ri-bg/80 backdrop-blur-md animate-in fade-in duration-200">
-            <div className="bg-ri-surface border border-ri-line rounded-2xl p-6 max-w-2xl w-full shadow-2xl space-y-4">
+            <div className="bg-ri-surface border border-ri-line rounded-xl p-6 max-w-2xl w-full shadow-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
                   <span className="p-1.5 rounded-lg bg-ri-primary/10 border border-ri-primary/30 text-ri-primary">

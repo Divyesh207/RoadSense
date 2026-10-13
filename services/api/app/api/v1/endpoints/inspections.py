@@ -46,6 +46,8 @@ from app.services.storage import (
 
 router = APIRouter()
 
+MEDIA_VIEW_URL_TTL_SECONDS = 600
+
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
@@ -660,6 +662,9 @@ async def list_inspection_media(
     request: Request,
     org_ctx: Annotated[OrgContext, Depends(require_permission("inspection_media:read"))],
     db: Annotated[AsyncSession, Depends(get_db)],
+    include_urls: Annotated[
+        bool, Query(description="Add a short-lived signed view URL to each completed upload.")
+    ] = False,
 ) -> ResponseEnvelope[list[InspectionMediaResponseData]]:
     request_id = getattr(request.state, "request_id", None)
 
@@ -693,6 +698,17 @@ async def list_inspection_media(
     media_items = result.scalars().all()
 
     data = [build_media_response(m) for m in media_items]
+    if include_urls:
+        storage = get_storage_backend()
+        for item in data:
+            if item.upload_status != "COMPLETED":
+                continue
+            try:
+                item.download_url = await run_in_threadpool(
+                    storage.create_signed_download_url, item.storage_bucket, item.storage_path, MEDIA_VIEW_URL_TTL_SECONDS
+                )
+            except StorageError:
+                item.download_url = None  # the row is still listed; the client shows it as unavailable
     return ResponseEnvelope(
         success=True,
         data=data,

@@ -265,7 +265,8 @@ async def test_report_artifact_is_rendered_in_requested_format(async_client: Asy
     assert resp.content.startswith(magic)
     if fmt == "PDF":
         assert resp.content.rstrip().endswith(b"%%EOF")
-        assert b"Road Health Report" in resp.content
+        # The designed Road Health layout carries its title in the document metadata.
+        assert b"Road Health Assessment Report" in resp.content
 
 
 @pytest.mark.asyncio

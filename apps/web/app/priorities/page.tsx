@@ -65,7 +65,7 @@ export default function PrioritiesPage() {
 
         {/* Filter Pills Bar (Matching Stitch Scrollable Horizon) */}
         {rows && (
-          <div className="flex items-center justify-between gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
+          <div className="flex items-center justify-between gap-3 bg-ri-surface p-3 rounded-xl border border-ri-line">
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
               {["", "CRITICAL", "HIGH", "MEDIUM", "LOW"].map((l) => (
                 <button
@@ -73,7 +73,7 @@ export default function PrioritiesPage() {
                   onClick={() => setLevel(l)}
                   className={`px-3.5 py-1.5 rounded-full font-label-md text-xs whitespace-nowrap flex items-center gap-1.5 font-bold transition-all ${
                     level === l
-                      ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                      ? "bg-ri-primary text-ri-on-primary"
                       : "bg-ri-raised text-ri-muted hover:text-ri-text border border-ri-line"
                   }`}
                 >
@@ -102,7 +102,7 @@ export default function PrioritiesPage() {
         )}
 
         {loading ? (
-          <div className="h-64 flex items-center justify-center border border-ri-line rounded-2xl bg-ri-surface">
+          <div className="h-64 flex items-center justify-center border border-ri-line rounded-xl bg-ri-surface">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ri-primary" />
           </div>
         ) : shown.length === 0 ? (
@@ -116,7 +116,7 @@ export default function PrioritiesPage() {
             {shown.map((r) => (
               <article
                 key={r.job_id}
-                className="rounded-2xl border border-ri-line bg-ri-surface p-4 hover:border-ri-primary/50 transition-colors"
+                className="rounded-xl border border-ri-line bg-ri-surface p-4 hover:border-ri-primary/50 transition-colors"
               >
                 {/* Desktop: identity | where and condition | status and risk. Stacks on smaller screens. */}
                 <div className="grid gap-3 xl:grid-cols-[minmax(280px,1.15fr)_minmax(0,2.3fr)_minmax(260px,1fr)] xl:items-stretch">

@@ -14,14 +14,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryCyan,
-    onPrimary = OnPrimaryCyan,
-    primaryContainer = PrimaryCyan,
-    onPrimaryContainer = OnPrimaryCyan,
-    secondary = SecondaryBlueSoft,
-    onSecondary = Color(0xFF002E6A),
+    primary = Accent,
+    onPrimary = OnAccent,
+    primaryContainer = Accent,
+    onPrimaryContainer = OnAccent,
+    secondary = NeutralSoft,
+    onSecondary = OnAccent,
     tertiary = SuccessEmeraldSoft,
-    onTertiary = Color(0xFF003824),
+    onTertiary = OnSuccess,
     background = BackgroundDark,
     onBackground = TextOnSurface,
     // Material's own containers (dialogs, menus, sheets) must stay opaque to be readable.
@@ -49,28 +49,29 @@ val CodeSm = TextStyle(fontFamily = MonoFamily, fontSize = 11.sp, lineHeight = 1
 val CodeMd = TextStyle(fontFamily = MonoFamily, fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium)
 val CodeLg = TextStyle(fontFamily = MonoFamily, fontSize = 15.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold)
 
-// Type scale from the Stitch design tokens (system sans in place of a bundled Inter to keep the APK small).
+// Type scale shared with the web console. The system sans stands in for Inter (no font is bundled,
+// to keep the APK small); headings are medium weight with slightly tight tracking, as on the web.
 private val FieldTypography = Typography(
-    headlineLarge = TextStyle(fontSize = 30.sp, lineHeight = 38.sp, fontWeight = FontWeight.Bold),
-    headlineMedium = TextStyle(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold),
-    headlineSmall = TextStyle(fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
-    titleLarge = TextStyle(fontSize = 20.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
-    titleMedium = TextStyle(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold),
-    titleSmall = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold),
+    headlineLarge = TextStyle(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.6).sp),
+    headlineMedium = TextStyle(fontSize = 24.sp, lineHeight = 30.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.4).sp),
+    headlineSmall = TextStyle(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.3).sp),
+    titleLarge = TextStyle(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.3).sp),
+    titleMedium = TextStyle(fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Medium),
+    titleSmall = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
     bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 24.sp),
     bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp),
     bodySmall = TextStyle(fontSize = 12.sp, lineHeight = 16.sp),
-    labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold),
-    labelMedium = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold),
+    labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
+    labelMedium = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
     labelSmall = TextStyle(fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Medium)
 )
 
 private val FieldShapes = Shapes(
     extraSmall = RoundedCornerShape(4.dp),
     small = RoundedCornerShape(8.dp),
-    medium = RoundedCornerShape(12.dp),
-    large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(24.dp)
+    medium = RoundedCornerShape(10.dp),
+    large = RoundedCornerShape(12.dp),
+    extraLarge = RoundedCornerShape(16.dp)
 )
 
 @Composable

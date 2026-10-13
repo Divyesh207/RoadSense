@@ -7,6 +7,7 @@ import { AppShell } from "@/components/shell";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { api } from "@/lib/api-client";
+import { InspectionPhotoGrid } from "@/components/inspections/inspection-photos";
 import { detectionMethodLabel, isHeuristic, scoreLabel } from "@/lib/provenance";
 import {
   AuditLogItem,
@@ -95,7 +96,7 @@ export default function InspectionDetailPage() {
     setLoading(false);
 
     const [mediaRes, detRes, dmgRes, auditRes] = await Promise.allSettled([
-      api.inspections.getMedia(inspectionId),
+      api.inspections.getMedia(inspectionId, { includeUrls: true }),
       api.inspections.getDetections(inspectionId),
       api.damages.list({ inspection_id: inspectionId, page_size: 100 }),
       api.auditLogs.list({ entity_id: inspectionId, page_size: 50 }),
@@ -193,7 +194,7 @@ export default function InspectionDetailPage() {
   if (error || !inspection) {
     return (
       <AppShell>
-        <div className="max-w-xl mx-auto mt-16 bg-ri-surface border border-ri-line rounded-2xl p-8 text-center space-y-4">
+        <div className="max-w-xl mx-auto mt-16 bg-ri-surface border border-ri-line rounded-xl p-8 text-center space-y-4">
           <AlertCircle className="h-10 w-10 mx-auto text-ri-warning" />
           <div>
             <h1 className="font-headline-sm text-base font-bold text-ri-text">
@@ -301,7 +302,7 @@ export default function InspectionDetailPage() {
         </div>
 
         {/* Stitch Header Card (Asset Record Summary) */}
-        <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-ri-surface border border-ri-line rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <span className="font-label-sm text-[11px] text-ri-primary uppercase tracking-wider font-semibold">
@@ -348,7 +349,7 @@ export default function InspectionDetailPage() {
         </div>
 
         {/* Processing stages */}
-        <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-ri-surface border border-ri-line rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between">
             <span className="font-label-md text-xs font-semibold text-ri-text">
               Processing
@@ -409,7 +410,7 @@ export default function InspectionDetailPage() {
         {/* Location & AI Results */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Location */}
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-ri-primary" />
@@ -445,7 +446,7 @@ export default function InspectionDetailPage() {
           </div>
 
           {/* AI results & review (values from the backend only) */}
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-5 shadow-sm space-y-3 flex flex-col justify-between">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Cpu className="h-4 w-4 text-ri-primary" />
@@ -483,7 +484,7 @@ export default function InspectionDetailPage() {
         </div>
 
         {inspection.notes && (
-          <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm">
+          <div className="bg-ri-surface border border-ri-line rounded-xl p-5 shadow-sm">
             <h2 className="font-headline-sm text-sm font-semibold text-ri-text mb-1">Notes</h2>
             <p className="text-xs text-ri-muted whitespace-pre-wrap">{inspection.notes}</p>
           </div>
@@ -637,6 +638,7 @@ export default function InspectionDetailPage() {
           section={media}
           empty="No media uploaded for this inspection."
         >
+          <InspectionPhotoGrid media={media.data} />
           <table className="w-full text-left text-xs">
             <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
               <tr>
@@ -718,7 +720,7 @@ function Panel<T>({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+    <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
       <div className="p-4 border-b border-ri-line flex items-center gap-2">
         {icon}
         <h2 className="font-headline-sm text-sm font-bold text-ri-text">{title}</h2>

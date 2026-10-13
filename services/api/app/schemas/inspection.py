@@ -109,6 +109,8 @@ class InspectionMediaResponseData(BaseModel):
     width_px: int | None = None
     height_px: int | None = None
     created_at: datetime
+    # Short-lived signed URL to view the object. Only set when the list is requested with include_urls.
+    download_url: str | None = None
 
 
 class ProcessInspectionResponseData(BaseModel):

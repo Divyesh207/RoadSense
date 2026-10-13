@@ -204,7 +204,7 @@ fun CameraCaptureScreen(
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Info, contentDescription = null, tint = PrimaryCyanBright, modifier = Modifier.size(14.dp))
+                Icon(Icons.Default.Info, contentDescription = null, tint = AccentBright, modifier = Modifier.size(14.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = captureError ?: "Frame the damage with surrounding road visible",
@@ -241,12 +241,12 @@ fun CameraCaptureScreen(
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .background(PrimaryCyan, CircleShape)
+                            .background(Accent, CircleShape)
                             .defaultMinSize(minWidth = 22.dp, minHeight = 22.dp)
                             .padding(horizontal = 5.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(capturedCount.toString(), color = OnPrimaryCyan, style = CodeSm, fontWeight = FontWeight.Bold)
+                        Text(capturedCount.toString(), color = OnAccent, style = CodeSm, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -256,7 +256,7 @@ fun CameraCaptureScreen(
                         .size(76.dp)
                         .border(4.dp, Color.White, CircleShape)
                         .padding(7.dp)
-                        .background(if (isCapturing) Color.Gray else PrimaryCyan, CircleShape)
+                        .background(if (isCapturing) Color.Gray else Accent, CircleShape)
                         .clickable(enabled = !isCapturing, onClickLabel = "Capture photo") {
                             val capture = imageCapture ?: return@clickable
                             isCapturing = true
@@ -357,8 +357,8 @@ private fun CameraPermissionMissing(onNavigateBack: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(64.dp)
-                    .background(WarningAmber.copy(alpha = 0.12f), RoundedCornerShape(18.dp))
-                    .border(1.dp, WarningAmber.copy(alpha = 0.4f), RoundedCornerShape(18.dp)),
+                    .background(WarningAmber.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                    .border(1.dp, WarningAmber.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.NoPhotography, contentDescription = null, tint = WarningAmber, modifier = Modifier.size(32.dp))

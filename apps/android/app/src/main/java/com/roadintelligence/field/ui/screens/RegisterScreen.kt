@@ -128,7 +128,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
             Spacer(modifier = Modifier.width(10.dp))
             Column {
                 Text("Create Account", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
-                Text("Field Inspection", color = PrimaryCyanBright, style = CodeSm)
+                Text("Field Inspection", color = AccentBright, style = CodeSm)
             }
         }
 

@@ -180,7 +180,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 aria-busy={loading}
-                className={`w-full h-14 bg-ri-primary hover:bg-ri-primary-bright motion-safe:active:scale-[0.99] text-ri-on-primary font-headline-sm text-sm rounded-xl font-bold flex items-center justify-center space-x-2 transition-all shadow-md shadow-ri-primary/20 hover:shadow-lg hover:shadow-ri-primary/30 disabled:opacity-60 disabled:cursor-not-allowed mt-2 ${focusRing}`}
+                className={`w-full h-14 bg-ri-primary hover:bg-ri-primary-bright motion-safe:active:scale-[0.99] text-ri-on-primary font-headline-sm text-sm rounded-xl font-bold flex items-center justify-center space-x-2 transition-all hover:shadow-lg hover: disabled:opacity-60 disabled:cursor-not-allowed mt-2 ${focusRing}`}
               >
                 <span>{loading ? "Authenticating..." : "Sign In to Operations"}</span>
                 {loading ? (

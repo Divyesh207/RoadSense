@@ -99,7 +99,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = "FIELD OPERATIONS PLATFORM",
-            color = PrimaryCyanBright,
+            color = AccentBright,
             style = CodeSm,
             letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp)
         )

@@ -96,9 +96,9 @@ fun InspectionDetailScreen(
                     if (serverId != null) {
                         IconButton(onClick = { refreshTick++ }, enabled = !serverLoading) {
                             if (serverLoading) {
-                                CircularProgressIndicator(color = PrimaryCyan, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                CircularProgressIndicator(color = Accent, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             } else {
-                                Icon(Icons.Default.Refresh, contentDescription = "Refresh server status", tint = PrimaryCyanBright)
+                                Icon(Icons.Default.Refresh, contentDescription = "Refresh server status", tint = AccentBright)
                             }
                         }
                     }
@@ -108,7 +108,7 @@ fun InspectionDetailScreen(
             val insp = inspection
             if (insp == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PrimaryCyan)
+                    CircularProgressIndicator(color = Accent)
                 }
             } else {
                 val media = insp.mediaList
@@ -256,7 +256,7 @@ private fun HeaderCard(insp: Inspection, state: ServerInspectionState?, authRepo
     FieldCard {
         Row(verticalAlignment = Alignment.Top) {
             Column(modifier = Modifier.weight(1f)) {
-                FieldLabel("Inspection", color = PrimaryCyanBright)
+                FieldLabel("Inspection", color = AccentBright)
                 Text(insp.displayId(), color = TextPrimary, style = CodeLg, fontWeight = FontWeight.Bold)
             }
             StatusBadge(status = insp.syncStatus)
@@ -273,11 +273,11 @@ private fun HeaderCard(insp: Inspection, state: ServerInspectionState?, authRepo
         )
         Spacer(modifier = Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Timeline, contentDescription = null, tint = SecondaryBlueSoft, modifier = Modifier.size(14.dp))
+            Icon(Icons.Default.Timeline, contentDescription = null, tint = NeutralSoft, modifier = Modifier.size(14.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = insp.segmentNumber?.let { "Segment #$it" } ?: "No segment selected",
-                color = if (insp.segmentNumber != null) SecondaryBlueSoft else TextSecondary,
+                color = if (insp.segmentNumber != null) NeutralSoft else TextSecondary,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -349,7 +349,7 @@ private fun PipelineCard(insp: Inspection, state: ServerInspectionState?) {
             Spacer(modifier = Modifier.height(12.dp))
             LinearProgressIndicator(
                 progress = { uploaded / total.toFloat() },
-                color = PrimaryCyan,
+                color = Accent,
                 trackColor = SurfaceLowest,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -385,7 +385,7 @@ private fun PipelineStep(title: String, caption: String, state: StepState, modif
     val icon: ImageVector
     when (state) {
         StepState.DONE -> { color = SuccessEmerald; icon = Icons.Default.Check }
-        StepState.ACTIVE -> { color = PrimaryCyanBright; icon = Icons.Default.Sync }
+        StepState.ACTIVE -> { color = AccentBright; icon = Icons.Default.Sync }
         StepState.FAILED -> { color = ErrorRose; icon = Icons.Default.PriorityHigh }
         StepState.WAITING -> { color = TextMuted; icon = Icons.Default.HourglassEmpty }
     }
@@ -426,7 +426,7 @@ private fun AiResultsCard(
 
         when {
             state == null && loading -> Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(color = PrimaryCyan, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(color = Accent, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 Spacer(modifier = Modifier.width(10.dp))
                 Text("Checking the server for analysis results...", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
             }
@@ -548,9 +548,9 @@ private fun DetectionRow(det: ServerDetection, photoIndex: Int, onOpenPhoto: (In
                     .padding(vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Image, contentDescription = null, tint = PrimaryCyanBright, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.Image, contentDescription = null, tint = AccentBright, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("View on photo ${photoIndex + 1}", color = PrimaryCyanBright, style = MaterialTheme.typography.labelMedium)
+                Text("View on photo ${photoIndex + 1}", color = AccentBright, style = MaterialTheme.typography.labelMedium)
             }
         }
     }
@@ -691,7 +691,7 @@ private fun PhotosCard(
                             color = when (item.uploadStatus) {
                                 UploadStatus.COMPLETED -> SuccessEmerald
                                 UploadStatus.FAILED -> ErrorRose
-                                UploadStatus.UPLOADING -> PrimaryCyanBright
+                                UploadStatus.UPLOADING -> AccentBright
                                 UploadStatus.PENDING -> TextSecondary
                             },
                             style = CodeSm

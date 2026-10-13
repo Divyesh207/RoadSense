@@ -52,6 +52,11 @@ class ReportService:
 
         # One snapshot of live analytics, rendered in the requested format (JSON, CSV or PDF).
         content = await ReportService._build_report_content(db, org_id, report_type, payload.parameters, now)
+        if requested_format == "PDF" and report_type == "ROAD_HEALTH":
+            # The designed PDF needs per-segment and per-defect records; JSON and CSV keep their shape.
+            from app.services.road_health_report import build_road_health_detail
+
+            content["road_health_detail"] = await build_road_health_detail(db, org_id, payload.parameters, now, report_id)
         extension, content_type = SUPPORTED_FORMATS[requested_format]
         filename = f"{report_type.lower()}_report_{now:%Y%m%d_%H%M%S}.{extension}"
         bucket = settings.SUPABASE_STORAGE_BUCKET_REPORTS
@@ -66,7 +71,7 @@ class ReportService:
 
         status_value, error_message, generated_at = "COMPLETED", None, now
         try:
-            body = RENDERERS[requested_format](content)
+            body = await run_in_threadpool(RENDERERS[requested_format], content)
             await run_in_threadpool(
                 lambda: get_storage_backend().put_object(bucket, storage_path, body, content_type)
             )
