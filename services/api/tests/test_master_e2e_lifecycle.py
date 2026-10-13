@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -166,7 +166,7 @@ async def test_master_platform_e2e_lifecycle(
         status="PENDING_REVIEW",
         confidence=0.88,
         estimated_area_m2=0.55,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(damage_record)
     await db_session.commit()
@@ -206,7 +206,7 @@ async def test_master_platform_e2e_lifecycle(
         "job_type": "EMERGENCY_PATCH",
         "priority": "HIGH",
         "description": "Urgent pothole filling on Northbound lane",
-        "scheduled_start_date": datetime.now(timezone.utc).isoformat(),
+        "scheduled_start_date": datetime.now(UTC).isoformat(),
     }
     job_create_resp = await async_client.post("/api/v1/maintenance-jobs", json=job_payload, headers=auth_hdr)
     assert job_create_resp.status_code == 201, job_create_resp.text

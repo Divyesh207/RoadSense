@@ -2,7 +2,7 @@
 projection, training-readiness report) and priority with escalation/estimate components."""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -21,7 +21,7 @@ from tests.conftest import INSPECTOR_USER_ID, ORG_1_ID
 
 
 def now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def headers(async_client):

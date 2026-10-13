@@ -11,14 +11,14 @@ from app.services.road_health_pdf import render_road_health_pdf
 def _text(pdf: bytes) -> bytes:
     """The text shown on the pages, as one space-separated run."""
     out = b""
-    for match in re.finditer(rb"stream\r?\n(.*?)endstream", pdf, re.S):
+    for match in re.finditer(rb"stream\r?\n(.*?)endstream", pdf, re.DOTALL):
         raw = match.group(1).strip()
         try:
             data = zlib.decompress(raw)
         except zlib.error:
             try:  # ReportLab ASCII85-encodes its compressed streams
                 data = zlib.decompress(base64.a85decode(raw, adobe=True))
-            except Exception:  # noqa: BLE001 - not a text stream (an image, for example)
+            except (ValueError, zlib.error):  # not a text stream (an image, for example)
                 continue
         out += b" ".join(re.findall(rb"\((.*?)\) Tj", data)) + b" "
     return out.replace(b"\\(", b"(").replace(b"\\)", b")")

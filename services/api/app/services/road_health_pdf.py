@@ -7,7 +7,7 @@ value the report says "not recorded" or leaves the block out.
 """
 
 import io
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from xml.sax.saxutils import escape
 
@@ -123,7 +123,7 @@ def _parse(value: Any) -> datetime | None:
         dt = datetime.fromisoformat(str(value))
     except ValueError:
         return None
-    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+    return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
 
 
 def _dt(value: Any, missing: str = "Not recorded") -> str:

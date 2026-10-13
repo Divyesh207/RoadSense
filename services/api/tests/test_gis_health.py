@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -46,7 +46,7 @@ async def seeded_gis_context(db_session):
         road_type="URBAN",
         geometry=geojson_to_wkt(road_geom),
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(road)
 
@@ -66,7 +66,7 @@ async def seeded_gis_context(db_session):
         length_meters=500.0,
         geometry=geojson_to_wkt(seg_geom),
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(seg)
 
@@ -81,8 +81,8 @@ async def seeded_gis_context(db_session):
         source="API",
         location=point_to_wkt(18.5200, 73.8525),
         gps_accuracy_meters=3.5,
-        captured_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
+        captured_at=datetime.now(UTC),
+        created_at=datetime.now(UTC),
     )
     db_session.add(insp)
 
@@ -101,8 +101,8 @@ async def seeded_gis_context(db_session):
         status="CONFIRMED",
         confidence=0.95,
         location=point_to_wkt(18.5200, 73.8520),
-        detected_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
+        detected_at=datetime.now(UTC),
+        created_at=datetime.now(UTC),
     )
     dmg2 = DamageRecord(
         id=uuid.uuid4(),
@@ -117,8 +117,8 @@ async def seeded_gis_context(db_session):
         status="DETECTED",
         confidence=0.80,
         location=point_to_wkt(18.5200, 73.8530),
-        detected_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
+        detected_at=datetime.now(UTC),
+        created_at=datetime.now(UTC),
     )
     db_session.add_all([dmg1, dmg2])
     await db_session.commit()
@@ -245,7 +245,7 @@ async def test_segment_health_insufficient_data(async_client, db_session):
         name="Empty Road",
         road_code="EMP-001",
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     empty_seg = RoadSegment(
         id=uuid.uuid4(),
@@ -257,7 +257,7 @@ async def test_segment_health_insufficient_data(async_client, db_session):
         end_chainage=0.1,
         length_meters=100.0,
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add_all([empty_road, empty_seg])
     await db_session.commit()

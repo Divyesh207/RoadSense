@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -62,7 +62,7 @@ async def test_damage_trends_and_filtering(
     headers = make_headers(token, ORG_1_ID)
 
     # Seed a road and damage record
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     road = Road(
         id=uuid.uuid4(),
         organization_id=ORG_1_ID,

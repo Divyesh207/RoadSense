@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import desc, func, select
@@ -71,7 +71,7 @@ async def _persist(db: AsyncSession, snapshot: RoadHealthSnapshot, dedupe: bool)
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def classify_health_status(score: float | None) -> str:
@@ -174,7 +174,7 @@ async def calculate_segment_health(
 
         insp_captured_at = latest_inspection.captured_at if latest_inspection else None
         if insp_captured_at and insp_captured_at.tzinfo is None:
-            insp_captured_at = insp_captured_at.replace(tzinfo=timezone.utc)
+            insp_captured_at = insp_captured_at.replace(tzinfo=UTC)
 
         freshness_days = (
             (now - insp_captured_at).days

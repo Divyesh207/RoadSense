@@ -16,7 +16,7 @@ severity. Every rule that fired is stored with its inputs and audited.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from geoalchemy2 import Geography
@@ -40,13 +40,13 @@ LEVELS = ("NONE", "ELEVATED", "CRITICAL")
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _utc(dt: datetime | None) -> datetime | None:
     if dt is None:
         return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 async def _candidates(

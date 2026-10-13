@@ -11,7 +11,7 @@ latest snapshot per segment, with INSUFFICIENT_DATA segments counted separately 
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select
@@ -44,7 +44,7 @@ MAX_EVIDENCE_PHOTOS = 6
 def _utc(dt: datetime | None) -> datetime | None:
     if dt is None:
         return None
-    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
+    return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
 
 
 def _iso(dt: datetime | None) -> str | None:
@@ -94,7 +94,7 @@ async def build_road_health_detail(
     generated_at: datetime,
     report_id: uuid.UUID,
 ) -> dict[str, Any]:
-    generated_at = _utc(generated_at) or datetime.now(timezone.utc)
+    generated_at = _utc(generated_at) or datetime.now(UTC)
     timeframe = str(parameters.get("timeframe") or "all_time")
     days = TIMEFRAME_DAYS.get(timeframe)
     period_start = generated_at - timedelta(days=days) if days else None

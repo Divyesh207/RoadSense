@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt
@@ -35,7 +35,7 @@ def create_access_token(
     extra_claims: dict[str, Any] | None = None,
 ) -> tuple[str, int]:
     """Create a signed JWT access token. Returns (token, expires_in_seconds)."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if expires_delta:
         expire = now + expires_delta
         expires_in = int(expires_delta.total_seconds())

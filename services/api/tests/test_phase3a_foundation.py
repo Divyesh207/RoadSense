@@ -1,7 +1,7 @@
 """Phase 3A: GPS damage grouping, automatic health, traffic input, historical-wear priority."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -28,7 +28,7 @@ LON_50M = 0.00047
 
 
 def now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def auth_headers(async_client):

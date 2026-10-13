@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -41,7 +41,7 @@ async def seeded_prediction_context(db_session):
         road_code="JM-001",
         road_type="URBAN",
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(road)
 
@@ -57,7 +57,7 @@ async def seeded_prediction_context(db_session):
         length_meters=1000.0,
         geometry=geojson_to_wkt({"type": "LineString", "coordinates": [[73.8400, 18.5300], [73.8500, 18.5300]]}),
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(seg)
 
@@ -72,8 +72,8 @@ async def seeded_prediction_context(db_session):
         source="API",
         location=point_to_wkt(18.5300, 73.8450),
         gps_accuracy_meters=4.0,
-        captured_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
+        captured_at=datetime.now(UTC),
+        created_at=datetime.now(UTC),
     )
     db_session.add(insp)
 
@@ -92,8 +92,8 @@ async def seeded_prediction_context(db_session):
         status="CONFIRMED",
         confidence=0.90,
         location=point_to_wkt(18.5300, 73.8450),
-        detected_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
+        detected_at=datetime.now(UTC),
+        created_at=datetime.now(UTC),
     )
     db_session.add(dmg)
 
@@ -107,8 +107,8 @@ async def seeded_prediction_context(db_session):
         health_status="FAIR",
         calculation_version="health-v1.0.0",
         factors={"damage_density": 1.0, "total_damages": 1},
-        calculated_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
+        calculated_at=datetime.now(UTC),
+        created_at=datetime.now(UTC),
     )
     db_session.add(health)
     await db_session.commit()
@@ -134,7 +134,7 @@ async def test_prediction_insufficient_data(async_client, db_session):
         name="Empty Road For Pred",
         road_code="EMP-PRED",
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     seg = RoadSegment(
         id=uuid.uuid4(),
@@ -143,7 +143,7 @@ async def test_prediction_insufficient_data(async_client, db_session):
         segment_number=1,
         name="No Data Seg",
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add_all([road, seg])
     await db_session.commit()

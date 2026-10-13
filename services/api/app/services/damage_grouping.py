@@ -17,7 +17,7 @@ damage record); records are never merged or deleted.
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from geoalchemy2 import Geography
 from sqlalchemy import cast, exists, func, select
@@ -36,7 +36,7 @@ OPEN_DAMAGE_STATUSES = ("DETECTED", "PENDING_REVIEW", "CONFIRMED", "MAINTENANCE_
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -149,8 +149,8 @@ async def promote_detection(db: AsyncSession, organization_id: uuid.UUID, det: A
         record.observation_count = (record.observation_count or 1) + 1
         current_last = record.last_observed_at
         if current_last is not None and current_last.tzinfo is None:
-            current_last = current_last.replace(tzinfo=timezone.utc)
-        obs_at = observed_at if observed_at.tzinfo else observed_at.replace(tzinfo=timezone.utc)
+            current_last = current_last.replace(tzinfo=UTC)
+        obs_at = observed_at if observed_at.tzinfo else observed_at.replace(tzinfo=UTC)
         record.last_observed_at = max(current_last, obs_at) if current_last else obs_at
         record.updated_at = utc_now()
         action = "GPS_GROUPED"
