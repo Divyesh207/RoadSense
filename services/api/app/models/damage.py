@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
@@ -21,7 +21,7 @@ from app.core.database import Base
 
 
 def utc_now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class DamageRecord(Base):

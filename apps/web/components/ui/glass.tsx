@@ -191,7 +191,7 @@ interface GlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
 }
 
 const BUTTON_VARIANT = {
-  primary: "bg-ri-primary text-ri-on-primary hover:bg-ri-primary-bright shadow-lg shadow-ri-primary/20 font-bold",
+  primary: "bg-ri-primary text-ri-on-primary hover:bg-ri-primary-bright font-bold",
   secondary: "bg-ri-raised border border-ri-line text-ri-text hover:border-ri-primary/50 font-semibold",
   ghost: "text-ri-muted hover:text-ri-text hover:bg-ri-raised font-semibold",
   danger: "bg-ri-danger/15 border border-ri-danger/40 text-ri-danger-soft hover:bg-ri-danger/25 font-semibold",
@@ -446,7 +446,7 @@ export function GlassTimeline({ items }: { items: GlassTimelineItem[] }) {
 export function GlassEmptyState({ icon: Icon, title, description, action }: { icon: LucideIcon; title: string; description?: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 px-6">
-      <span className="h-12 w-12 rounded-2xl bg-ri-raised border border-ri-line flex items-center justify-center text-ri-muted mb-4">
+      <span className="h-12 w-12 rounded-xl bg-ri-raised border border-ri-line flex items-center justify-center text-ri-muted mb-4">
         <Icon className="h-5 w-5" />
       </span>
       <p className="text-sm font-semibold text-ri-text">{title}</p>

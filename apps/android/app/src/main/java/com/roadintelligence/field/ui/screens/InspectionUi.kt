@@ -12,8 +12,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.roadintelligence.field.data.repository.ServerDetection
 import com.roadintelligence.field.domain.model.Inspection
 import com.roadintelligence.field.ui.theme.ErrorRose
-import com.roadintelligence.field.ui.theme.PrimaryCyanBright
-import com.roadintelligence.field.ui.theme.ReviewPurple
+import com.roadintelligence.field.ui.theme.AccentBright
+import com.roadintelligence.field.ui.theme.InfoSky
 import com.roadintelligence.field.ui.theme.SuccessEmerald
 import com.roadintelligence.field.ui.theme.TextSecondary
 import java.text.SimpleDateFormat
@@ -45,7 +45,7 @@ data class AiStatusInfo(val label: String, val color: Color, val icon: ImageVect
 fun aiStatusInfo(serverStatus: String?): AiStatusInfo = when (serverStatus?.uppercase()) {
     null -> AiStatusInfo("AI status unavailable", TextSecondary, Icons.Default.CloudOff)
     "SUBMITTED" -> AiStatusInfo("Awaiting AI analysis", TextSecondary, Icons.Default.Schedule)
-    "PROCESSING" -> AiStatusInfo("AI analysis running", ReviewPurple, Icons.Default.Memory)
+    "PROCESSING" -> AiStatusInfo("AI analysis running", InfoSky, Icons.Default.Memory)
     "PROCESSED", "ANALYZED", "COMPLETED" -> AiStatusInfo("AI analysis completed", SuccessEmerald, Icons.Default.CheckCircle)
     "PROCESSING_FAILED", "FAILED" -> AiStatusInfo("AI analysis failed", ErrorRose, Icons.Default.ErrorOutline)
     else -> AiStatusInfo("Not submitted", TextSecondary, Icons.Default.HourglassEmpty)
@@ -67,7 +67,7 @@ fun ServerDetection.methodLabel(): String = when {
 
 fun ServerDetection.methodColor(): Color = when {
     isHeuristic -> com.roadintelligence.field.ui.theme.WarningAmber
-    detectionMethod == "TRAINED_MODEL" -> PrimaryCyanBright
+    detectionMethod == "TRAINED_MODEL" -> AccentBright
     else -> TextSecondary
 }
 

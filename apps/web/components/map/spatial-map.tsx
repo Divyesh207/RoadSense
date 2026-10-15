@@ -23,7 +23,7 @@ export const HEALTH_COLORS: Record<string, string> = {
   FAIR: "#eab308",
   POOR: "#f97316",
   CRITICAL: "#ef4444",
-  INSUFFICIENT_DATA: "#64748b",
+  INSUFFICIENT_DATA: "#71717a",
 };
 
 // Used only until data arrives; the view is then fitted to the returned features.
@@ -135,7 +135,7 @@ export default function SpatialMap({
       zoom={INITIAL_ZOOM}
       scrollWheelZoom
       className="h-full w-full rounded-xl"
-      style={{ background: "#0f172a" }}
+      style={{ background: "#0a0a0b" }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -188,8 +188,8 @@ export default function SpatialMap({
             center={[d.latitude, d.longitude]}
             radius={d.severity === "CRITICAL" ? 9 : d.severity === "HIGH" ? 8 : 6}
             pathOptions={{
-              color: SEVERITY_COLORS[d.severity] ?? "#94a3b8",
-              fillColor: SEVERITY_COLORS[d.severity] ?? "#94a3b8",
+              color: SEVERITY_COLORS[d.severity] ?? "#a1a1aa",
+              fillColor: SEVERITY_COLORS[d.severity] ?? "#a1a1aa",
               fillOpacity: 0.75,
               weight: 2,
             }}
@@ -240,7 +240,7 @@ export default function SpatialMap({
             key={`insp-${i.id}`}
             center={[i.location!.latitude, i.location!.longitude]}
             radius={5}
-            pathOptions={{ color: INSPECTION_COLOR, fillColor: "#0f172a", fillOpacity: 0.9, weight: 2 }}
+            pathOptions={{ color: INSPECTION_COLOR, fillColor: "#0a0a0b", fillOpacity: 0.9, weight: 2 }}
           >
             <Popup>
               <div className="text-xs space-y-0.5" style={{ minWidth: 220 }}>

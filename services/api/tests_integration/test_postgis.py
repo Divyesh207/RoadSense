@@ -3,6 +3,7 @@
 import math
 import sys
 import uuid
+from datetime import UTC
 from pathlib import Path
 
 import pytest
@@ -254,7 +255,7 @@ async def test_inspection_pipeline_persists_detections_with_postgis_geometry(api
 @pytest.mark.asyncio
 async def test_detection_grouping_uses_postgis_geography_radius(api_client, session_factory):
     """Repeat detections of one defect within GPS drift group via ST_DWithin(geography); far ones do not."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from sqlalchemy import select
     from sqlalchemy.orm import selectinload
@@ -273,7 +274,7 @@ async def test_detection_grouping_uses_postgis_geography_radius(api_client, sess
     )
     assert insp.status_code == 201, insp.text
     insp_id = uuid.UUID(insp.json()["data"]["id"])
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     async with session_factory() as session:
         pothole = DamageType(id=uuid.uuid4(), code="POTHOLE", name="Pothole")

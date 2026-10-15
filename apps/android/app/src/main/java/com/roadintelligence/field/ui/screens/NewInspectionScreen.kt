@@ -3,6 +3,9 @@ package com.roadintelligence.field.ui.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.roadintelligence.field.domain.model.*
@@ -37,8 +43,24 @@ import com.roadintelligence.field.ui.permissions.PermissionResult
 import com.roadintelligence.field.ui.permissions.openAppSettings
 import com.roadintelligence.field.ui.permissions.rememberPermissionRequest
 import com.roadintelligence.field.ui.theme.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
+
+private const val GPS_LOG_TAG = "RoadGPS"
+private const val GPS_REQUEST_TIMEOUT_MS = 25_000L   // give up after this long without a new fix
+private const val GPS_FRESH_MAX_AGE_MS = 10_000L     // a fix older than this is treated as cached
+private const val GPS_STALE_WARNING_MIN = 5L         // warn on screen once the held fix is this old
+private const val GPS_SAMPLE_INTERVAL_MS = 1_000L    // how often a new fix is requested while acquiring
+private const val GPS_SETTLE_MS = 8_000L             // after the first fix, keep sampling this long for a better one
+private const val GPS_GOOD_ACCURACY_M = 10f          // stop early once a fix is at least this accurate
+
+/** The location request in progress, so it can be stopped when it is done or the screen closes. */
+private class GpsSampling {
+    var callback: LocationCallback? = null
+    var jobs: List<Job> = emptyList()
+}
 
 /**
  * Inspection form data that must survive leaving the composition, e.g. while the
@@ -53,6 +75,9 @@ class NewInspectionFormState {
     var latitude by mutableStateOf<Double?>(null)
     var longitude by mutableStateOf<Double?>(null)
     var accuracyMeters by mutableStateOf<Float?>(null)
+    /** Wall-clock time of the GPS fix held above (null when there is none). */
+    var fixTimeMillis by mutableStateOf<Long?>(null)
+    var fixIsMock by mutableStateOf(false)
     var gpsStatusMessage by mutableStateOf("Tap 'Acquire GPS' to capture coordinates")
     var notes by mutableStateOf("")
 }
@@ -87,7 +112,17 @@ fun NewInspectionScreen(
     var latitude by form::latitude
     var longitude by form::longitude
     var accuracyMeters by form::accuracyMeters
+    var fixTimeMillis by form::fixTimeMillis
+    var fixIsMock by form::fixIsMock
     var isAcquiringGps by remember { mutableStateOf(false) }
+    // Re-read the clock twice a minute so the age of the fix shown on screen stays current.
+    var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            nowMillis = System.currentTimeMillis()
+            kotlinx.coroutines.delay(30_000)
+        }
+    }
     var gpsStatusMessage by form::gpsStatusMessage
     var locationPermanentlyDenied by remember { mutableStateOf(false) }
 
@@ -105,6 +140,18 @@ fun NewInspectionScreen(
         mediaList = inspectionRepository.getMediaForInspection(localId)
     }
 
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val gpsSampling = remember { GpsSampling() }
+    fun stopGpsSampling() {
+        gpsSampling.callback?.let { fusedLocationClient.removeLocationUpdates(it) }
+        gpsSampling.callback = null
+        gpsSampling.jobs.forEach { it.cancel() }
+        gpsSampling.jobs = emptyList()
+    }
+    DisposableEffect(Unit) {
+        onDispose { stopGpsSampling() }
+    }
+
     // Acquire GPS function (only called once location permission is granted)
     fun acquireLocation() {
         val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -116,30 +163,93 @@ fun NewInspectionScreen(
             return
         }
         isAcquiringGps = true
-        gpsStatusMessage = "Acquiring GPS fix from satellites..."
+        gpsStatusMessage = "Acquiring a fresh GPS fix..."
+        // Drop the previous fix first: an old position must never be shown or saved as the
+        // result of this request, including when the request fails.
+        latitude = null
+        longitude = null
+        accuracyMeters = null
+        fixTimeMillis = null
+        fixIsMock = false
         // Approximate-only grants (Android 12+) cannot use high-accuracy GPS.
         val priority = if (hasFine) Priority.PRIORITY_HIGH_ACCURACY else Priority.PRIORITY_BALANCED_POWER_ACCURACY
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        try {
-            fusedLocationClient.getCurrentLocation(priority, null)
-                .addOnSuccessListener { loc: Location? ->
-                    isAcquiringGps = false
-                    if (loc != null) {
-                        latitude = loc.latitude
-                        longitude = loc.longitude
-                        accuracyMeters = loc.accuracy
-                        gpsStatusMessage = "GPS Acquired: ±%.1f m accuracy".format(loc.accuracy)
-                    } else {
-                        gpsStatusMessage = "Could not obtain GPS fix. Ensure location is enabled."
+        // The first fix after the receiver starts is often the least accurate, so fixes are collected
+        // for a short time and the most accurate one is kept. maxUpdateAge 0 = never answer from the
+        // location cache; every fix is newly computed.
+        val request = LocationRequest.Builder(priority, GPS_SAMPLE_INTERVAL_MS)
+            .setMinUpdateIntervalMillis(GPS_SAMPLE_INTERVAL_MS / 2)
+            .setMaxUpdateAgeMillis(0)
+            .build()
+        Log.i(GPS_LOG_TAG, "sampling fresh fixes: priority=${if (hasFine) "HIGH_ACCURACY" else "BALANCED (approximate permission)"} " +
+            "maxUpdateAgeMs=0 timeoutMs=$GPS_REQUEST_TIMEOUT_MS settleMs=$GPS_SETTLE_MS inspection=$localId")
+        stopGpsSampling()
+        var best: Location? = null
+        var done = false
+        fun accuracyOf(loc: Location) = if (loc.hasAccuracy()) loc.accuracy else Float.MAX_VALUE
+        fun finish() {
+            if (done) return
+            done = true
+            stopGpsSampling()
+            isAcquiringGps = false
+            val kept = best
+            if (kept == null) {
+                Log.w(GPS_LOG_TAG, "no fix within ${GPS_REQUEST_TIMEOUT_MS / 1000}s (no cached location used)")
+                gpsStatusMessage = "No GPS fix yet. Move to open sky, check that Location is on, and try again."
+                return
+            }
+            Log.i(GPS_LOG_TAG, "kept fix: lat=${kept.latitude} lon=${kept.longitude} accuracy=±${kept.accuracy}m inspection=$localId")
+            gpsStatusMessage = "GPS Acquired: ±%.1f m accuracy".format(kept.accuracy) +
+                if (fixIsMock) " (MOCK location: a mock-location app is active)" else ""
+        }
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                if (done) return
+                for (loc in result.locations) {
+                    val ageMs = (SystemClock.elapsedRealtimeNanos() - loc.elapsedRealtimeNanos) / 1_000_000
+                    val fresh = ageMs <= GPS_FRESH_MAX_AGE_MS
+                    val mock = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) loc.isMock else @Suppress("DEPRECATION") loc.isFromMockProvider
+                    Log.i(GPS_LOG_TAG, "fix ${if (fresh) "FRESH" else "CACHED"}: lat=${loc.latitude} lon=${loc.longitude} " +
+                        "accuracy=±${loc.accuracy}m provider=${loc.provider} fixTime=${java.time.Instant.ofEpochMilli(loc.time)} " +
+                        "ageMs=$ageMs mock=$mock inspection=$localId")
+                    // Should not happen with maxUpdateAge 0; if it does, refuse the old position.
+                    if (!fresh) continue
+                    val previous = best
+                    if (previous != null && accuracyOf(loc) >= accuracyOf(previous)) continue
+                    best = loc
+                    latitude = loc.latitude
+                    longitude = loc.longitude
+                    accuracyMeters = if (loc.hasAccuracy()) loc.accuracy else null
+                    fixTimeMillis = System.currentTimeMillis() - ageMs
+                    fixIsMock = mock
+                    gpsStatusMessage = "Improving accuracy: ±%.1f m so far. Hold still...".format(loc.accuracy)
+                    if (previous == null) {
+                        gpsSampling.jobs = gpsSampling.jobs + coroutineScope.launch {
+                            delay(GPS_SETTLE_MS)
+                            finish()
+                        }
                     }
                 }
+                if (best?.let { accuracyOf(it) <= GPS_GOOD_ACCURACY_M } == true) finish()
+            }
+        }
+        gpsSampling.callback = callback
+        gpsSampling.jobs = listOf(coroutineScope.launch {
+            delay(GPS_REQUEST_TIMEOUT_MS)
+            finish()
+        })
+        try {
+            fusedLocationClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
                 .addOnFailureListener { e ->
+                    done = true
+                    stopGpsSampling()
                     isAcquiringGps = false
-                    Log.e("NewInspection", "getCurrentLocation failed", e)
+                    Log.e(GPS_LOG_TAG, "requestLocationUpdates failed (no cached location used)", e)
                     gpsStatusMessage = "GPS Error: ${e.message}"
                 }
         } catch (e: SecurityException) {
             // Permission revoked between the check and the call.
+            done = true
+            stopGpsSampling()
             isAcquiringGps = false
             gpsStatusMessage = "Location permission is required to capture coordinates."
         }
@@ -185,7 +295,11 @@ fun NewInspectionScreen(
         accuracyMeters = accuracyMeters,
         notes = notes.ifBlank { null },
         syncStatus = status
-    )
+    ).also {
+        val ageS = fixTimeMillis?.let { t -> (System.currentTimeMillis() - t) / 1000 }
+        Log.i(GPS_LOG_TAG, "saving inspection=$localId status=$status lat=$latitude lon=$longitude " +
+            "accuracy=${accuracyMeters?.let { a -> "±${a}m" } ?: "none"} fixAgeS=${ageS ?: "no fix"} mock=$fixIsMock")
+    }
 
     val road = selectedRoad
     val segment = selectedSegment
@@ -220,12 +334,12 @@ fun NewInspectionScreen(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.weight(1f)
                 )
-                Text("${stepsDone * 25}%", color = PrimaryCyanBright, style = CodeSm)
+                Text("${stepsDone * 25}%", color = AccentBright, style = CodeSm)
             }
             Spacer(modifier = Modifier.height(6.dp))
             LinearProgressIndicator(
                 progress = { stepsDone / 4f },
-                color = PrimaryCyan,
+                color = Accent,
                 trackColor = SurfaceLowest,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -379,7 +493,7 @@ fun NewInspectionScreen(
                             FieldLabel("Latitude")
                             Text(
                                 text = if (lat != null) "%.6f".format(lat) else "—",
-                                color = if (hasGps) PrimaryCyanBright else TextMuted,
+                                color = if (hasGps) AccentBright else TextMuted,
                                 style = CodeLg
                             )
                         }
@@ -387,7 +501,7 @@ fun NewInspectionScreen(
                             FieldLabel("Longitude")
                             Text(
                                 text = if (lon != null) "%.6f".format(lon) else "—",
-                                color = if (hasGps) PrimaryCyanBright else TextMuted,
+                                color = if (hasGps) AccentBright else TextMuted,
                                 style = CodeLg
                             )
                         }
@@ -426,22 +540,34 @@ fun NewInspectionScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
 
+                val fixTime = fixTimeMillis
+                if (hasGps && fixTime != null) {
+                    val ageMin = ((nowMillis - fixTime) / 60_000).coerceAtLeast(0)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Fix taken at " + java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date(fixTime)) +
+                            if (ageMin >= GPS_STALE_WARNING_MIN) " · $ageMin min ago. Re-acquire if you have moved." else "",
+                        color = if (ageMin >= GPS_STALE_WARNING_MIN || fixIsMock) WarningAmber else TextMuted,
+                        style = CodeSm
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(10.dp))
                 SecondaryButton(
                     text = if (isAcquiringGps) "Acquiring..." else if (hasGps) "Re-acquire GPS" else "Acquire GPS",
                     icon = Icons.Default.MyLocation,
                     onClick = { requestLocationPermission() },
                     enabled = !isAcquiringGps,
-                    contentColor = PrimaryCyanBright,
+                    contentColor = AccentBright,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 if (locationPermanentlyDenied) {
                     Spacer(modifier = Modifier.height(6.dp))
                     TextButton(onClick = { context.openAppSettings() }) {
-                        Icon(Icons.Default.Settings, contentDescription = null, tint = PrimaryCyanBright, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Settings, contentDescription = null, tint = AccentBright, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Open App Settings", color = PrimaryCyanBright, style = MaterialTheme.typography.labelLarge)
+                        Text("Open App Settings", color = AccentBright, style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -464,7 +590,7 @@ fun NewInspectionScreen(
                     icon = Icons.Default.PhotoCamera,
                     // Requests CAMERA if needed, then opens the CameraX capture screen
                     onClick = { requestCameraPermission() },
-                    contentColor = PrimaryCyanBright,
+                    contentColor = AccentBright,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -618,7 +744,7 @@ private fun StepCard(
                 contentAlignment = Alignment.Center
             ) {
                 if (done) {
-                    Icon(Icons.Default.Check, contentDescription = "Step filled", tint = Color(0xFF003824), modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Check, contentDescription = "Step filled", tint = OnSuccess, modifier = Modifier.size(16.dp))
                 } else {
                     Text(number.toString(), color = TextSecondary, style = CodeSm, fontWeight = FontWeight.Bold)
                 }

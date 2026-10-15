@@ -35,7 +35,7 @@ const HEALTH_COLORS: Record<string, string> = {
   FAIR: "#F59E0B", // Stitch amber
   POOR: "#FB923C",
   CRITICAL: "#EF4444", // Stitch red
-  "INSUFFICIENT DATA": "#64748B",
+  "INSUFFICIENT DATA": "#71717A",
 };
 
 function ChartCard({
@@ -48,7 +48,7 @@ function ChartCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="p-5 rounded-2xl bg-ri-surface border border-ri-line shadow-sm flex flex-col justify-between">
+    <div className="p-5 rounded-xl bg-ri-surface border border-ri-line shadow-sm flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-headline-sm text-sm font-semibold text-ri-text">{title}</h3>
       </div>
@@ -114,7 +114,7 @@ export default function DashboardPage() {
           </div>
           <Link
             href="/damages"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-ri-primary hover:bg-ri-primary-bright rounded-xl text-xs font-bold text-ri-on-primary shadow-sm shadow-ri-primary/20 transition-all active:scale-95"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-ri-primary hover:bg-ri-primary-bright rounded-xl text-xs font-bold text-ri-on-primary transition-all active:scale-95"
           >
             Review damage queue <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -222,26 +222,26 @@ export default function DashboardPage() {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={maint}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#26344F" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                     <XAxis
                       dataKey="name"
-                      tick={{ fill: "#94A3B8", fontSize: 10 }}
+                      tick={{ fill: "#A1A1AA", fontSize: 10 }}
                       interval={0}
                       angle={-20}
                       height={50}
                       textAnchor="end"
                     />
-                    <YAxis allowDecimals={false} tick={{ fill: "#94A3B8", fontSize: 11 }} />
+                    <YAxis allowDecimals={false} tick={{ fill: "#A1A1AA", fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
-                        background: "#17223A",
-                        border: "1px solid #26344F",
+                        background: "#111113",
+                        border: "1px solid #27272A",
                         borderRadius: "8px",
                         color: "#F1F5F9",
                         fontSize: "12px",
                       }}
                     />
-                    <Bar dataKey="value" fill="#06B6D4" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill="#E4E4E7" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -252,13 +252,13 @@ export default function DashboardPage() {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={healthDist}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#26344F" />
-                    <XAxis dataKey="name" tick={{ fill: "#94A3B8", fontSize: 11 }} interval={0} />
-                    <YAxis allowDecimals={false} tick={{ fill: "#94A3B8", fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
+                    <XAxis dataKey="name" tick={{ fill: "#A1A1AA", fontSize: 11 }} interval={0} />
+                    <YAxis allowDecimals={false} tick={{ fill: "#A1A1AA", fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
-                        background: "#17223A",
-                        border: "1px solid #26344F",
+                        background: "#111113",
+                        border: "1px solid #27272A",
                         borderRadius: "8px",
                         color: "#F1F5F9",
                         fontSize: "12px",
@@ -266,7 +266,7 @@ export default function DashboardPage() {
                     />
                     <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                       {healthDist.map((d) => (
-                        <Cell key={d.name} fill={HEALTH_COLORS[d.name] || "#64748B"} />
+                        <Cell key={d.name} fill={HEALTH_COLORS[d.name] || "#71717A"} />
                       ))}
                     </Bar>
                   </BarChart>
@@ -279,13 +279,13 @@ export default function DashboardPage() {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={severity}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#26344F" />
-                    <XAxis dataKey="name" tick={{ fill: "#94A3B8", fontSize: 11 }} interval={0} />
-                    <YAxis allowDecimals={false} tick={{ fill: "#94A3B8", fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
+                    <XAxis dataKey="name" tick={{ fill: "#A1A1AA", fontSize: 11 }} interval={0} />
+                    <YAxis allowDecimals={false} tick={{ fill: "#A1A1AA", fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
-                        background: "#17223A",
-                        border: "1px solid #26344F",
+                        background: "#111113",
+                        border: "1px solid #27272A",
                         borderRadius: "8px",
                         color: "#F1F5F9",
                         fontSize: "12px",
@@ -312,13 +312,13 @@ export default function DashboardPage() {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={results}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#26344F" />
-                    <XAxis dataKey="name" tick={{ fill: "#94A3B8", fontSize: 11 }} interval={0} />
-                    <YAxis allowDecimals={false} tick={{ fill: "#94A3B8", fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
+                    <XAxis dataKey="name" tick={{ fill: "#A1A1AA", fontSize: 11 }} interval={0} />
+                    <YAxis allowDecimals={false} tick={{ fill: "#A1A1AA", fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
-                        background: "#17223A",
-                        border: "1px solid #26344F",
+                        background: "#111113",
+                        border: "1px solid #27272A",
                         borderRadius: "8px",
                         color: "#F1F5F9",
                         fontSize: "12px",
@@ -332,7 +332,7 @@ export default function DashboardPage() {
 
             {/* Critical Segments Warning Alert */}
             {health && health.critical_segments.length > 0 && (
-              <div className="p-5 rounded-2xl bg-ri-danger/10 border border-ri-danger/30">
+              <div className="p-5 rounded-xl bg-ri-danger/10 border border-ri-danger/30">
                 <div className="flex items-center gap-2 mb-2 text-ri-danger">
                   <ShieldAlert className="h-5 w-5" />
                   <h3 className="font-headline-sm text-sm font-semibold">

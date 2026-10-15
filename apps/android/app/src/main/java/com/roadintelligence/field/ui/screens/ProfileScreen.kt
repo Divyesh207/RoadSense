@@ -64,11 +64,11 @@ fun ProfileScreen(
                     Box(
                         modifier = Modifier
                             .size(60.dp)
-                            .background(PrimaryCyan.copy(alpha = 0.15f), RoundedCornerShape(18.dp))
-                            .border(1.dp, PrimaryCyan.copy(alpha = 0.35f), RoundedCornerShape(18.dp)),
+                            .background(Accent.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                            .border(1.dp, Accent.copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(initials.ifBlank { "?" }, color = PrimaryCyanBright, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(initials.ifBlank { "?" }, color = AccentBright, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -79,7 +79,7 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         StatusPill(
                             label = (session?.role?.takeIf { it.isNotBlank() } ?: "ROLE NOT SET").replace('_', ' '),
-                            color = PrimaryCyanBright,
+                            color = AccentBright,
                             icon = Icons.Default.Badge
                         )
                     }

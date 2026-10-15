@@ -76,7 +76,7 @@ fun SyncQueueScreen(
             item {
                 FieldCard {
                     Row(verticalAlignment = Alignment.Top) {
-                        Icon(Icons.Default.CloudSync, contentDescription = null, tint = PrimaryCyanBright, modifier = Modifier.size(22.dp))
+                        Icon(Icons.Default.CloudSync, contentDescription = null, tint = AccentBright, modifier = Modifier.size(22.dp))
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Automatic background sync", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
@@ -90,7 +90,7 @@ fun SyncQueueScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ValueTile("Pending", pending.toString(), Modifier.weight(1f), valueColor = if (pending > 0) SecondaryBlueSoft else TextSecondary)
+                        ValueTile("Pending", pending.toString(), Modifier.weight(1f), valueColor = if (pending > 0) NeutralSoft else TextSecondary)
                         ValueTile("Failed", failed.toString(), Modifier.weight(1f), valueColor = if (failed > 0) ErrorRose else TextSecondary)
                         ValueTile("Completed", completed.toString(), Modifier.weight(1f), valueColor = if (completed > 0) SuccessEmerald else TextSecondary)
                     }
@@ -164,13 +164,13 @@ fun SyncQueueItemCard(
     FieldCard(
         borderColor = if (failed) ErrorRose.copy(alpha = 0.45f) else BorderDark,
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(enabled = inspection != null, onClick = onOpen)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = inspection?.displayId() ?: "Local #${item.inspectionLocalId.take(8)}",
-                color = PrimaryCyanBright,
+                color = AccentBright,
                 style = CodeMd,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
@@ -203,7 +203,7 @@ fun SyncQueueItemCard(
         if (item.status == SyncStatus.UPLOADING) {
             Spacer(modifier = Modifier.height(10.dp))
             LinearProgressIndicator(
-                color = PrimaryCyan,
+                color = Accent,
                 trackColor = SurfaceLowest,
                 modifier = Modifier
                     .fillMaxWidth()

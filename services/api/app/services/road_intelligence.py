@@ -6,7 +6,7 @@ returned as null/empty so the UI can show an honest no-data state.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -36,7 +36,7 @@ ACTIVE_RECURRENCE = ("POTENTIAL", "CONFIRMED")
 def _iso(dt: datetime | None) -> str | None:
     if dt is None:
         return None
-    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).isoformat()
+    return (dt if dt.tzinfo else dt.replace(tzinfo=UTC)).isoformat()
 
 
 def _snapshot(s: RoadHealthSnapshot) -> dict[str, Any]:

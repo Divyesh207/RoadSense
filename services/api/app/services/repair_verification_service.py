@@ -10,7 +10,7 @@ Image-based repair verification (Phase 3B), API side.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -51,7 +51,7 @@ SIGNED_URL_TTL_SECONDS = 600
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _error(code: int, err: str, message: str) -> HTTPException:

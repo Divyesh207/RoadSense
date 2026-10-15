@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -27,7 +27,7 @@ async def get_crew_token(async_client):
 
 @pytest_asyncio.fixture
 async def seeded_recurrence_context(db_session):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     t_past = now - timedelta(days=60)
 
     # Road & Segment

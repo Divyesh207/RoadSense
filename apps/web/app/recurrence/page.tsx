@@ -215,7 +215,7 @@ export default function RecurrencePage() {
 
         {/* Table / Empty State */}
         {loading ? (
-          <div className="py-20 text-center rounded-2xl bg-ri-surface border border-ri-line">
+          <div className="py-20 text-center rounded-xl bg-ri-surface border border-ri-line">
             <RefreshCw className="h-6 w-6 animate-spin mx-auto text-ri-primary mb-3" />
             <p className="text-xs font-mono text-ri-muted">Loading recurrences...</p>
           </div>
@@ -248,7 +248,7 @@ export default function RecurrencePage() {
               </GlassCard>
             ))}
           </div>
-          <div className="rounded-2xl border border-ri-line bg-ri-surface overflow-hidden shadow-xl">
+          <div className="rounded-xl border border-ri-line bg-ri-surface overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>

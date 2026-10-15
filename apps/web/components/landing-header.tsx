@@ -79,7 +79,7 @@ export function AuthNavButton() {
   return (
     <Link
       href={signedIn ? "/dashboard" : "/login"}
-      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-ri-primary to-ri-info hover:from-ri-primary-bright hover:to-ri-info text-ri-bg text-xs font-bold shadow-lg shadow-ri-primary/20 transition-all"
+      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold transition-all"
     >
       {signedIn ? (
         <>

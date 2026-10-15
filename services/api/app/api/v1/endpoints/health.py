@@ -1,5 +1,4 @@
-import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
@@ -26,7 +25,7 @@ async def check_redis_health() -> tuple[bool, str]:
         await client.ping()
         await client.aclose()
         return True, "connected"
-    except (RedisError, OSError, asyncio.TimeoutError) as e:
+    except (TimeoutError, RedisError, OSError) as e:
         return False, f"unreachable ({e.__class__.__name__})"
 
 
@@ -49,7 +48,7 @@ async def health_live() -> ResponseEnvelope[dict[str, Any]]:
             "app_name": settings.APP_NAME,
             "version": settings.APP_VERSION,
             "environment": settings.APP_ENV,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
     )
 
@@ -82,7 +81,7 @@ async def health_ready(db: Annotated[AsyncSession, Depends(get_db)]):
         data={
             "status": "ready" if all_ready else "not_ready",
             "checks": checks,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         },
         error=None
         if all_ready

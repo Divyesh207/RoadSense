@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
@@ -62,7 +62,7 @@ async def test_damage_trends_and_filtering(
     headers = make_headers(token, ORG_1_ID)
 
     # Seed a road and damage record
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     road = Road(
         id=uuid.uuid4(),
         organization_id=ORG_1_ID,
@@ -265,7 +265,8 @@ async def test_report_artifact_is_rendered_in_requested_format(async_client: Asy
     assert resp.content.startswith(magic)
     if fmt == "PDF":
         assert resp.content.rstrip().endswith(b"%%EOF")
-        assert b"Road Health Report" in resp.content
+        # The designed Road Health layout carries its title in the document metadata.
+        assert b"Road Health Assessment Report" in resp.content
 
 
 @pytest.mark.asyncio

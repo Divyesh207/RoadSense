@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from geoalchemy2 import WKTElement
@@ -35,7 +35,7 @@ VALID_TRANSITIONS: dict[str, list[str]] = {
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def create_maintenance_job(
@@ -102,7 +102,7 @@ async def create_maintenance_job(
     due_at = payload.due_at
     if due_at is None and payload.target_date:
         try:
-            due_at = datetime.fromisoformat(payload.target_date).replace(tzinfo=timezone.utc)
+            due_at = datetime.fromisoformat(payload.target_date).replace(tzinfo=UTC)
         except ValueError:
             pass
 

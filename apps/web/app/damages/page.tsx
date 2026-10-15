@@ -117,7 +117,7 @@ export default function DamagesPage() {
 
         {/* Operational Overview Bento Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+          <div className="p-4 rounded-xl bg-ri-surface border border-ri-line flex flex-col justify-between">
             <span className="font-label-sm text-[11px] text-ri-muted uppercase tracking-wider">
               Total Records
             </span>
@@ -125,7 +125,7 @@ export default function DamagesPage() {
               {damages.length}
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+          <div className="p-4 rounded-xl bg-ri-surface border border-ri-line flex flex-col justify-between">
             <span className="font-label-sm text-[11px] text-ri-warning uppercase tracking-wider">
               Pending Human Review
             </span>
@@ -133,7 +133,7 @@ export default function DamagesPage() {
               {pendingCount}
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+          <div className="p-4 rounded-xl bg-ri-surface border border-ri-line flex flex-col justify-between">
             <span className="font-label-sm text-[11px] text-ri-success uppercase tracking-wider">
               Confirmed
             </span>
@@ -141,7 +141,7 @@ export default function DamagesPage() {
               {confirmedCount}
             </div>
           </div>
-          <div className="p-4 rounded-2xl bg-ri-surface border border-ri-line flex flex-col justify-between">
+          <div className="p-4 rounded-xl bg-ri-surface border border-ri-line flex flex-col justify-between">
             <span className="font-label-sm text-[11px] text-ri-danger uppercase tracking-wider">
               Critical Severity
             </span>
@@ -152,7 +152,7 @@ export default function DamagesPage() {
         </div>
 
         {/* AI & Human Review Provenance Callout */}
-        <div className="bg-ri-surface border border-ri-line rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="bg-ri-surface border border-ri-line rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-ri-primary/15 border border-ri-primary/30 flex items-center justify-center text-ri-primary-bright shrink-0 mt-0.5">
               <Cpu className="h-5 w-5" />
@@ -179,7 +179,7 @@ export default function DamagesPage() {
         </div>
 
         {/* Filter bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-ri-surface p-3 rounded-xl border border-ri-line">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="font-label-sm text-xs text-ri-muted font-medium">Status:</span>
@@ -222,7 +222,7 @@ export default function DamagesPage() {
         </div>
 
         {/* Damage Records Table */}
-        <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
@@ -317,7 +317,7 @@ export default function DamagesPage() {
         {/* Human Review Modal (Matching Stitch tactile dialog) */}
         {selectedDamage && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div className="bg-ri-surface border border-ri-line rounded-xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
               <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="h-5 w-5 text-ri-primary" />
@@ -423,7 +423,7 @@ export default function DamagesPage() {
                   <button
                     type="submit"
                     disabled={submittingReview}
-                    className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold shadow-md shadow-ri-primary/20 transition-all active:scale-95 disabled:opacity-50"
+                    className="h-10 px-5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
                   >
                     {submittingReview ? "Saving Review..." : "Commit Review"}
                   </button>

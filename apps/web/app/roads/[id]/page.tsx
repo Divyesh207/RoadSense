@@ -61,8 +61,8 @@ const EVENT_COLOR: Record<string, string> = {
   RECURRENCE: "bg-ri-danger",
 };
 
-const LINE_COLORS = ["#06B6D4", "#4CD7F6", "#10B981", "#F59E0B", "#ADC6FF", "#3B82F6"];
-const cardClass = "rounded-2xl border border-ri-line bg-ri-surface p-5 shadow-sm";
+const LINE_COLORS = ["#06B6D4", "#4CD7F6", "#10B981", "#F59E0B", "#E5E7EB", "#3B82F6"];
+const cardClass = "rounded-xl border border-ri-line bg-ri-surface p-5 shadow-sm";
 
 const eventLink = (e: TimelineEvent): string | null => {
   if (e.type === "INSPECTION") return `/inspections/${e.entity_id}`;
@@ -363,13 +363,13 @@ export default function RoadDetailPage() {
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trend.rows}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#26344F" />
-                    <XAxis dataKey="label" tick={{ fill: "#94A3B8", fontSize: 10 }} />
-                    <YAxis domain={[0, 100]} tick={{ fill: "#94A3B8", fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
+                    <XAxis dataKey="label" tick={{ fill: "#A1A1AA", fontSize: 10 }} />
+                    <YAxis domain={[0, 100]} tick={{ fill: "#A1A1AA", fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{
-                        background: "#17223A",
-                        border: "1px solid #26344F",
+                        background: "#111113",
+                        border: "1px solid #27272A",
                         borderRadius: "8px",
                         color: "#F1F5F9",
                         fontSize: "12px",
@@ -414,17 +414,17 @@ export default function RoadDetailPage() {
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={contribution} layout="vertical" margin={{ left: 20 }}>
-                    <XAxis type="number" tick={{ fill: "#94A3B8", fontSize: 10 }} />
+                    <XAxis type="number" tick={{ fill: "#A1A1AA", fontSize: 10 }} />
                     <YAxis
                       type="category"
                       dataKey="factor"
-                      tick={{ fill: "#94A3B8", fontSize: 10 }}
+                      tick={{ fill: "#A1A1AA", fontSize: 10 }}
                       width={80}
                     />
                     <Tooltip
                       contentStyle={{
-                        background: "#17223A",
-                        border: "1px solid #26344F",
+                        background: "#111113",
+                        border: "1px solid #27272A",
                         borderRadius: "8px",
                         color: "#F1F5F9",
                         fontSize: "12px",
@@ -440,7 +440,7 @@ export default function RoadDetailPage() {
 
         {/* Segments Table & Predictions */}
         <div className="space-y-4">
-          <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
             <div className="p-4 border-b border-ri-line flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-ri-primary" />
@@ -539,7 +539,7 @@ export default function RoadDetailPage() {
         </div>
 
         {/* Lifecycle Timeline */}
-        <div className="bg-ri-surface border border-ri-line rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="bg-ri-surface border border-ri-line rounded-xl p-5 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <History className="h-4 w-4 text-ri-primary" />

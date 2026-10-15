@@ -45,7 +45,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-const card = "rounded-2xl border border-ri-line bg-ri-surface p-5 shadow-sm";
+const card = "rounded-xl border border-ri-line bg-ri-surface p-5 shadow-sm";
 const label = "font-label-sm text-[11px] uppercase tracking-wide text-ri-muted font-semibold";
 
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
@@ -141,7 +141,7 @@ function AnalysisCard({
   };
 
   return (
-    <div className="rounded-2xl border border-ri-line bg-ri-input p-5 space-y-4">
+    <div className="rounded-xl border border-ri-line bg-ri-input p-5 space-y-4">
       <div className="flex flex-wrap items-center gap-2 justify-between">
         <div className="flex items-center gap-2">
           <Cpu className="h-4 w-4 text-ri-primary" />
@@ -551,7 +551,7 @@ export default function MaintenanceJobPage() {
         </div>
 
         {/* Linked Damage Table */}
-        <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
           <div className="p-4 border-b border-ri-line flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-ri-warning" />

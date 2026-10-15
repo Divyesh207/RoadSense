@@ -33,6 +33,7 @@ export default function ReportsPage() {
   const [reportType, setReportType] = useState<string>("ROAD_HEALTH");
   const [format, setFormat] = useState<string>("PDF");
   const [timeframe, setTimeframe] = useState<string>("last_30_days");
+  const [createError, setCreateError] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   async function loadReports() {
@@ -57,6 +58,7 @@ export default function ReportsPage() {
     e.preventDefault();
     try {
       setCreating(true);
+      setCreateError(null);
       await api.reports.create({
         report_type: reportType,
         parameters: {
@@ -68,6 +70,8 @@ export default function ReportsPage() {
       await loadReports();
     } catch (err) {
       console.error("Failed to generate report:", err);
+      // Say so in the dialog: a silent failure looks exactly like "nothing happened".
+      setCreateError(err instanceof Error && err.message ? err.message : "The report could not be generated. Check your connection and sign in again.");
     } finally {
       setCreating(false);
     }
@@ -125,7 +129,7 @@ export default function ReportsPage() {
             </button>
             <button
               onClick={() => setShowGenerateModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-ri-primary to-ri-info hover:from-ri-primary-bright hover:to-ri-info text-ri-bg font-bold rounded-xl text-xs shadow-lg shadow-ri-primary/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-bold rounded-xl text-xs transition-all"
             >
               <Plus className="h-4 w-4 stroke-[3]" />
               <span>Generate Report</span>
@@ -146,7 +150,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Filter and List Container */}
-        <div className="p-5 rounded-2xl bg-ri-surface border border-ri-line space-y-4 shadow-xl">
+        <div className="p-5 rounded-xl bg-ri-surface border border-ri-line space-y-4 shadow-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-ri-line">
             <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-ri-muted">
               <Filter className="h-3.5 w-3.5 text-ri-primary" />
@@ -270,7 +274,7 @@ export default function ReportsPage() {
       {/* Generate Report Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 z-50 bg-ri-bg/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+          <div className="bg-ri-surface border border-ri-line rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-ri-line">
               <div className="flex items-center gap-2">
                 <span className="p-1.5 rounded-lg bg-ri-primary/10 border border-ri-primary/30 text-ri-primary">
@@ -320,7 +324,7 @@ export default function ReportsPage() {
                       onClick={() => setFormat(fmt)}
                       className={`py-2 rounded-xl text-xs font-mono font-bold border transition-all ${
                         format === fmt
-                          ? "bg-ri-primary/15 text-ri-primary-bright border-ri-primary shadow-sm shadow-ri-primary/20"
+                          ? "bg-ri-primary/15 text-ri-primary-bright border-ri-primary"
                           : "bg-ri-bg text-ri-muted border-ri-line hover:text-white"
                       }`}
                     >
@@ -346,6 +350,11 @@ export default function ReportsPage() {
                 </select>
               </div>
 
+              {createError && (
+                <p role="alert" className="text-xs text-ri-danger-soft border border-ri-danger/30 bg-ri-danger/10 rounded-xl px-3 py-2">
+                  {createError}
+                </p>
+              )}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-ri-line">
                 <button
                   type="button"
@@ -357,7 +366,7 @@ export default function ReportsPage() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-4 py-2 bg-ri-primary hover:bg-ri-primary-bright text-ri-bg font-bold rounded-xl text-xs disabled:opacity-40 transition-all shadow-md shadow-ri-primary/20"
+                  className="px-4 py-2 bg-ri-primary hover:bg-ri-primary-bright text-ri-bg font-bold rounded-xl text-xs disabled:opacity-40 transition-all"
                 >
                   {creating ? "Submitting Request..." : "Request Generation"}
                 </button>

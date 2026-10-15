@@ -140,7 +140,7 @@ export function SegmentFormModal({ roads, presetRoadId, onClose, onCreated }: Se
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[2000]">
-      <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-5xl w-full p-6 space-y-4 shadow-2xl max-h-[94vh] overflow-y-auto">
+      <div className="bg-ri-surface border border-ri-line rounded-xl max-w-5xl w-full p-6 space-y-4 shadow-2xl max-h-[94vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-ri-line pb-3">
           <div className="flex items-center gap-2">
             <GitBranch className="h-5 w-5 text-ri-primary" />

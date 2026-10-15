@@ -178,6 +178,8 @@ export interface Inspection {
 
 export interface InspectionMedia {
   id: string;
+  /** Short-lived signed view URL; only present when requested with includeUrls. */
+  download_url?: string | null;
   inspection_id: string;
   media_type: "IMAGE" | "VIDEO";
   storage_bucket: string;

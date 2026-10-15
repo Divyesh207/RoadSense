@@ -14,49 +14,35 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** Corner radius of glass panels. */
-val GlassRadius = 18.dp
+/** Corner radius of panels (matches --ri-radius on the web). */
+val GlassRadius = 12.dp
 val GlassShape = RoundedCornerShape(GlassRadius)
 
-/** Fill of a glass panel: slightly brighter at the top, like light catching the surface. */
+/** Fill of a panel: a faint white tint, slightly brighter at the top. */
 val GlassFill: Brush
     get() = Brush.verticalGradient(listOf(SurfaceContainer, SurfaceDark))
 
-/** Edge of a glass panel: a bright top highlight fading into the regular border. */
+/** Edge of a panel: a bright top highlight fading into the regular hairline (the liquid-glass edge). */
 val GlassEdge: Brush
     get() = Brush.verticalGradient(listOf(GlassHighlight, BorderDark, BorderDark))
 
 /**
- * Ambient page background: deep navy with three soft, static colour pools (cyan, blue, emerald).
- * It is drawn once per frame as plain gradients; nothing animates and nothing is blurred, so it
- * costs almost nothing on a phone. Glass panels are translucent and let it show through.
+ * Page background: near-black with one faint, static neutral highlight at the top. It is drawn
+ * as plain gradients; nothing animates and nothing is blurred, so it costs almost nothing on a
+ * phone.
  */
 fun Modifier.glassBackground(): Modifier = this.drawBehind {
     drawRect(BackgroundDark)
     drawRect(
         Brush.radialGradient(
-            listOf(PrimaryCyan.copy(alpha = 0.20f), Color.Transparent),
-            center = Offset(size.width * 0.08f, -size.height * 0.04f),
-            radius = size.maxDimension * 0.62f
-        )
-    )
-    drawRect(
-        Brush.radialGradient(
-            listOf(SecondaryBlue.copy(alpha = 0.17f), Color.Transparent),
-            center = Offset(size.width * 1.02f, size.height * 0.10f),
-            radius = size.maxDimension * 0.50f
-        )
-    )
-    drawRect(
-        Brush.radialGradient(
-            listOf(SuccessEmerald.copy(alpha = 0.08f), Color.Transparent),
-            center = Offset(size.width * 0.70f, size.height * 1.05f),
+            listOf(Color.White.copy(alpha = 0.06f), Color.Transparent),
+            center = Offset(size.width * 0.5f, -size.height * 0.08f),
             radius = size.maxDimension * 0.55f
         )
     )
 }
 
-/** Glass panel look for any composable: translucent fill, highlighted edge, rounded corners. */
+/** Panel look for any composable: translucent fill, highlighted edge, rounded corners. */
 fun Modifier.glassPanel(shape: Shape = GlassShape, radius: Dp = GlassRadius): Modifier = this
     .clip(shape)
     .background(GlassFill, shape)

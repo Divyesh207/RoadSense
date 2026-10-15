@@ -188,7 +188,7 @@ export default function RoadsPage() {
               onClick={() => setActiveTab("roads")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "roads"
-                  ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                  ? "bg-ri-primary text-ri-on-primary"
                   : "text-ri-muted hover:text-ri-text"
               }`}
             >
@@ -199,7 +199,7 @@ export default function RoadsPage() {
               onClick={() => setActiveTab("recurrence")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "recurrence"
-                  ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                  ? "bg-ri-primary text-ri-on-primary"
                   : "text-ri-muted hover:text-ri-text"
               }`}
             >
@@ -241,7 +241,7 @@ export default function RoadsPage() {
         {activeTab === "roads" ? (
           <>
             {/* Filter & Search Bar */}
-            <div className="flex items-center gap-4 bg-ri-surface p-3 rounded-2xl border border-ri-line">
+            <div className="flex items-center gap-4 bg-ri-surface p-3 rounded-xl border border-ri-line">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-ri-muted" />
                 <input
@@ -255,7 +255,7 @@ export default function RoadsPage() {
             </div>
 
             {/* Roads Table */}
-            <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
@@ -394,7 +394,7 @@ export default function RoadsPage() {
         ) : (
           /* Recurrence Tracking Tab */
           <div className="space-y-4">
-            <div className="flex items-center gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
+            <div className="flex items-center gap-3 bg-ri-surface p-3 rounded-xl border border-ri-line">
               <span className="font-label-sm text-xs text-ri-muted font-medium">Status:</span>
               <select
                 value={recurrenceStatusFilter}
@@ -409,7 +409,7 @@ export default function RoadsPage() {
             </div>
 
             {recurrenceLoading ? (
-              <div className="p-12 text-center text-ri-muted bg-ri-surface border border-ri-line rounded-2xl">
+              <div className="p-12 text-center text-ri-muted bg-ri-surface border border-ri-line rounded-xl">
                 Loading recurrence events...
               </div>
             ) : recurrences.length === 0 ? (
@@ -419,7 +419,7 @@ export default function RoadsPage() {
                 description="No recurrence records match the selected status."
               />
             ) : (
-              <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-ri-bg border-b border-ri-line text-ri-muted">
@@ -535,7 +535,7 @@ export default function RoadsPage() {
         {/* Timeline Modal */}
         {timelineSegmentId && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+            <div className="bg-ri-surface border border-ri-line rounded-xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
               <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
                   <History className="h-5 w-5 text-ri-primary" />
@@ -603,7 +603,7 @@ export default function RoadsPage() {
         {/* Recurrence Review Modal */}
         {reviewingRecurrence && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-ri-surface border border-ri-line rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="bg-ri-surface border border-ri-line rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
               <div className="flex items-center justify-between border-b border-ri-line pb-3">
                 <div className="flex items-center gap-2">
                   <RotateCcw className="h-5 w-5 text-ri-primary" />

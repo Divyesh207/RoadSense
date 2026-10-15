@@ -6,6 +6,7 @@ import { AppShell } from "@/components/shell";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { api } from "@/lib/api-client";
+import { InspectionThumbs } from "@/components/inspections/inspection-photos";
 import { Inspection } from "@/types/api";
 import {
   ClipboardList,
@@ -115,7 +116,7 @@ export default function InspectionsPage() {
 
         {/* Operational Metric Tiles (4-Column Bento matching Stitch Screen) */}
         <section aria-label="Inspection Metrics" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+          <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-ri-surface border border-ri-line text-center shadow-sm">
             <div className="w-8 h-8 rounded-xl bg-ri-raised flex items-center justify-center text-ri-text-soft mb-1.5 border border-ri-line-strong">
               <Clock className="h-4 w-4" />
             </div>
@@ -127,7 +128,7 @@ export default function InspectionsPage() {
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+          <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-ri-surface border border-ri-line text-center shadow-sm">
             <div className="w-8 h-8 rounded-xl bg-ri-info/15 flex items-center justify-center text-ri-info-soft mb-1.5 border border-ri-info/30">
               <Layers className="h-4 w-4" />
             </div>
@@ -139,7 +140,7 @@ export default function InspectionsPage() {
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+          <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-ri-surface border border-ri-line text-center shadow-sm">
             <div className="w-8 h-8 rounded-xl bg-ri-primary/15 flex items-center justify-center text-ri-primary-bright mb-1.5 border border-ri-primary/30">
               <Cpu className="h-4 w-4" />
             </div>
@@ -151,7 +152,7 @@ export default function InspectionsPage() {
             </span>
           </div>
 
-          <div className="flex flex-col items-center justify-center p-3 rounded-2xl bg-ri-surface border border-ri-line text-center shadow-sm">
+          <div className="flex flex-col items-center justify-center p-3 rounded-xl bg-ri-surface border border-ri-line text-center shadow-sm">
             <div className="w-8 h-8 rounded-xl bg-ri-success/15 flex items-center justify-center text-ri-success mb-1.5 border border-ri-success/30">
               <CheckCircle2 className="h-4 w-4" />
             </div>
@@ -165,7 +166,7 @@ export default function InspectionsPage() {
         </section>
 
         {/* Filter Pills Bar (Matching Stitch Scrollable Horizon) */}
-        <div className="flex items-center justify-between gap-3 bg-ri-surface p-3 rounded-2xl border border-ri-line">
+        <div className="flex items-center justify-between gap-3 bg-ri-surface p-3 rounded-xl border border-ri-line">
           <div className="flex items-center gap-2 overflow-x-auto pb-0.5">
             {[
               { label: "All", value: "", count: countLabel("") },
@@ -179,7 +180,7 @@ export default function InspectionsPage() {
                 onClick={() => setStatusFilter(tab.value)}
                 className={`px-3.5 py-1.5 rounded-full font-label-md text-xs whitespace-nowrap flex items-center gap-1.5 font-bold transition-all ${
                   statusFilter === tab.value
-                    ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                    ? "bg-ri-primary text-ri-on-primary"
                     : "bg-ri-raised text-ri-muted hover:text-ri-text border border-ri-line"
                 }`}
               >
@@ -212,7 +213,7 @@ export default function InspectionsPage() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="w-full bg-ri-surface border border-ri-line rounded-2xl p-5 animate-pulse flex flex-col gap-3"
+                className="w-full bg-ri-surface border border-ri-line rounded-xl p-5 animate-pulse flex flex-col gap-3"
               >
                 <div className="flex justify-between items-center">
                   <div className="h-4 bg-ri-raised rounded w-1/4"></div>
@@ -234,7 +235,7 @@ export default function InspectionsPage() {
             {inspections.map((insp) => (
               <article
                 key={insp.id}
-                className="flex flex-col p-5 rounded-2xl bg-ri-surface border border-ri-line hover:border-ri-primary/50 transition-all shadow-sm group"
+                className="flex flex-col p-5 rounded-xl bg-ri-surface border border-ri-line hover:border-ri-primary/50 transition-all shadow-sm group"
               >
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-3 mb-2.5">
@@ -258,6 +259,8 @@ export default function InspectionsPage() {
                     {insp.road_name ? insp.road_name : "Unassigned road"}
                   </Link>
                 </h3>
+
+                {(insp.media_summary?.image_count || 0) > 0 && <InspectionThumbs inspectionId={insp.id} />}
 
                 {/* Telemetry and Media row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-ri-line/60">
@@ -292,7 +295,7 @@ export default function InspectionsPage() {
                       <button
                         disabled={processingId === insp.id}
                         onClick={() => handleTriggerAI(insp.id)}
-                        className="h-9 px-3.5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-ri-primary/20 transition-all active:scale-95 disabled:opacity-50"
+                        className="h-9 px-3.5 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary font-label-md text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
                       >
                         <Cpu className="h-3.5 w-3.5" />
                         <span>{processingId === insp.id ? "Queuing..." : "Process AI"}</span>

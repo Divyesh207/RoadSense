@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
-import { Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ImageOff, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
+import { GlassModal } from "@/components/ui/glass";
 
 interface BeforeAfterViewerProps {
   beforeUrl: string | null;
@@ -25,6 +26,12 @@ export function BeforeAfterViewer({ beforeUrl, afterUrl, beforeCaption, afterCap
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 }); // in % of the pane, at the current zoom
   const drag = useRef<{ x: number; y: number; ox: number; oy: number; w: number; h: number } | null>(null);
+  // An image that fails to load is reported as unavailable, never replaced by a stand-in.
+  const [failed, setFailed] = useState<{ BEFORE: boolean; AFTER: boolean }>({ BEFORE: false, AFTER: false });
+  // Inline viewers open a full-size copy when an image is clicked (the large viewer is that copy).
+  const [expanded, setExpanded] = useState(false);
+  const canExpand = !large;
+  useEffect(() => setFailed({ BEFORE: false, AFTER: false }), [beforeUrl, afterUrl]);
 
   const clamp = useCallback((o: { x: number; y: number }, z: number) => {
     const limit = ((z - 1) / 2) * 100; // how far the image can move before an edge shows
@@ -87,30 +94,38 @@ export function BeforeAfterViewer({ beforeUrl, afterUrl, beforeCaption, afterCap
   const pane = (side: "BEFORE" | "AFTER", url: string | null, caption: string | undefined, tone: string) => (
     <figure className="min-w-0">
       <figcaption className="flex items-baseline justify-between gap-2 mb-1.5">
-        <span className={`ri-label ${tone}`}>{side}</span>
+        <span className={`ri-label ${tone}`}>{side} REPAIR</span>
         {caption && <span className="text-[11px] text-ri-muted truncate">{caption}</span>}
       </figcaption>
       <div
         className={`${paneHeight} rounded-xl bg-ri-bg border border-ri-line overflow-hidden flex items-center justify-center select-none ${
-          zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""
+          zoom > 1 ? "cursor-grab active:cursor-grabbing" : canExpand && url && !failed[side] ? "cursor-zoom-in" : ""
         }`}
+        onClick={() => canExpand && zoom === 1 && url && !failed[side] && setExpanded(true)}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onWheel={onWheel}
       >
-        {url ? (
+        {url && !failed[side] ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={url}
-            alt={`${side === "BEFORE" ? "Before" : "After"} repair image`}
+            alt={`${side === "BEFORE" ? "Before" : "After"} repair evidence`}
             draggable={false}
+            onError={() => setFailed((f) => ({ ...f, [side]: true }))}
             className="w-full h-full object-contain will-change-transform"
             style={transform}
           />
         ) : (
-          <span className="font-code-sm text-[11px] text-ri-faint">No image</span>
+          <span className="flex flex-col items-center gap-2 text-ri-faint px-4 text-center">
+            <ImageOff className="h-6 w-6" />
+            <span className="font-code-sm text-[11px]">Evidence image unavailable</span>
+            <span className="text-[10px]">
+              {url ? "The stored image could not be loaded." : "No image is recorded for this side."}
+            </span>
+          </span>
         )}
       </div>
     </figure>
@@ -129,7 +144,9 @@ export function BeforeAfterViewer({ beforeUrl, afterUrl, beforeCaption, afterCap
         {pane("AFTER", afterUrl, afterCaption, "text-ri-success")}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[11px] text-ri-faint">Both images move together. Drag to pan when zoomed.</p>
+        <p className="text-[11px] text-ri-faint">
+          Both images move together. Drag to pan when zoomed.{canExpand ? " Click an image for the full-size view." : ""}
+        </p>
         <div className="flex items-center gap-1.5">
           <button type="button" onClick={() => applyZoom(zoom / 1.25)} disabled={zoom <= MIN_ZOOM} aria-label="Zoom out" className={controlClass}>
             <ZoomOut className="h-4 w-4" />
@@ -143,6 +160,11 @@ export function BeforeAfterViewer({ beforeUrl, afterUrl, beforeCaption, afterCap
           </button>
         </div>
       </div>
+      {canExpand && (
+        <GlassModal open={expanded} onClose={() => setExpanded(false)} title="Before / after repair evidence" size="full">
+          <BeforeAfterViewer large beforeUrl={beforeUrl} afterUrl={afterUrl} beforeCaption={beforeCaption} afterCaption={afterCaption} />
+        </GlassModal>
+      )}
     </div>
   );
 }

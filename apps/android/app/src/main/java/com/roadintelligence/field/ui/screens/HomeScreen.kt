@@ -96,9 +96,9 @@ fun HomeScreen(
                     enabled = !isRefreshing
                 ) {
                     if (isRefreshing) {
-                        CircularProgressIndicator(color = PrimaryCyan, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(color = Accent, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     } else {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh roads and sync now", tint = PrimaryCyanBright)
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh roads and sync now", tint = AccentBright)
                     }
                 }
             }
@@ -137,11 +137,11 @@ fun HomeScreen(
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(PrimaryCyan.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
-                                .border(1.dp, PrimaryCyan.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                                .background(Accent.copy(alpha = 0.15f), RoundedCornerShape(12.dp))
+                                .border(1.dp, Accent.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = PrimaryCyanBright)
+                            Icon(Icons.Default.Person, contentDescription = null, tint = AccentBright)
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -172,7 +172,7 @@ fun HomeScreen(
                         ConnectionChip(gpsInfo.label, gpsInfo.color)
                         ConnectionChip(
                             label = if (pendingSync == 0) "Nothing to sync" else "$pendingSync pending sync",
-                            color = if (failedCount > 0) ErrorRose else if (pendingSync > 0) SecondaryBlueSoft else SuccessEmerald,
+                            color = if (failedCount > 0) ErrorRose else if (pendingSync > 0) NeutralSoft else SuccessEmerald,
                             modifier = Modifier.clickable(onClick = onNavigateToSync)
                         )
                     }
@@ -182,7 +182,7 @@ fun HomeScreen(
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatTile("Drafts", draftsCount, Icons.Default.EditNote, TextSecondary, Modifier.weight(1f))
-                    StatTile("Queued", queuedCount, Icons.Default.Schedule, SecondaryBlueSoft, Modifier.weight(1f))
+                    StatTile("Queued", queuedCount, Icons.Default.Schedule, NeutralSoft, Modifier.weight(1f))
                     StatTile("Failed", failedCount, Icons.Default.WarningAmber, if (failedCount > 0) ErrorRose else TextMuted, Modifier.weight(1f))
                     StatTile("Synced", completedCount, Icons.Default.CheckCircle, SuccessEmerald, Modifier.weight(1f))
                 }
@@ -288,8 +288,8 @@ private fun FilterPill(item: HomeFilter, count: Int, selected: HomeFilter, onSel
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
-            .background(if (isSelected) PrimaryCyan else SurfaceCard)
-            .border(1.dp, if (isSelected) PrimaryCyan else BorderDark, RoundedCornerShape(999.dp))
+            .background(if (isSelected) Accent else SurfaceCard)
+            .border(1.dp, if (isSelected) Accent else BorderDark, RoundedCornerShape(999.dp))
             .clickable { onSelect(item) }
             .heightIn(min = 36.dp)
             .padding(horizontal = 14.dp),
@@ -297,13 +297,13 @@ private fun FilterPill(item: HomeFilter, count: Int, selected: HomeFilter, onSel
     ) {
         Text(
             text = item.label,
-            color = if (isSelected) OnPrimaryCyan else TextOnSurface,
+            color = if (isSelected) OnAccent else TextOnSurface,
             style = MaterialTheme.typography.labelMedium
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = count.toString(),
-            color = if (isSelected) OnPrimaryCyan else TextSecondary,
+            color = if (isSelected) OnAccent else TextSecondary,
             style = CodeSm
         )
     }
@@ -332,10 +332,10 @@ fun InspectionCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         color = SurfaceDark,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             if (inspection.syncStatus == SyncStatus.UPLOAD_FAILED) ErrorRose.copy(alpha = 0.45f) else BorderDark
@@ -345,7 +345,7 @@ fun InspectionCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = inspection.displayId(),
-                    color = PrimaryCyanBright,
+                    color = AccentBright,
                     style = CodeMd,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f),
@@ -396,7 +396,7 @@ fun InspectionCard(
                         if (inspection.segmentNumber != null) {
                             Text(
                                 text = "SEG #${inspection.segmentNumber}",
-                                color = SecondaryBlueSoft,
+                                color = NeutralSoft,
                                 style = CodeSm,
                                 modifier = Modifier
                                     .background(SurfaceCard, RoundedCornerShape(6.dp))
@@ -455,7 +455,7 @@ fun InspectionCard(
             if (inspection.syncStatus == SyncStatus.UPLOADING) {
                 Spacer(modifier = Modifier.height(10.dp))
                 LinearProgressIndicator(
-                    color = PrimaryCyan,
+                    color = Accent,
                     trackColor = SurfaceLowest,
                     modifier = Modifier
                         .fillMaxWidth()

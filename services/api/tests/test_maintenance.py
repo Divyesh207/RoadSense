@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -29,7 +29,7 @@ async def get_inspector_token(async_client):
 
 @pytest_asyncio.fixture
 async def seeded_maintenance_context(db_session):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # 1. Road & Segment
     road = Road(

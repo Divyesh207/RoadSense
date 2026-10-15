@@ -133,7 +133,7 @@ fun PhotoViewer(
                                     val x0 = det.xMin; val y0 = det.yMin; val x1 = det.xMax; val y1 = det.yMax
                                     if (x0 != null && y0 != null && x1 != null && y1 != null) {
                                         drawRect(
-                                            color = if (det.isHeuristic) WarningAmber else PrimaryCyanBright,
+                                            color = if (det.isHeuristic) WarningAmber else AccentBright,
                                             topLeft = Offset(origin.x + x0 * fitted.width, origin.y + y0 * fitted.height),
                                             size = Size((x1 - x0) * fitted.width, (y1 - y0) * fitted.height),
                                             style = Stroke(width = 3.dp.toPx() / scale)
@@ -145,7 +145,7 @@ fun PhotoViewer(
                     }
                 }
 
-                LocalImage.Loading -> CircularProgressIndicator(color = PrimaryCyan)
+                LocalImage.Loading -> CircularProgressIndicator(color = Accent)
 
                 LocalImage.Missing -> Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -190,7 +190,7 @@ fun PhotoViewer(
                     Icon(
                         imageVector = if (showBoxes) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                         contentDescription = if (showBoxes) "Hide detection boxes" else "Show detection boxes",
-                        tint = PrimaryCyanBright
+                        tint = AccentBright
                     )
                 }
             }
@@ -265,7 +265,7 @@ fun PhotoViewer(
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
-                                    .background(if (det.isHeuristic) WarningAmber else PrimaryCyanBright, RoundedCornerShape(2.dp))
+                                    .background(if (det.isHeuristic) WarningAmber else AccentBright, RoundedCornerShape(2.dp))
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(

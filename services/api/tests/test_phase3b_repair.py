@@ -6,7 +6,7 @@ The worker's image analysis itself is tested in services/ai-worker; here the wor
 completion is simulated by writing the result the worker would store."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import func, select
@@ -202,7 +202,7 @@ async def test_inspection_photo_is_used_when_no_before_evidence(async_client, db
     media = InspectionMedia(
         id=uuid.uuid4(), organization_id=ORG_1_ID, inspection_id=ctx["inspection"].id, media_type="IMAGE",
         storage_bucket="inspection-media", storage_path=f"inspections/{ctx['inspection'].id}/p.jpg",
-        mime_type="image/jpeg", upload_status="COMPLETED", created_at=datetime.now(timezone.utc),
+        mime_type="image/jpeg", upload_status="COMPLETED", created_at=datetime.now(UTC),
     )
     db_session.add(media)
     await db_session.commit()

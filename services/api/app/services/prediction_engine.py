@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import desc, func, select
@@ -39,7 +39,7 @@ RULE_BASED_DISCLAIMER = (
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def get_or_create_prediction_model(db: AsyncSession) -> AIModel:
@@ -205,7 +205,7 @@ async def predict_segment_deterioration(
 def _utc(dt: datetime | None) -> datetime | None:
     if dt is None:
         return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 def health_trend(points: list[tuple[datetime, float]]) -> tuple[float | None, int, int]:

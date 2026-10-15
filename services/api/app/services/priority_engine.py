@@ -21,7 +21,7 @@ and are recorded as unknown rather than estimated.
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import desc, func, or_, select
@@ -46,7 +46,7 @@ ESTIMATE_FACTOR, ESTIMATE_CAP, ESTIMATE_MAX_AGE_DAYS = 0.1, 10.0, 30
 
 
 def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def compute_priority_from_damages(damages: Sequence[DamageRecord]) -> tuple[str, float]:

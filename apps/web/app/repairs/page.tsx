@@ -10,6 +10,7 @@ import { resultBadgeClass } from "@/lib/repair";
 import { ContractorHistoryItem, VerificationOverviewItem } from "@/types/api";
 import { ShieldCheck, Users, RefreshCw, CheckCircle2, Columns2 } from "lucide-react";
 import { VerificationCompareModal } from "@/components/repairs/verification-compare-modal";
+import { EvidenceThumbnails } from "@/components/repairs/evidence-thumbnails";
 
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : "—");
 
@@ -62,7 +63,7 @@ export default function RepairsPage() {
               onClick={() => setTab("verifications")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 tab === "verifications"
-                  ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                  ? "bg-ri-primary text-ri-on-primary"
                   : "text-ri-muted hover:text-ri-text"
               }`}
             >
@@ -73,7 +74,7 @@ export default function RepairsPage() {
               onClick={() => setTab("contractors")}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                 tab === "contractors"
-                  ? "bg-ri-primary text-ri-on-primary shadow-sm shadow-ri-primary/20"
+                  ? "bg-ri-primary text-ri-on-primary"
                   : "text-ri-muted hover:text-ri-text"
               }`}
             >
@@ -90,7 +91,7 @@ export default function RepairsPage() {
         )}
 
         {loading ? (
-          <div className="h-64 flex items-center justify-center border border-ri-line rounded-2xl bg-ri-surface">
+          <div className="h-64 flex items-center justify-center border border-ri-line rounded-xl bg-ri-surface">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ri-primary" />
           </div>
         ) : tab === "verifications" && verifications ? (
@@ -101,16 +102,16 @@ export default function RepairsPage() {
               description="No automated repair verification has been run yet."
             />
           ) : (
-            <div className="bg-ri-surface border border-ri-line rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-ri-surface border border-ri-line rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs table-fixed min-w-[1040px]">
+                <table className="w-full text-left text-xs table-fixed min-w-[1120px]">
                   <colgroup>
-                    <col className="w-[20%]" />
-                    <col className="w-[9%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[8%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[19%]" />
                     <col className="w-[14%]" />
-                    <col className="w-[10%]" />
+                    <col className="w-[7%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[9%]" />
                     <col className="w-[11%]" />
                     <col className="w-[13%]" />
                   </colgroup>
@@ -141,13 +142,21 @@ export default function RepairsPage() {
                           </div>
                         </td>
                         <td className="py-2.5 px-4 align-top">
-                          <button
-                            onClick={() => setComparing(v)}
-                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-ri-primary/15 border border-ri-primary/40 text-ri-primary-bright text-[11px] font-bold hover:bg-ri-primary/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright"
-                          >
-                            <Columns2 className="h-3.5 w-3.5 text-ri-primary-bright" />
-                            Compare
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <EvidenceThumbnails
+                              jobId={v.maintenance_job_id}
+                              verificationId={v.verification_id}
+                              onOpen={() => setComparing(v)}
+                            />
+                            <button
+                              onClick={() => setComparing(v)}
+                              aria-label="Compare before and after"
+                              title="Compare before and after"
+                              className="inline-flex items-center justify-center h-8 w-8 shrink-0 rounded-lg bg-ri-primary/15 border border-ri-primary/40 text-ri-primary-bright hover:bg-ri-primary/25 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright"
+                            >
+                              <Columns2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
                         <td className="py-2.5 px-4 align-top">
                           {v.automated_result ? (
@@ -207,7 +216,7 @@ export default function RepairsPage() {
               {contractors.map((c) => (
                 <div
                   key={`${c.assignee_type}-${c.assignee_id}`}
-                  className="rounded-2xl border border-ri-line bg-ri-surface p-5 shadow-sm space-y-4"
+                  className="rounded-xl border border-ri-line bg-ri-surface p-5 shadow-sm space-y-4"
                 >
                   <div className="flex items-center justify-between">
                     <p className="font-headline-sm text-sm font-bold text-white flex items-center gap-2">

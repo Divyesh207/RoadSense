@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
@@ -104,8 +104,8 @@ def test_expired_token_handling():
     expired_payload = {
         "sub": str(user_id),
         "type": "access",
-        "exp": datetime.now(timezone.utc) - timedelta(minutes=10),
-        "iat": datetime.now(timezone.utc) - timedelta(minutes=20),
+        "exp": datetime.now(UTC) - timedelta(minutes=10),
+        "iat": datetime.now(UTC) - timedelta(minutes=20),
     }
     expired_token = jwt.encode(expired_payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
@@ -249,8 +249,8 @@ async def test_refresh_expired_token(async_client, db_session):
         id=uuid.uuid4(),
         user_id=INSPECTOR_USER_ID,
         token_hash=token_hash,
-        expires_at=datetime.now(timezone.utc) - timedelta(days=1),
-        created_at=datetime.now(timezone.utc) - timedelta(days=8),
+        expires_at=datetime.now(UTC) - timedelta(days=1),
+        created_at=datetime.now(UTC) - timedelta(days=8),
     )
     db_session.add(expired_record)
     await db_session.commit()

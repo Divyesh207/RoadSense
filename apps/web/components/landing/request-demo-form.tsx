@@ -190,7 +190,7 @@ export function RequestDemoForm() {
 
       <button
         type="submit"
-        className="inline-flex items-center justify-center h-12 px-6 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-sm font-bold shadow-md shadow-ri-primary/20 transition-colors motion-safe:active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright focus-visible:ring-offset-2 focus-visible:ring-offset-ri-surface w-full sm:w-auto"
+        className="inline-flex items-center justify-center h-12 px-6 rounded-xl bg-ri-primary hover:bg-ri-primary-bright text-ri-on-primary text-sm font-bold transition-colors motion-safe:active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-ri-primary-bright focus-visible:ring-offset-2 focus-visible:ring-offset-ri-surface w-full sm:w-auto"
       >
         Prepare Demo Request
       </button>

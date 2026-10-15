@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field
@@ -14,7 +14,7 @@ class ErrorDetail(BaseModel):
 
 class ResponseMeta(BaseModel):
     request_id: str | None = None
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class PaginationMeta(ResponseMeta):

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import pytest_asyncio
@@ -42,7 +42,7 @@ async def seeded_damage_context(db_session):
         road_code="MG-001",
         road_type="URBAN",
         is_active=True,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(road)
 
@@ -56,8 +56,8 @@ async def seeded_damage_context(db_session):
         source="API",
         location=point_to_wkt(18.5204, 73.8567),
         gps_accuracy_meters=4.0,
-        captured_at=datetime.now(timezone.utc),
-        created_at=datetime.now(timezone.utc),
+        captured_at=datetime.now(UTC),
+        created_at=datetime.now(UTC),
     )
     db_session.add(insp)
 
@@ -73,7 +73,7 @@ async def seeded_damage_context(db_session):
         mime_type="image/jpeg",
         file_size_bytes=102400,
         upload_status="COMPLETED",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(media)
     await db_session.commit()
@@ -148,7 +148,7 @@ async def test_create_damage_from_ai_detection(async_client, db_session, seeded_
         pixel_height=480,
         location=point_to_wkt(18.5204, 73.8567),
         raw_output={"severity_assessment": {"severity": "HIGH", "score": 0.78}},
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(det)
     await db_session.commit()
@@ -177,7 +177,7 @@ async def test_list_damages_with_filters(async_client, db_session, seeded_damage
         damage_type_id=ctx["type_map"]["POTHOLE"],
         severity="CRITICAL",
         status="CONFIRMED",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     d2 = DamageRecord(
         organization_id=ORG_1_ID,
@@ -185,7 +185,7 @@ async def test_list_damages_with_filters(async_client, db_session, seeded_damage
         damage_type_id=ctx["type_map"]["CRACK"],
         severity="LOW",
         status="PENDING_REVIEW",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add_all([d1, d2])
     await db_session.commit()
@@ -218,7 +218,7 @@ async def test_get_and_update_damage_record(async_client, db_session, seeded_dam
         severity="MEDIUM",
         status="PENDING_REVIEW",
         notes="Initial notes",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(dmg)
     await db_session.commit()
@@ -254,7 +254,7 @@ async def test_human_review_confirm_workflow(async_client, db_session, seeded_da
         severity="MEDIUM",
         status="PENDING_REVIEW",
         confidence=0.75,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(dmg)
     await db_session.commit()
@@ -298,7 +298,7 @@ async def test_human_review_reject_workflow(async_client, db_session, seeded_dam
         damage_type_id=ctx["type_map"]["CRACK"],
         severity="LOW",
         status="PENDING_REVIEW",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(dmg)
     await db_session.commit()
@@ -332,7 +332,7 @@ async def test_get_inspection_detections_endpoint(async_client, db_session, seed
         bbox_x_max=0.4,
         bbox_y_max=0.4,
         raw_output={"severity_assessment": {"severity": "LOW"}},
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(det)
     await db_session.commit()
@@ -359,7 +359,7 @@ async def test_damage_multi_tenant_isolation(async_client, db_session, seeded_da
         damage_type_id=ctx["type_map"]["POTHOLE"],
         severity="HIGH",
         status="PENDING_REVIEW",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(dmg_org2)
     await db_session.commit()
@@ -392,7 +392,7 @@ async def test_damage_rbac_permissions(async_client, db_session, seeded_damage_c
         damage_type_id=ctx["type_map"]["POTHOLE"],
         severity="MEDIUM",
         status="PENDING_REVIEW",
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add(dmg)
     await db_session.commit()
@@ -449,7 +449,7 @@ async def test_heuristic_detection_provenance_is_labelled(async_client, db_sessi
         pixel_height=720,
         location=point_to_wkt(18.5204, 73.8567),
         raw_output={"severity_assessment": {"severity": "MEDIUM", "score": 0.4}},
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     db_session.add_all([model, run, det])
     await db_session.commit()

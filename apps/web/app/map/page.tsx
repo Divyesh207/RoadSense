@@ -48,7 +48,7 @@ const HEALTH_SWATCH: Record<string, string> = {
 
 function MapPlaceholder({ message }: { message: string }) {
   return (
-    <div className="h-full w-full flex items-center justify-center rounded-2xl bg-ri-bg border border-ri-line">
+    <div className="h-full w-full flex items-center justify-center rounded-xl bg-ri-bg border border-ri-line">
       <div className="flex flex-col items-center gap-3">
         <div className="h-8 w-8 border-2 border-ri-primary border-t-transparent rounded-full animate-spin" />
         <p className="text-xs font-mono text-ri-muted">{message}</p>
@@ -264,7 +264,7 @@ export default function SpatialMapPage() {
         {/* Main Grid: Sidebar Controls & Spatial Viewport */}
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
           {/* Controls Sidebar */}
-          <aside className="space-y-5 rounded-2xl border border-ri-line bg-ri-surface p-5 h-fit shadow-xl">
+          <aside className="space-y-5 rounded-xl border border-ri-line bg-ri-surface p-5 h-fit shadow-xl">
             {/* Layer Visibility */}
             <section className="space-y-2.5">
               <h2 className="text-xs font-semibold uppercase tracking-wider text-ri-muted font-mono flex items-center gap-1.5 pb-2 border-b border-ri-line">
@@ -339,7 +339,7 @@ export default function SpatialMapPage() {
                       onClick={() => toggleSeverity(sev)}
                       className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-mono font-medium transition-all ${
                         active
-                          ? "border-ri-primary bg-ri-primary/15 text-ri-primary-bright shadow-sm shadow-ri-primary/20"
+                          ? "border-ri-primary bg-ri-primary/15 text-ri-primary-bright"
                           : "border-ri-line bg-ri-bg text-ri-text-soft hover:bg-ri-raised"
                       }`}
                     >
@@ -504,7 +504,7 @@ export default function SpatialMapPage() {
               </div>
             )}
 
-            <div className="relative h-[calc(100vh-15rem)] min-h-[460px] rounded-2xl border border-ri-line overflow-hidden shadow-2xl bg-ri-bg">
+            <div className="relative h-[calc(100vh-15rem)] min-h-[460px] rounded-xl border border-ri-line overflow-hidden shadow-2xl bg-ri-bg">
               {/* Layer counts */}
               <div className="absolute top-3 left-3 z-[400] pointer-events-none">
                 <div className="px-3 py-1.5 rounded-xl bg-ri-bg/90 border border-ri-line backdrop-blur-md shadow-lg flex items-center gap-3 text-xs font-mono">
@@ -537,7 +537,7 @@ export default function SpatialMapPage() {
 
               {isEmpty && (
                 <div className="pointer-events-none absolute inset-0 z-[500] flex items-center justify-center p-4">
-                  <div className="rounded-2xl border border-ri-line bg-ri-bg/95 px-6 py-5 text-center shadow-2xl max-w-sm">
+                  <div className="rounded-xl border border-ri-line bg-ri-bg/95 px-6 py-5 text-center shadow-2xl max-w-sm">
                     <MapPin className="h-6 w-6 text-ri-primary mx-auto mb-2" />
                     <p className="text-sm font-semibold text-white">No mapped data yet</p>
                     <p className="text-xs text-ri-muted mt-1">

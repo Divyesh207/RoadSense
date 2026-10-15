@@ -78,10 +78,10 @@ data class SyncStatusStyle(val label: String, val color: Color, val icon: ImageV
 
 fun syncStatusStyle(status: SyncStatus): SyncStatusStyle = when (status) {
     SyncStatus.LOCAL_DRAFT -> SyncStatusStyle("LOCAL DRAFT", TextSecondary, Icons.Default.Edit)
-    SyncStatus.QUEUED -> SyncStatusStyle("QUEUED", SecondaryBlueSoft, Icons.Default.Schedule)
-    SyncStatus.UPLOADING -> SyncStatusStyle("UPLOADING", PrimaryCyanBright, Icons.Default.CloudUpload)
+    SyncStatus.QUEUED -> SyncStatusStyle("QUEUED", NeutralSoft, Icons.Default.Schedule)
+    SyncStatus.UPLOADING -> SyncStatusStyle("UPLOADING", AccentBright, Icons.Default.CloudUpload)
     SyncStatus.UPLOADED -> SyncStatusStyle("UPLOADED", SuccessEmeraldSoft, Icons.Default.CloudDone)
-    SyncStatus.PROCESSING -> SyncStatusStyle("PROCESSING", ReviewPurple, Icons.Default.Memory)
+    SyncStatus.PROCESSING -> SyncStatusStyle("PROCESSING", InfoSky, Icons.Default.Memory)
     SyncStatus.COMPLETED -> SyncStatusStyle("SYNCED", SuccessEmerald, Icons.Default.CheckCircle)
     SyncStatus.UPLOAD_FAILED -> SyncStatusStyle("UPLOAD FAILED", ErrorRose, Icons.Default.ErrorOutline)
 }
@@ -150,7 +150,7 @@ fun SectionTitle(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = PrimaryCyan, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = null, tint = Accent, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.width(8.dp))
         }
         Text(
@@ -203,7 +203,7 @@ fun MessageCard(
     val (color, icon) = when (kind) {
         MessageKind.ERROR -> ErrorRose to Icons.Default.ErrorOutline
         MessageKind.WARNING -> WarningAmber to Icons.Default.WarningAmber
-        MessageKind.INFO -> PrimaryCyanBright to Icons.Default.Info
+        MessageKind.INFO -> AccentBright to Icons.Default.Info
         MessageKind.SUCCESS -> SuccessEmerald to Icons.Default.CheckCircle
     }
     Surface(
@@ -254,11 +254,11 @@ fun EmptyState(
             Box(
                 modifier = Modifier
                     .size(52.dp)
-                    .background(SurfaceCard, RoundedCornerShape(16.dp))
-                    .border(1.dp, BorderDark, RoundedCornerShape(16.dp)),
+                    .background(SurfaceCard, RoundedCornerShape(12.dp))
+                    .border(1.dp, BorderDark, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = PrimaryCyanBright, modifier = Modifier.size(26.dp))
+                Icon(icon, contentDescription = null, tint = AccentBright, modifier = Modifier.size(26.dp))
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(title, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
@@ -295,8 +295,8 @@ fun PrimaryButton(
         onClick = onClick,
         enabled = enabled && !loading,
         colors = ButtonDefaults.buttonColors(
-            containerColor = PrimaryCyan,
-            contentColor = OnPrimaryCyan,
+            containerColor = Accent,
+            contentColor = OnAccent,
             disabledContainerColor = SurfaceCard,
             disabledContentColor = TextMuted
         ),
@@ -305,7 +305,7 @@ fun PrimaryButton(
         modifier = modifier.height(height)
     ) {
         if (loading) {
-            CircularProgressIndicator(color = OnPrimaryCyan, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            CircularProgressIndicator(color = OnAccent, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
         } else {
             if (icon != null) {
                 Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
@@ -345,7 +345,7 @@ fun SecondaryButton(
 
 @Composable
 fun fieldTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = PrimaryCyan,
+    focusedBorderColor = Accent,
     unfocusedBorderColor = BorderDark,
     disabledBorderColor = BorderDark,
     focusedTextColor = TextPrimary,
@@ -354,11 +354,11 @@ fun fieldTextFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = SurfaceLowest,
     unfocusedContainerColor = SurfaceLowest,
     disabledContainerColor = SurfaceLowest,
-    focusedLabelColor = PrimaryCyanBright,
+    focusedLabelColor = AccentBright,
     unfocusedLabelColor = TextSecondary,
     disabledLabelColor = TextMuted,
-    cursorColor = PrimaryCyan,
-    focusedLeadingIconColor = PrimaryCyanBright,
+    cursorColor = Accent,
+    focusedLeadingIconColor = AccentBright,
     unfocusedLeadingIconColor = TextSecondary,
     focusedTrailingIconColor = TextSecondary,
     unfocusedTrailingIconColor = TextSecondary
@@ -402,7 +402,7 @@ fun CommonTopBar(
                 if (overline != null) {
                     Text(
                         overline.uppercase(),
-                        color = PrimaryCyanBright,
+                        color = AccentBright,
                         style = CodeSm,
                         letterSpacing = 1.sp,
                         maxLines = 1,
@@ -452,22 +452,14 @@ fun FieldBottomNavBar(
     onItemSelected: (NavItem) -> Unit,
     syncBadgeCount: Int = 0
 ) {
-    // Floating glass bar: rounded, inset from the screen edges, above the system navigation.
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(BackgroundDark)
-            .padding(start = 12.dp, end = 12.dp, top = 6.dp, bottom = 8.dp)
-    ) {
+    // Flat dark bar with a hairline on top. The Scaffold places it above the system navigation.
+    Column(modifier = Modifier.fillMaxWidth().background(GlassBar)) {
+        HorizontalDivider(thickness = 1.dp, color = BorderDark)
         NavigationBar(
             containerColor = Color.Transparent,
             tonalElevation = 0.dp,
             windowInsets = WindowInsets(0, 0, 0, 0),
-            modifier = Modifier
-                .height(68.dp)
-                .clip(RoundedCornerShape(22.dp))
-                .background(GlassFill, RoundedCornerShape(22.dp))
-                .border(BorderStroke(1.dp, GlassEdge), RoundedCornerShape(22.dp))
+            modifier = Modifier.height(64.dp)
         ) {
             NavItem.values().forEach { item ->
                 val selected = selectedItem == item
@@ -477,7 +469,7 @@ fun FieldBottomNavBar(
                     icon = {
                         if (item == NavItem.SYNC_QUEUE && syncBadgeCount > 0) {
                             BadgedBox(badge = {
-                                Badge(containerColor = PrimaryCyan, contentColor = OnPrimaryCyan) {
+                                Badge(containerColor = Accent, contentColor = OnAccent) {
                                     Text(syncBadgeCount.toString(), style = CodeSm)
                                 }
                             }) {
@@ -491,15 +483,15 @@ fun FieldBottomNavBar(
                         Text(
                             text = item.label,
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
                         )
                     },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = PrimaryCyanBright,
-                        selectedTextColor = PrimaryCyanBright,
+                        selectedIconColor = AccentBright,
+                        selectedTextColor = AccentBright,
                         unselectedIconColor = TextSecondary,
                         unselectedTextColor = TextSecondary,
-                        indicatorColor = PrimaryCyan.copy(alpha = 0.20f)
+                        indicatorColor = SurfaceHighest
                     )
                 )
             }

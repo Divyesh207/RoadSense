@@ -2,7 +2,7 @@
 summary from real states, road intelligence timeline and map context."""
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import pytest_asyncio
@@ -24,7 +24,7 @@ LON_3M = 0.000028
 
 
 def now():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 async def headers(async_client):
