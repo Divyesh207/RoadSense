@@ -12,10 +12,12 @@ import com.roadintelligence.field.data.remote.dto.MediaCompleteDto
 import com.roadintelligence.field.data.remote.dto.UploadUrlRequestDto
 import com.roadintelligence.field.domain.model.SyncStatus
 import com.roadintelligence.field.domain.model.UploadStatus
+import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.Response
 import java.io.File
 import java.time.Instant
 
@@ -23,6 +25,25 @@ class InspectionSyncWorker(
     appContext: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(appContext, workerParams) {
+
+    private fun <T> formatError(response: Response<T>, defaultPrefix: String): String {
+        return try {
+            val errorJson = response.errorBody()?.string()
+            if (!errorJson.isNullOrBlank()) {
+                val jsonObject = JsonParser.parseString(errorJson).asJsonObject
+                val errorObj = jsonObject.getAsJsonObject("error")
+                val message = errorObj?.get("message")?.asString
+                if (!message.isNullOrBlank()) {
+                    return "$defaultPrefix: $message"
+                }
+            }
+            val msg = response.message()
+            if (!msg.isNullOrBlank()) "$defaultPrefix: $msg" else "$defaultPrefix: HTTP ${response.code()}"
+        } catch (_: Exception) {
+            val msg = response.message()
+            if (!msg.isNullOrBlank()) "$defaultPrefix: $msg" else "$defaultPrefix: HTTP ${response.code()}"
+        }
+    }
 
     companion object {
         const val WORK_NAME = "inspection_sync_work"
@@ -83,7 +104,7 @@ class InspectionSyncWorker(
                         serverId = responseData.id
                         inspectionDao.markUploaded(localInspection.localId, serverId, responseData.status)
                     } else {
-                        throw Exception("Failed to create inspection on server: ${createResponse.message()}")
+                        throw Exception(formatError(createResponse, "Failed to create inspection on server"))
                     }
                 }
 
@@ -113,7 +134,7 @@ class InspectionSyncWorker(
                     )
 
                     if (!uploadUrlResponse.isSuccessful || uploadUrlResponse.body()?.data == null) {
-                        throw Exception("Failed to get upload URL: HTTP ${uploadUrlResponse.code()}")
+                        throw Exception(formatError(uploadUrlResponse, "Failed to get upload URL"))
                     }
 
                     val uploadData = uploadUrlResponse.body()!!.data!!
@@ -127,7 +148,7 @@ class InspectionSyncWorker(
                     )
 
                     if (!binaryUploadResponse.isSuccessful) {
-                        throw Exception("Binary upload failed: HTTP ${binaryUploadResponse.code()}")
+                        throw Exception(formatError(binaryUploadResponse, "Binary upload failed"))
                     }
 
                     // Register the uploaded object as inspection media
@@ -149,7 +170,7 @@ class InspectionSyncWorker(
 
                     val mediaServerId = completeResponse.body()?.data?.id
                     if (!completeResponse.isSuccessful || mediaServerId == null) {
-                        throw Exception("Media completion failed: HTTP ${completeResponse.code()}")
+                        throw Exception(formatError(completeResponse, "Media completion failed"))
                     }
 
                     mediaDao.updateMediaStatus(media.localId, UploadStatus.COMPLETED.name, mediaServerId, null)
@@ -161,7 +182,7 @@ class InspectionSyncWorker(
                 val finalStatus = when {
                     submitResponse.isSuccessful -> submitResponse.body()?.data?.status ?: "SUBMITTED"
                     submitResponse.code() == 409 -> localInspection.status.takeIf { it != "DRAFT" } ?: "SUBMITTED"
-                    else -> throw Exception("Submit failed: HTTP ${submitResponse.code()}")
+                    else -> throw Exception(formatError(submitResponse, "Submit failed"))
                 }
 
                 // 4. Mark inspection and sync queue item completed

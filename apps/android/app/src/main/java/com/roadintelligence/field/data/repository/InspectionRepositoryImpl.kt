@@ -153,6 +153,9 @@ class InspectionRepositoryImpl(
         try {
             inspectionDao.deleteInspection(localId)
             mediaDao.deleteMedia(localId)
+            syncQueueDao.getItemByInspectionId(localId)?.let {
+                syncQueueDao.deleteItem(it.id)
+            }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -192,9 +192,9 @@ fun InspectionDetailScreen(
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 )
-                                if (insp.syncStatus == SyncStatus.LOCAL_DRAFT) {
+                                if (insp.syncStatus == SyncStatus.LOCAL_DRAFT || insp.syncStatus == SyncStatus.UPLOAD_FAILED) {
                                     SecondaryButton(
-                                        text = "Delete Draft",
+                                        text = if (insp.syncStatus == SyncStatus.UPLOAD_FAILED) "Delete Failed Inspection" else "Delete Draft",
                                         icon = Icons.Default.DeleteOutline,
                                         contentColor = ErrorRose,
                                         onClick = { confirmDelete = true },

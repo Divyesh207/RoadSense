@@ -20,7 +20,9 @@ class RoadRepositoryImpl(
 ) : RoadRepository {
 
     override fun getCachedRoads(): Flow<List<Road>> {
-        return roadDao.getAllRoads().map { list ->
+        val orgId = sessionManager.getOrganizationId().orEmpty()
+        val flow = if (orgId.isNotEmpty()) roadDao.getRoadsForOrganization(orgId) else roadDao.getAllRoads()
+        return flow.map { list ->
             list.map {
                 Road(
                     id = it.id,

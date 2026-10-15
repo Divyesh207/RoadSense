@@ -1,6 +1,9 @@
 
+import json
+from typing import Annotated
+
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -23,7 +26,9 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     API_V1_PREFIX: str = "/api/v1"
-    CORS_ALLOWED_ORIGINS: list[str] = [
+    # NoDecode: the validator below parses the env value, so both the comma-separated form
+    # (as in .env.example) and a JSON list work.
+    CORS_ALLOWED_ORIGINS: Annotated[list[str], NoDecode] = [
         "http://localhost:3000",
         "http://localhost:8000",
         "http://127.0.0.1:3000",
@@ -33,9 +38,11 @@ class Settings(BaseSettings):
     @field_validator("CORS_ALLOWED_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
-        if isinstance(v, str) and not v.startswith("["):
+        if isinstance(v, str) and not v.strip().startswith("["):
             return [i.strip() for i in v.split(",") if i.strip()]
-        elif isinstance(v, (list, str)):
+        if isinstance(v, str):
+            return json.loads(v)
+        if isinstance(v, list):
             return v
         raise ValueError(v)
 

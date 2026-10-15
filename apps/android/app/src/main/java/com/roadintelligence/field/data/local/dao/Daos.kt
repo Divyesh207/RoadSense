@@ -65,6 +65,9 @@ interface RoadDao {
     @Query("SELECT * FROM roads ORDER BY name ASC")
     fun getAllRoads(): Flow<List<RoadEntity>>
 
+    @Query("SELECT * FROM roads WHERE organizationId = :orgId ORDER BY name ASC")
+    fun getRoadsForOrganization(orgId: String): Flow<List<RoadEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRoads(roads: List<RoadEntity>)
 
