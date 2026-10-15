@@ -134,13 +134,23 @@ class InspectionRepositoryImpl(
     override suspend fun queueForUpload(localId: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             inspectionDao.updateSyncStatus(localId, SyncStatus.QUEUED.name, null)
-            val queueItem = SyncQueueEntity(
+            // One queue entry per inspection: a retry resets the existing entry instead of adding
+            // another, so the worker never uploads the same inspection several times in one run.
+            val now = System.currentTimeMillis()
+            val existing = syncQueueDao.getItemByInspectionId(localId)
+            val queueItem = existing?.copy(
+                status = SyncStatus.QUEUED.name,
+                attemptCount = 0,
+                nextAttemptAt = now,
+                lastError = null,
+                updatedAt = now
+            ) ?: SyncQueueEntity(
                 id = UUID.randomUUID().toString(),
                 inspectionLocalId = localId,
                 operation = "SYNC_INSPECTION",
                 status = SyncStatus.QUEUED.name,
                 attemptCount = 0,
-                nextAttemptAt = System.currentTimeMillis()
+                nextAttemptAt = now
             )
             syncQueueDao.insertQueueItem(queueItem)
             Result.success(Unit)
@@ -153,9 +163,7 @@ class InspectionRepositoryImpl(
         try {
             inspectionDao.deleteInspection(localId)
             mediaDao.deleteMedia(localId)
-            syncQueueDao.getItemByInspectionId(localId)?.let {
-                syncQueueDao.deleteItem(it.id)
-            }
+            syncQueueDao.deleteItemsForInspection(localId)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -68,8 +68,14 @@ class InspectionSyncWorker(
         }
 
         var anyFailed = false
+        val seen = mutableSetOf<String>()
 
         for (item in pendingItems) {
+            // Older app versions could queue the same inspection more than once; keep the first entry.
+            if (!seen.add(item.inspectionLocalId)) {
+                syncQueueDao.deleteItem(item.id)
+                continue
+            }
             val localInspection = inspectionDao.getInspectionByIdSync(item.inspectionLocalId)
             if (localInspection == null) {
                 syncQueueDao.deleteItem(item.id)

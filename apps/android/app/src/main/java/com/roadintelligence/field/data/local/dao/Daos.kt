@@ -113,4 +113,7 @@ interface SyncQueueDao {
 
     @Query("DELETE FROM sync_queue WHERE id = :id")
     suspend fun deleteItem(id: String)
+
+    @Query("DELETE FROM sync_queue WHERE inspectionLocalId = :inspectionLocalId")
+    suspend fun deleteItemsForInspection(inspectionLocalId: String)
 }
